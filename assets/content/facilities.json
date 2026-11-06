@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "dummy": true,
+  "facilities": [
+    {
+      "id": "FS01",
+      "type": "toilet",
+      "name": "Toilet dekat Gerbang",
+      "lat": -6.85818,
+      "lng": 107.633272,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS01",
+      "keywords": [
+        "toilet",
+        "wc",
+        "kamar mandi"
+      ]
+    },
+    {
+      "id": "FS02",
+      "type": "musala",
+      "name": "Musala",
+      "lat": -6.856111,
+      "lng": 107.632638,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS02",
+      "keywords": [
+        "musala",
+        "mushola",
+        "masjid",
+        "salat",
+        "sholat"
+      ]
+    },
+    {
+      "id": "FS03",
+      "type": "warung",
+      "name": "Warung dekat Kolam",
+      "lat": -6.853279,
+      "lng": 107.635446,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS03",
+      "keywords": [
+        "warung",
+        "kios",
+        "makan",
+        "minum",
+        "jajan"
+      ]
+    },
+    {
+      "id": "FS04",
+      "type": "pos_petugas",
+      "name": "Pos Petugas",
+      "lat": -6.848332,
+      "lng": 107.638163,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS04",
+      "keywords": [
+        "pos",
+        "petugas",
+        "informasi",
+        "bantuan"
+      ]
+    },
+    {
+      "id": "FS05",
+      "type": "istirahat",
+      "name": "Bangku Hutan Pinus",
+      "lat": -6.852244,
+      "lng": 107.633181,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS05",
+      "keywords": [
+        "istirahat",
+        "bangku",
+        "duduk"
+      ]
+    }
+  ]
+}

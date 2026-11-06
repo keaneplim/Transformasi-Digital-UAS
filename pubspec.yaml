@@ -1,0 +1,28 @@
+name: jelajah_taman
+description: "Jelajah Taman — pemandu eksplorasi Tahura Ir. H. Djuanda (zona Dago Pakar)."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.5.0
+
+# Add a plugin only in the PR of the module that owns it (docs/engineering/ARCHITECTURE.md §3, rule R5).
+# Commit pubspec.lock. Don't upgrade dependencies during Sprint 4–5.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/content/
+    # - assets/images/     (enable when the first photo is added)
+    # - assets/audio/      (enable when the first narration is added)
+    # - assets/map/        (enable when the MBTiles file exists)

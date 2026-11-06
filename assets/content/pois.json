@@ -1,0 +1,364 @@
+{
+  "version": 1,
+  "dummy": true,
+  "pois": [
+    {
+      "id": "P01",
+      "name": "Gerbang Dago Pakar",
+      "category": "informasi",
+      "lat": -6.858,
+      "lng": 107.633,
+      "coord_source": "DUMMY",
+      "radius_m": 30,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 5,
+      "difficulty": 1,
+      "graph_node": "N_P01",
+      "keywords": [
+        "gerbang",
+        "pintu masuk",
+        "dago pakar"
+      ],
+      "text": "[ISI] Teks Gerbang Dago Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P02",
+      "name": "Monumen Ir. H. Djuanda",
+      "category": "sejarah",
+      "lat": -6.855662,
+      "lng": 107.633543,
+      "coord_source": "DUMMY",
+      "radius_m": 25,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 10,
+      "difficulty": 1,
+      "graph_node": "N_P02",
+      "keywords": [
+        "monumen",
+        "djuanda",
+        "juanda"
+      ],
+      "text": "[ISI] Teks Monumen Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P03",
+      "name": "Museum Ir. H. Djuanda",
+      "category": "sejarah",
+      "lat": -6.855032,
+      "lng": 107.634087,
+      "coord_source": "DUMMY",
+      "radius_m": 25,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 20,
+      "difficulty": 1,
+      "graph_node": "N_P03",
+      "keywords": [
+        "museum",
+        "djuanda",
+        "juanda"
+      ],
+      "text": "[ISI] Teks Museum Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P04",
+      "name": "Kolam Pakar",
+      "category": "alam",
+      "lat": -6.853503,
+      "lng": 107.635265,
+      "coord_source": "DUMMY",
+      "radius_m": 30,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 10,
+      "difficulty": 1,
+      "graph_node": "N_P04",
+      "keywords": [
+        "kolam",
+        "pakar",
+        "danau"
+      ],
+      "text": "[ISI] Teks Kolam Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P05",
+      "name": "Gua Jepang",
+      "category": "sejarah",
+      "lat": -6.850356,
+      "lng": 107.635265,
+      "coord_source": "DUMMY",
+      "radius_m": 20,
+      "trigger": [
+        "gps",
+        "qr"
+      ],
+      "qr_code": "jelajahtaman://poi/P05",
+      "visit_minutes": 15,
+      "difficulty": 2,
+      "graph_node": "N_P05",
+      "keywords": [
+        "gua",
+        "goa",
+        "jepang"
+      ],
+      "text": "[ISI] Teks Gua Jepang (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P06",
+      "name": "Gua Belanda",
+      "category": "sejarah",
+      "lat": -6.848107,
+      "lng": 107.637982,
+      "coord_source": "DUMMY",
+      "radius_m": 20,
+      "trigger": [
+        "gps",
+        "qr"
+      ],
+      "qr_code": "jelajahtaman://poi/P06",
+      "visit_minutes": 20,
+      "difficulty": 2,
+      "graph_node": "N_P06",
+      "keywords": [
+        "gua",
+        "goa",
+        "belanda"
+      ],
+      "text": "[ISI] Teks Gua Belanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "santai",
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P07",
+      "name": "Penangkaran Rusa",
+      "category": "alam",
+      "lat": -6.846309,
+      "lng": 107.639341,
+      "coord_source": "DUMMY",
+      "radius_m": 30,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 10,
+      "difficulty": 2,
+      "graph_node": "N_P07",
+      "keywords": [
+        "rusa",
+        "penangkaran",
+        "satwa"
+      ],
+      "text": "[ISI] Teks Penangkaran Rusa (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P08",
+      "name": "Kawasan Hutan Pinus",
+      "category": "alam",
+      "lat": -6.852424,
+      "lng": 107.633,
+      "coord_source": "DUMMY",
+      "radius_m": 40,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 15,
+      "difficulty": 1,
+      "graph_node": "N_P08",
+      "keywords": [
+        "pinus",
+        "hutan"
+      ],
+      "text": "[ISI] Teks Kawasan Hutan Pinus (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P09",
+      "name": "Area Rumput / Piknik",
+      "category": "rekreasi",
+      "lat": -6.851165,
+      "lng": 107.632094,
+      "coord_source": "DUMMY",
+      "radius_m": 40,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 15,
+      "difficulty": 1,
+      "graph_node": "N_P09",
+      "keywords": [
+        "piknik",
+        "rumput",
+        "taman"
+      ],
+      "text": "[ISI] Teks Area Rumput / Piknik (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P10",
+      "name": "Titik Koleksi Flora",
+      "category": "alam",
+      "lat": -6.855302,
+      "lng": 107.631641,
+      "coord_source": "DUMMY",
+      "radius_m": 25,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 10,
+      "difficulty": 1,
+      "graph_node": "N_P10",
+      "keywords": [
+        "flora",
+        "tanaman",
+        "koleksi"
+      ],
+      "text": "[ISI] Teks Titik Koleksi Flora (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "sedang",
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    },
+    {
+      "id": "P11",
+      "name": "Curug Omas",
+      "category": "alam",
+      "lat": -6.837316,
+      "lng": 107.64387,
+      "coord_source": "DUMMY",
+      "radius_m": 40,
+      "trigger": [
+        "gps"
+      ],
+      "qr_code": null,
+      "visit_minutes": 20,
+      "difficulty": 3,
+      "graph_node": "N_P11",
+      "keywords": [
+        "curug",
+        "air terjun",
+        "omas"
+      ],
+      "text": "[ISI] Teks Curug Omas (80–150 kata) dari sumber resmi/papan informasi.",
+      "key_facts": [],
+      "images": [],
+      "audio": null,
+      "audio_seconds": null,
+      "routes": [
+        "trekking"
+      ],
+      "safety_note": null,
+      "sources": []
+    }
+  ]
+}

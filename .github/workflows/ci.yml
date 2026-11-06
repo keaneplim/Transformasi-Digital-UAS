@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Content · format · analyze · architecture · test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate content (assets/content/*.json)
+        run: python tools/validate_content.py
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.9"   # keep in sync with everyone's local `flutter --version`
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test tools
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Architecture rules (ARCHITECTURE.md §10)
+        run: dart run tools/check_architecture.dart
+
+      - name: Test
+        run: flutter test
+
+  build-apk:
+    name: Debug APK
+    needs: check
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if android/ has not been generated yet
+        id: platform
+        run: |
+          if [ -d android ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-java@v4
+        if: steps.platform.outputs.present == 'true'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        if: steps.platform.outputs.present == 'true'
+        with:
+          flutter-version: "3.47.9"   # keep in sync with everyone's local `flutter --version`
+          channel: stable
+          cache: true
+
+      - if: steps.platform.outputs.present == 'true'
+        run: flutter pub get
+
+      - if: steps.platform.outputs.present == 'true'
+        run: flutter build apk --debug
+
+      - uses: actions/upload-artifact@v4
+        if: steps.platform.outputs.present == 'true'
+        with:
+          name: jelajah-taman-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14

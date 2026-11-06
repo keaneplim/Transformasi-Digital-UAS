@@ -1,0 +1,17 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  exclude:
+    - build/**
+    - android/**
+
+linter:
+  rules:
+    avoid_dynamic_calls: true
+    avoid_print: true
+    prefer_final_locals: true
+    unawaited_futures: true
+    always_declare_return_types: true
