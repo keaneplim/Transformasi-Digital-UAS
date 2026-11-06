@@ -28,7 +28,11 @@ jobs:
         run: |
           pip install --quiet python-docx
           python tools/prd_to_md.py
-          git diff --exit-code -- docs/prd/PRD.md docs/prd/figures \n            || (echo "PRD.md is stale: run 'python tools/prd_to_md.py' and commit the result" && exit 1)
+          git diff --exit-code -- docs/prd/PRD.md docs/prd/figures \
+            || (echo "PRD.md is stale: run 'python tools/prd_to_md.py' and commit the result" && exit 1)
+
+      - name: Python tool tests (tools/tests)
+        run: python -m unittest discover -s tools/tests -v
 
       - uses: subosito/flutter-action@v2
         with:

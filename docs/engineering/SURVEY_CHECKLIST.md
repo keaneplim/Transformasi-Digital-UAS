@@ -95,7 +95,14 @@ At each of these, note the accuracy shown and the satellite count: open area at 
 1. Upload raw data to the team Drive: `survey/2026-11-07/{gpx,photos,signboards,sheet}`.
 2. Commit **small files** to the repo: GPX in `survey/raw/2026-11-07/`, the data sheet as `survey/raw/2026-11-07/points.csv`, replay tracks in `test_data/gpx/`. Keep the original photos on Drive; only curated, resized photos (WebP ≤1280 px) go into `assets/images/`.
 3. Average the 3 readings per point (drop an obvious outlier) and update `pois.json` / `facilities.json`. Remove `"coord_source": "DUMMY"` from each record you replace, and set the file-level `"dummy"` to `false` only when every record in that file is real.
-4. Build the real `trail_graph.json` from the GPX with `tools/gpx_to_graph.py` (owner B; to be written).
+4. Build the real `trail_graph.json` (owner B), **after** step 3 so POIs attach at their real positions:
+   ```bash
+   python tools/gpx_to_graph.py survey/raw/2026-11-07/ --update-routes
+   ```
+   - Pass **only the trail GPX**, never `test_data/gpx/` (the `detour.gpx` replay would become a fake trail).
+   - Open `build/gpx_to_graph/preview.geojson` on https://geojson.io and check it against the sheet: every junction there, no fake shortcuts, red attach lines = POIs > 25 m from a trail.
+   - Every `WARNING`/`ERROR` is a question for the survey team **tonight**, while a second visit is still possible: "P07 is 40 m from any trail" = wrong coordinate or a path not recorded; "E01: trail ends without a POI" = unfinished recording or a real dead end; "P11 not connected to the gate" = a missing segment.
+   - `--update-routes` rewrites `node_path`, `distance_m`, `ascent_m` in `routes.json`; `duration_min` stays as surveyed.
 5. Run `python tools/validate_content.py` and fix every error.
 6. Update PROGRESS.md: which Lampiran B items are closed, what is still `[VERIFIKASI]`, and whether Curug Omas stays in scope.
 7. Once all content is real, delete `tools/make_dummy_data.py` so nobody regenerates dummy data over the survey data.
