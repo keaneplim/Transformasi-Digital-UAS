@@ -20,6 +20,7 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 |---|---|
 | `docs/prd/PRD_Kelompok5_Jelajah_Taman.docx` | **Canonical PRD** (v0.9). Edit here first. |
 | `docs/prd/Kelompok 5_Draft PRD.pdf` | Export of the docx (29 pp). Re-export after docx edits. Greppable via `pdftotext`. |
+| `docs/prd/PRD.md` + `docs/prd/figures/` | **Generated** markdown of the PRD (`python tools/prd_to_md.py`). Read this instead of parsing the docx. Never edit by hand; CI fails if it is out of date. |
 | `docs/prd/Kickoff_Kel5.pdf` | W7 kickoff report (historical, don't edit). |
 | `docs/presentation/Presentasi_Kel5_Jelajah_Taman.pptx` / `.pdf` | 15-slide deck; speaker script lives in each slide's notes. |
 | `docs/design/DESIGN.md`, `docs/design/STITCH_PROMPTS.md` | UI design system (palette, type, components) + Google Stitch prompts per screen UI01–UI15. |
@@ -32,7 +33,7 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 
 Docs moved into `docs/` on 2026-11-06. Removed 2026-11-03 (still in git history, commit 414c626): PRD md mirror, Naskah md, course template docx, `figures/` (the figures are embedded in the docx/pptx).
 
-**Sync rule:** a content change to the PRD must propagate docx → pdf, and, if it is presented, pptx slide + pptx notes. List every touched file when reporting.
+**Sync rule:** a content change to the PRD must propagate docx → pdf → `PRD.md` (run `python tools/prd_to_md.py`), and, if it is presented, pptx slide + pptx notes. PRD (what) and IMPLEMENTATION_PLAN (how) stay separate: requirements are never defined in the plan. List every touched file when reporting.
 
 **Reading binaries** (tools available on this machine): `pdftotext -layout file.pdf -`; Python 3.13 has `python-pptx`, `python-docx`, `pypdf`, `PIL`. Set `PYTHONIOENCODING=utf-8` (Windows console is cp1252). Put scratch scripts in the session scratchpad, not the repo.
 

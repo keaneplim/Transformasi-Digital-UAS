@@ -29,7 +29,7 @@ Do every step and fill in the table in §3.
 
 ### 1.1 Basics
 - **Settings → About phone:** brand, model, Android version, free storage (need ≥1 GB).
-- **Developer options:** tap *Build number* 7×, then enable **USB debugging**. Plug into Ballard's laptop and run `flutter devices`; the phone must be listed.
+- **Developer options:** tap *Build number* 7×, then enable **USB debugging**. Plug into a coder's laptop and run `flutter devices`; the phone must be listed.
 - **Android 14+?** Fine, but note it: the manifest needs `FOREGROUND_SERVICE_LOCATION` (already planned).
 - **Android 13+?** The notification permission is asked at runtime (planned in onboarding).
 

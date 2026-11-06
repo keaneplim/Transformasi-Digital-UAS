@@ -1,8 +1,8 @@
 # IMPLEMENTATION PLAN — Jelajah Taman
 
-Feature-level specification and build plan for the 3 coders. It is derived from **PRD v0.9** (`PRD_Kelompok5_Jelajah_Taman.docx`). The PRD says *what* each requirement must do; this document says *how we build it, who builds it, in what order, and how we prove it works*.
+Feature-level build plan for the 3 coders. **What** the product must do lives in the PRD: read [PRD.md](../prd/PRD.md) (generated from the canonical `PRD_Kelompok5_Jelajah_Taman.docx`, v0.9.1). This document only says **how** we build it, who builds it, in what order, and how we prove it works. Requirement IDs (F01–F08, A01–A07), screen IDs (UI01–UI15) and test IDs (TC-01–TC-13) refer to the PRD; when this plan quotes an acceptance criterion, the PRD text is the authority.
 
-- **If this file and the PRD disagree, the PRD wins** until the change is approved and written into the PRD Change Log (§10). Items marked **PROPOSED** below are decisions this plan needs that the PRD does not make (or makes inconsistently). The team must confirm them, then record them in the PRD.
+- **If this file and the PRD disagree, the PRD wins** until the change is approved and written into the PRD Change Log (§10). Decisions D01–D14 (§1) are accepted and in PRD v0.9.1. Items still marked **PROPOSED** elsewhere in this file are smaller defaults the PRD doesn't cover; the owning coder may adjust them and records the outcome in PROGRESS.md.
 - `[VERIFIKASI]` values (coordinates, opening hours, route lengths, history facts) are **not** filled in here. Code reads them from data files, so they can be updated after the survey without touching code.
 - Current status and open issues live in [PROGRESS.md](../../PROGRESS.md). Issue numbers like "#8" refer to its *Known issues* table.
 
@@ -10,7 +10,7 @@ Feature-level specification and build plan for the 3 coders. It is derived from 
 
 ## Contents
 0. [Team, ownership, schedule](#0-team-ownership-schedule)
-1. [Decisions to confirm before coding](#1-decisions-to-confirm-before-coding)
+1. [Decisions (accepted)](#1-decisions-accepted)
 2. [Architecture](#2-architecture)
 3. [Data model & content files](#3-data-model--content-files)
 4. [Shared contracts (agree on day 1)](#4-shared-contracts-agree-on-day-1)
@@ -34,7 +34,7 @@ Feature-level specification and build plan for the 3 coders. It is derived from 
 
 | Role | Person | Owns |
 |---|---|---|
-| **Coder A — "Where am I"** + integrator | Michael Ballard Silaen | F01, F02, A02, A06 → then F07, A03. App skeleton, `LocationService`, `TriggerEngine`, `SessionLog`, debug tools (GPX replay, fake clock). Merges to `main`, keeps the build installed on the test phones. |
+| **Coder A — "Where am I"** + integrator | _TBD_ | F01, F02, A02, A06 → then F07, A03. App skeleton, `LocationService`, `TriggerEngine`, `SessionLog`, debug tools (GPX replay, fake clock). Merges to `main`, keeps the build installed on the test phones. |
 | **Coder B — "Where do I go"** | _TBD_ | A01 (map), F06, F05, A04. `TrailRouter` (graph, Dijkstra, ETA), map widget. |
 | **Coder C — "What do I experience"** | _TBD_ | F03, F04, A05 loader → then F08, A07, Onboarding/Home/Settings. `AudioService`, `TtsService`, notifications (`notify`), content repository. |
 | **Content & data** (non-coder) | _TBD_ (BA fits) | Survey (coordinates, GPX, photos, walk times), `pois.json` / `routes.json` / `park.json` contents, narration scripts + recordings, source log for every fact, PRD updates. |
@@ -61,7 +61,7 @@ PM duties (permits, PMO, W12 report) go to whichever non-coder is the PM, or are
 
 ### 0.4 Task list
 
-Coder A = Michael Ballard Silaen · Coder B = _TBD_ · Coder C = _TBD_. Within a wave the three coders work **in parallel**; the waves run in order. A task can start as soon as everything in "Needs first" is done (or stubbed).
+Coder A = _TBD_ · Coder B = _TBD_ · Coder C = _TBD_ (the three coders are Keane, Ballard and Khalfani; who takes which track is not decided yet). Within a wave the three coders work **in parallel**; the waves run in order. A task can start as soon as everything in "Needs first" is done (or stubbed).
 
 | Wave | Dates (2026) | Goal |
 |---|---|---|
@@ -119,11 +119,11 @@ Update the Status column (☐ → ◐ in progress → ☑ done) in the same PR t
 
 ---
 
-## 1. Decisions to confirm before coding
+## 1. Decisions (accepted)
 
-These are gaps or contradictions in PRD v0.9 that block implementation. Each has a **PROPOSED** default so coding can start. Confirm or change in the team meeting, then add to the PRD Change Log and sync docx → pdf → pptx per CLAUDE.md.
+These were gaps or contradictions in PRD v0.9 that blocked implementation. **All 14 were accepted on 2026-11-06** and written into the PRD as **version 0.9.1** (Change Log §10: docx, pdf, and deck slides 6/7/8/10 + notes). Formal PMO approval is still pending. Code follows these decisions; the PRD now says the same thing.
 
-| ID | Problem (PROGRESS #) | PROPOSED decision | Blocks |
+| ID | Problem (PROGRESS #) | Decision (accepted) | Blocks |
 |---|---|---|---|
 | **D01** | Flowchart checks only the single nearest POI, so a visited POI can mask an untriggered neighbour (#8) | Evaluate **every eligible POI** (state `Outside`/`Approaching`) each reading. Among those meeting the trigger condition, trigger the nearest. POIs in `Triggered/Visited/Cooldown` are skipped. | PB06 |
 | **D02** | Approaching buzz fires before the visited/cooldown check (#9) | Approaching only applies to eligible POIs. **One buzz per approach episode.** | PB06, PB07 |
@@ -132,7 +132,7 @@ These are gaps or contradictions in PRD v0.9 that block implementation. Each has
 | **D05** | "Nanti" marks the POI visited, so walk-bys count as visits (#11) | Separate **triggered** from **visited**. Visited = user chose *Dengarkan* or *Lihat*, Auto-Play started narration, user opened POI Detail by any route, or QR scan. *Nanti*/dismiss = triggered only, stays a recommendation candidate. | PB06, PB15, PB18 |
 | **D06** | Navigation "tiba ≤15 m" routes into TRIGGER → double trigger; facilities would also trigger (#10) | Arrival **never creates a trigger.** It announces arrival (UI11). If the destination is a POI not yet visited, UI11 offers *Buka detail*. Facilities: announcement only. | PB14 |
 | **D07** | P01 "offer to start session" is impossible because triggers only run in a session (#12) | P01 is not handled by the trigger engine. When Home is open (no session) and a foreground location fix is within P01's radius, Home shows a "Anda di Gerbang Dago Pakar — Mulai Jelajah?" banner. | UI02 |
-| **D08** | "GPS lemah > 60 s" rule is only in the figure and slide 8 (#15) | Keep it: if every reading for 60 s has accuracy > 30 m (or no fix), show the UI12 banner: *Pindai QR* / *Pilih manual*. Add to PRD F02 text. | PB10 |
+| **D08** | "GPS lemah > 60 s" rule is only in the figure and slide 8 (#15) | Keep it: if every reading for 60 s has accuracy > 30 m (or no fix), show the UI12 banner: *Pindai QR* / *Pilih manual*. Now in PRD F02 and §4.2. | PB10 |
 | **D09** | F06 slope formula unspecified (#16) | Naismith-style: `t = horizontal_m / 50 m·min⁻¹` (3 km/h) `+ 1 min per 10 m ascent`. Descent adds nothing. Calibrate against survey walk times in S4. | PB14 |
 | **D10** | F07 weights unspecified (#16) | `score = 0.50·dist + 0.25·interest + 0.15·route + 0.10·difficulty` (definitions in F07). | PB15 |
 | **D11** | F08 calorie method unspecified; no body weight (#16) | MET-based estimate, optional body weight in Settings stored on-device only (allowed by NG05: nothing on a server). Default 60 kg, shown as "estimasi". | PB16 |
@@ -477,7 +477,7 @@ Dot is shown and updated on ≥2 test phones in airplane mode (GPS works without
 | (3) Exit > r+15 and re-enter < 10 min → no re-trigger | TC-03 + unit test 4 |
 | (4) Approaching buzz at ≤ r+30 | Unit test 1; field observation |
 | (5) QR opens correct POI ≤3 s offline | TC-04 (see A02) |
-| *(missing in PRD)* false triggers | PROPOSED AC: during TC-02, count triggers for POIs the tester didn't enter; target 0 false triggers on the route. Add to PRD. |
+| (6) No false triggers (added in PRD 0.9.1) | During TC-02, count triggers for POIs the tester didn't enter; target 0 on the route. |
 
 #### Edge cases
 - GPS jump of 50 m into a radius for one fix → debounce absorbs it.

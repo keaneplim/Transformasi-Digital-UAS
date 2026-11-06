@@ -6,7 +6,7 @@ Living status file. Update at the end of every work session: what changed, what'
 | Milestone | Week | Dates (2026) | Status |
 |---|---|---|---|
 | Kickoff | W7 | 8 Okt | ✅ Done |
-| PRD workshop / baseline v1.0 | W9 | ~20–25 Okt | ⏳ Draft v0.9 presented; PMO decision not recorded |
+| PRD workshop / baseline v1.0 | W9 | ~20–25 Okt | ⏳ v0.9 presented; v0.9.1 (D01–D14) on 6 Nov; PMO decision not recorded |
 | Sprint 1 — fondasi & location awareness (PB01–PB05) | W10 | 26 Okt – 1 Nov | ⚠️ Late: skeleton + dummy data added 6 Nov; survey 7 Nov; map/GPS not started |
 | **Sprint 2 — POI, trigger logic (PB06–PB10)** | **W11** | **2 – 8 Nov** | **← current** |
 | Sprint 3 — core flow + eyes-free (PB11–PB14) | W12 | 9 – 15 Nov | Major Progress Review (end-to-end demo) |
@@ -25,34 +25,38 @@ Living status file. Update at the end of every work session: what changed, what'
 ## Known issues in the documents
 | # | Issue | Where | Status |
 |---|---|---|---|
-| 1 | Cover lists only 4 members — Michael Dimas missing | `Kelompok 5_Draft PRD.pdf` | Open |
-| 2 | Scenario timing contradicts A03 rule: with 25 min walk the reminder should fire at 15.20, not 14.45; and 10.30 start + 2 j 40 m ends ~13.10, before the 14.45 reminder | PRD §2.1, slide 6, Naskah slide 6 | Open |
-| 3 | Cooldown start ambiguous: from trigger time (flowchart) vs. from leaving r+15 m (state diagram) | PRD §3 F02, §4.2 | Open — decide before PB06 |
-| 4 | No hysteresis on Approaching (enter and exit both at r+30 m) → repeated vibration at the boundary, contradicts "getar sekali" | PRD §4.2 | Open — e.g. exit at r+40 m or one buzz per approach episode |
+| 1 | Cover lists only 4 members — Michael Dimas missing | `Kelompok 5_Draft PRD.pdf` | Closed 2026-11-06 — PDF re-exported from docx (cover now lists all 5) |
+| 2 | Scenario timing contradicts A03 rule: with 25 min walk the reminder should fire at 15.20, not 14.45; and 10.30 start + 2 j 40 m ends ~13.10, before the 14.45 reminder | PRD §2.1, slide 6, Naskah slide 6 | Closed 2026-11-06 — D13: scenario now starts 13.00, reminder 15.20 (PRD 0.9.1, slide 6) |
+| 3 | Cooldown start ambiguous: from trigger time (flowchart) vs. from leaving r+15 m (state diagram) | PRD §3 F02, §4.2 | Closed 2026-11-06 — D04: cooldown from trigger time (PRD 0.9.1) |
+| 4 | No hysteresis on Approaching (enter and exit both at r+30 m) → repeated vibration at the boundary, contradicts "getar sekali" | PRD §4.2 | Closed 2026-11-06 — D03: exit approaching at r+40 m, one buzz per approach (PRD 0.9.1, slide 8) |
 | 5 | QR path: figure routes QR → TRIGGER; old md mermaid routed QR → POI Detail | userflow figure (Gambar 2.1) in docx | Open — confirm figure is the intended flow |
 | 6 | md mirror lagged docx | `PRD_Kel5_Jelajah_Taman.md` | Closed — file removed 2026-11-03 |
-| 7 | Working-tree pptx re-saved by PowerPoint (media renamed/deduped, no text change) — uncommitted | `Presentasi_…pptx` | Safe to commit |
-| 8 | Trigger flowchart (Gambar 4.2) evaluates only the single nearest POI → a visited/cooling POI masks an untriggered neighbour inside its radius. Slide 8 says "terdekat yang belum terpicu"; PRD F02 says "terdekat" | PRD Gambar 4.2, F02; slide 8 | Open — fix before PB06 |
-| 9 | Approaching (vibrate) is evaluated before the visited/cooldown check → every pass near an already-visited POI buzzes again | Gambar 4.2, Gambar 4.1 | Open — suppress approaching for Visited/Cooldown |
-| 10 | Navigation "tiba ≤15 m" → connector B → TRIGGER, but trigger radius is 20–40 m so the POI already triggered on the way in → double trigger; also routes facility (FS, never triggers) arrivals into TRIGGER | Gambar 2.1, F06, UI11 | Open |
-| 11 | TRIGGERED marks POI "dikunjungi" even on "Nanti" → walk-bys count as visits (summary 6/10) and are excluded from F07 forever | Gambar 4.2, F07, F08(e) | Open — separate triggered vs visited |
-| 12 | P01 "tawaran memulai sesi" impossible: triggers only run during an active session. "Sekali per sesi" exception not modelled in state machine | §4.1 P01, Gambar 4.2 | Open |
+| 7 | Working-tree pptx re-saved by PowerPoint (media renamed/deduped, no text change) — uncommitted | `Presentasi_…pptx` | Closed — committed d2cefc2 |
+| 8 | Trigger flowchart (Gambar 4.2) evaluates only the single nearest POI → a visited/cooling POI masks an untriggered neighbour inside its radius. Slide 8 says "terdekat yang belum terpicu"; PRD F02 says "terdekat" | PRD Gambar 4.2, F02; slide 8 | Closed 2026-11-06 — D01: evaluate all eligible POIs (PRD 0.9.1, slide 8) |
+| 9 | Approaching (vibrate) is evaluated before the visited/cooldown check → every pass near an already-visited POI buzzes again | Gambar 4.2, Gambar 4.1 | Closed 2026-11-06 — D02 (PRD 0.9.1) |
+| 10 | Navigation "tiba ≤15 m" → connector B → TRIGGER, but trigger radius is 20–40 m so the POI already triggered on the way in → double trigger; also routes facility (FS, never triggers) arrivals into TRIGGER | Gambar 2.1, F06, UI11 | Closed 2026-11-06 — D06: arrival never triggers (PRD F06, UI11) |
+| 11 | TRIGGERED marks POI "dikunjungi" even on "Nanti" → walk-bys count as visits (summary 6/10) and are excluded from F07 forever | Gambar 4.2, F07, F08(e) | Closed 2026-11-06 — D05: triggered ≠ visited (PRD F02, F07) |
+| 12 | P01 "tawaran memulai sesi" impossible: triggers only run during an active session. "Sekali per sesi" exception not modelled in state machine | §4.1 P01, Gambar 4.2 | Closed 2026-11-06 — D07: P01 offer moved to Home (PRD §4.1) |
 | 13 | P11 Curug Omas likely outside NG02 zone (Maribaya end of trail); Trekking "6 km ±4 j incl. Curug Omas" round trip implausible | §4.1, F08, slide 9–10 | Open — verify in survey |
-| 14 | TC-10 and slide 10 reuse the wrong 14.45 time from issue #2; TC-10 has no fixed tester position so 15.30 result is not deterministic | Lampiran A, F07 AC3, slide 10 | Open |
-| 15 | "GPS lemah > 60 s" rule exists only in Gambar 4.2 + slide 8, not in PRD text | §4.2, F02 | Open |
-| 16 | Untested / unspecified: F05 typo tolerance (no AC), F06 slope formula, F07 weights, F08 calorie method (no body weight under NG05), no false-positive AC for F02 | §3 | Open |
-| 17 | Deck PDF (22 Okt) older than pptx (27 Okt): title subtitle "Draft v0.9 → Baseline v1.0" removed in pptx only | deck pdf/pptx | Open — re-export |
+| 14 | TC-10 and slide 10 reuse the wrong 14.45 time from issue #2; TC-10 has no fixed tester position so 15.30 result is not deterministic | Lampiran A, F07 AC3, slide 10 | Closed 2026-11-06 — D13: TC-10 fixed position P06, computed threshold (PRD Lampiran A, slide 10) |
+| 15 | "GPS lemah > 60 s" rule exists only in Gambar 4.2 + slide 8, not in PRD text | §4.2, F02 | Closed 2026-11-06 — D08: in PRD F02 + §4.2 |
+| 16 | Untested / unspecified: F05 typo tolerance (no AC), F06 slope formula, F07 weights, F08 calorie method (no body weight under NG05), no false-positive AC for F02 | §3 | Closed 2026-11-06 — D09–D12 + F02 AC6 (PRD 0.9.1) |
+| 17 | Deck PDF (22 Okt) older than pptx (27 Okt): title subtitle "Draft v0.9 → Baseline v1.0" removed in pptx only | deck pdf/pptx | Closed 2026-11-06 — deck PDF re-exported from current pptx |
 | 18 | STITCH_PROMPTS references removed `figures/fig_wire_*.png`; Prompt 0 calls caves "WWII-era" (unsourced AI fact; Gua Belanda predates WWII); closing mock uses 15.20 while PRD still says 14.45 | `design/STITCH_PROMPTS.md` | Open |
 | 19 | Trail Green #3E8A5B on white = 4.21:1 (< 4.5 for text) despite DESIGN.md "all text ≥4.5:1" | `design/DESIGN.md` | Open — darken to ~#357A4F |
+| 20 | PRD figures Gambar 2.1 (user flow: arrival → TRIGGER), 4.1 (state diagram: approaching exit r+30, no Visited rule) and 4.2 (flowchart: nearest POI only) still show the pre-0.9.1 logic; text is updated, images are not | PRD docx/pdf embedded figures | Open — redraw (UX) and replace in docx, re-export pdf |
 
 ## Decisions
 | Date | Decision | By |
 |---|---|---|
 | 2026-11-03 | Added CLAUDE.md (stable context) + PROGRESS.md (living status) so AI sessions don't re-parse binaries | Keane |
 | 2026-11-06 | Architecture: modular monolith (folder modules + import checker), Riverpod without codegen, in-process event bus, Open/Closed only at listed extension points (ARCHITECTURE.md ADR-001…007) | Keane (team to confirm) |
+| 2026-11-06 | Accepted D01–D14 (IMPLEMENTATION_PLAN §1) and applied them to PRD → v0.9.1 (docx, pdf, deck slides 6/7/8/10 + notes, deck pdf) | Keane (team) |
 | 2026-11-06 | App code lives in this repo; docs moved to `docs/`; dummy content until survey | Keane |
 
 ## Log
+- **2026-11-06** — PRD and implementation plan separated: added generated `docs/prd/PRD.md` + `docs/prd/figures/` via `tools/prd_to_md.py` (docx stays canonical); CI step fails if PRD.md is stale (prevents the drift of issue #6). Plan header now points to PRD.md for all requirements. AI-assisted (Claude Code) — log for AI Disclosure.
+- **2026-11-06** — Applied decisions D01–D14 to the PRD as v0.9.1: F01, F02 (+AC6 false triggers), F05 (+AC6 typo), F06, F07, F08, §2.1 scenario (13.00 start, 15.20 reminder), §4.1 P01, §4.2, UI11, TC-02, TC-10, Change Log row. Deck: slides 6, 7, 8, 10 + notes 8, 10. Re-exported both PDFs (PRD now 32 pp). Closed issues #1–#4, #7–#12, #14–#17; opened #20 (embedded figures still old). Files: docs/prd/PRD_Kelompok5_Jelajah_Taman.docx, docs/prd/Kelompok 5_Draft PRD.pdf, docs/presentation/Presentasi_Kel5_Jelajah_Taman.pptx, docs/presentation/Presentasi_Kel5_Jelajah_Taman.pdf. AI-assisted (Claude Code) — log for AI Disclosure.
 - **2026-11-06** — Added task list T01–T30 (4 waves, owners, dependencies, status) as IMPLEMENTATION_PLAN §0.4, plus rule "day 1 together on T01–T02". Moved `notify` module ownership A → C (ARCHITECTURE §3, plan §0.1/§0.2/§2.1, `notify.dart` header) to unload Coder A's critical path. AI-assisted (Claude Code) — log for AI Disclosure.
 - **2026-11-06** — Moved docs into `docs/` (prd, presentation, design, engineering). Added Flutter skeleton (`lib/core`, 16 module front doors, content loader, stub TrailRouter, shell Home), DUMMY content (`tools/make_dummy_data.py`), `tools/validate_content.py`, `tools/check_architecture.dart`, CI workflow, tests, README (setup + definition of done), DEVICE_CHECK.md, SURVEY_CHECKLIST.md. Then installed Flutter 3.47.9 and ran `flutter create --platforms=android`: `flutter analyze` clean, 14 tests pass, architecture checker passes (and catches R1/R2/R4/R7 on a probe file), debug APK builds. CI pinned to Flutter 3.47.9. Renamed `Router` → `TrailRouter` (clash with Flutter's Router). AI-assisted (Claude Code) — log for AI Disclosure.
 - **2026-11-06** — Created `ARCHITECTURE.md` (modular monolith with folder modules + import checker, Riverpod without codegen, in-process event bus E1–E10, Open/Closed only at listed extension points, ADR-001…007). Updated IMPLEMENTATION_PLAN §2/§4 to match (trigger visited-marking now via `PoiEngaged` event). AI-assisted (Claude Code) — log for AI Disclosure.

@@ -1,0 +1,2 @@
+# Generated file: keep LF everywhere so the CI sync check (tools/prd_to_md.py) is stable.
+docs/prd/PRD.md text eol=lf

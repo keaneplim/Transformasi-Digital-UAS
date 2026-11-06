@@ -24,6 +24,12 @@ jobs:
       - name: Validate content (assets/content/*.json)
         run: python tools/validate_content.py
 
+      - name: PRD.md is in sync with the PRD docx
+        run: |
+          pip install --quiet python-docx
+          python tools/prd_to_md.py
+          git diff --exit-code -- docs/prd/PRD.md docs/prd/figures \n            || (echo "PRD.md is stale: run 'python tools/prd_to_md.py' and commit the result" && exit 1)
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.47.9"   # keep in sync with everyone's local `flutter --version`

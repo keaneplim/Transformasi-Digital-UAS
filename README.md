@@ -13,8 +13,8 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 | `lib/modules/<module>/` | Feature modules. Import only `<module>/<module>.dart` from outside. |
 | `assets/content/` | `pois.json`, `facilities.json`, `routes.json`, `park.json`, `trail_graph.json` |
 | `test/` | Mirrors `lib/` |
-| `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py` |
-| `docs/prd/` | PRD (docx = canonical, pdf export), kickoff report |
+| `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py`, `prd_to_md.py` |
+| `docs/prd/` | PRD: docx = canonical, pdf export, `PRD.md` = generated readable copy (`python tools/prd_to_md.py`); kickoff report |
 | `docs/presentation/` | Deck (pptx + pdf) |
 | `docs/design/` | Design system, Stitch prompts, hi-fi screen exports (`screens/`) |
 | `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, `DEVICE_CHECK.md`, `SURVEY_CHECKLIST.md` |
