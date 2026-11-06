@@ -34,9 +34,9 @@ Feature-level build plan for the 3 coders. **What** the product must do lives in
 
 | Role | Person | Owns |
 |---|---|---|
-| **Coder A — "Where am I"** + integrator | _TBD_ | F01, F02, A02, A06 → then F07, A03. App skeleton, `LocationService`, `TriggerEngine`, `SessionLog`, debug tools (GPX replay, fake clock). Merges to `main`, keeps the build installed on the test phones. |
-| **Coder B — "Where do I go"** | _TBD_ | A01 (map), F06, F05, A04. `TrailRouter` (graph, Dijkstra, ETA), map widget. |
-| **Coder C — "What do I experience"** | _TBD_ | F03, F04, A05 loader → then F08, A07, Onboarding/Home/Settings. `AudioService`, `TtsService`, notifications (`notify`), content repository. |
+| **Coder A — "Where am I"** | _TBD_ | F01, F02, A02, F05, A04, A06 → then F07. `LocationService`, `TriggerEngine`, QR, `SessionLog`, Search + facility finder, debug tools (GPX replay, fake clock). The hardest logic and the critical path, so no integration duty. |
+| **Coder B — "Where do I go"** + integrator | _TBD_ | A01 (map), F06 → then A03 (`ReminderScheduler` + closing reminder), session summary UI14. `TrailRouter` (graph, Dijkstra, ETA), `TimeBudget`, map widget, Explore + summary screens in `shell`. Merges to `main` and keeps the build installed on the test phones. |
+| **Coder C — "What do I experience"** | _TBD_ | F03, F04, A05 loader → then F08 tracking + hydration, A07, permissions/Onboarding/Home/Settings. `AudioService`, `TtsService`, notifications (`notify`), content repository. |
 | **Content & data** (non-coder) | _TBD_ (BA fits) | Survey (coordinates, GPX, photos, walk times), `pois.json` / `routes.json` / `park.json` contents, narration scripts + recordings, source log for every fact, PRD updates. |
 | **Design & QA** (non-coder) | _TBD_ | Hi-fi screens **one sprint ahead** of the coder building them, GPX replay files, test scripts TC-01…TC-13, field + usability tests (SUS), AI & Tools Disclosure log. |
 
@@ -46,9 +46,9 @@ PM duties (permits, PMO, W12 report) go to whichever non-coder is the PM, or are
 
 | Sprint | Coder A | Coder B | Coder C | Non-coders |
 |---|---|---|---|---|
-| **S2** (2–8 Nov) | Project skeleton, `LocationService`, GPX replay + debug menu, `TriggerEngine` + unit tests, QR scanner | Offline map + markers + user dot, GPX → graph script, stub `TrailRouter` (day 1) | Content loader + validation, POI Detail, audio player, notifications | Survey, `pois.json` v1, scripts + recordings, hi-fi UI03–UI07, GPX replay files |
-| **S3** (9–15 Nov) **W12 review** | Integrate trigger → POI Detail, screen-off tracking, GPS-weak flow, session log | Dijkstra, Navigation screen, reroute, arrival, Search | Lock-screen media controls, Auto-Play, TTS prompts, Onboarding, Home | Hi-fi UI08–UI15, run TC-04/05/07 on device, prepare demo |
-| **S4** (16–22 Nov) **feature freeze** | F07 recommendation, A03 closing reminder | Voice turn instructions, slope ETA, ETA calibration vs survey times, A06 support if needed | F08: routes screen, pedometer, distance, hydration, summary; Settings; A07 | Calibrate data, TC-09/10/11/12 dry runs |
+| **S2** (2–8 Nov) | `LocationService`, GPX replay + debug menu, then **start `TriggerEngine` + unit tests right after day 1** | Offline map + markers + user dot, GPX → graph script, stub `TrailRouter` (day 1); starts merging PRs | Minimal permissions, content loader + validation, POI Detail, audio player, notifications | Survey, `pois.json` v1, scripts + recordings, hi-fi UI03–UI07, GPX replay files |
+| **S3** (9–15 Nov) **W12 review** | Trigger controller, QR scanner, screen-off tracking; then session log **first**, GPS-weak flow + manual pick, Search + facility finder | Dijkstra, Navigation screen, reroute, arrival, Explore composition, W12 integration build | Lock-screen media controls, Auto-Play, TTS prompts, Onboarding, Home | Hi-fi UI08–UI15, run TC-04/05/07 on device, prepare demo |
+| **S4** (16–22 Nov) **feature freeze** | F07 recommendation, A06 battery-aware tracking | **First:** `TimeBudget` + `ReminderScheduler` + A03 closing reminder (C's hydration needs it). Then voice turn instructions, ETA calibration vs survey times, session summary UI14 | F08: route chooser data, pedometer, distance, kcal, hydration; Settings UI15; A07 | Calibrate data, TC-09/10/11/12 dry runs |
 | **S5** (23–29 Nov) | Radius calibration in the field, trigger bug fixes | ETA vs actual, routing fixes | Usability fixes, accessibility scan | Field test TC-01…13, usability + SUS, video, testing report |
 
 ### 0.3 Working rules
@@ -76,12 +76,12 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 |---|---|---|---|---|---|
 | T01 | `LocationService` + `GeolocatorSource` (3 s, foreground service, GPS quality) | A | — | 0 | ☐ |
 | T02 | `GpxReplaySource` + debug menu (replay picker, fake clock, teleport, debug overlay) | A | T01 | 0 | ☐ |
-| T03 | Minimal permission request (location, notifications) so testing can start. Proper onboarding UI is T18. | A | — | 0 | ☐ |
+| T03 | Minimal permission request (location, notifications) so testing can start. First slice of the onboarding flow; T18 builds on it. | C | — | 0 | ☐ |
 | T04 | Explore map UI03: MBTiles tiles, POI/facility markers, geofence rings, user dot | B | T01 (or teleport) | 0 | ☐ |
 | T05 | Offline tiles: generate `dago_pakar.mbtiles` legally (not bulk-downloaded from OSM's servers) | B | — | 0 | ☐ |
 | T06 | POI Detail UI06: gallery, text, facts, player widget; publishes `PoiEngaged`/`PoiFinished` | C | content (done) | 0 | ☐ |
 | T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C | — | 0 | ☐ |
-| T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests | A | T01 | 1 | ☐ |
+| T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests. Start right after day 1 (A is free once T01–T02 are done). | A | T01 | 0–1 | ☐ |
 | T09 | Trigger controller: fixes → engine → events; approaching banner UI04 | A | T08 | 1 | ☐ |
 | T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ☐ |
 | T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ☐ |
@@ -89,29 +89,45 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX | B | survey | 1 | ☐ |
 | T14 | Real `TrailRouter`: snapping, Dijkstra on time cost, ETA with slope (D09) + tests | B | T13 (dummy graph is fine to start) | 1 | ☐ |
 | T15 | Lock-screen/earphone media controls, Auto-Play, voice prompt on trigger, `VoiceArbiter` | C | T07, T11 | 1–2 | ☐ |
-| T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table | A | T08 | 2 | ☐ |
-| T17 | GPS-weak banner (60 s) + manual POI pick | A | T09 | 2 | ☐ |
-| T18 | Onboarding UI01 (permission flow, battery exemption, TTS check) + Home UI02 (interests, route chooser, *Mulai Jelajah*) | C | T16 (start session) | 2 | ☐ |
+| T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table. **A's first task in wave 2:** C's T18 needs `SessionController.start()`. | A | T08 | 2 | ☐ |
+| T17 | GPS-weak banner (60 s) + manual POI pick (builds the POI list widget that T20 reuses) | A | T09 | 2 | ☐ |
+| T18 | Onboarding UI01 (permission flow, battery exemption, TTS check) + Home UI02 (interests, route chooser, *Mulai Jelajah*). Until T16 lands, wire the button to a stub `SessionController`. | C | T03; T16 (stub until then) | 2 | ☐ |
 | T19 | Navigation UI10/UI11: route line, remaining distance/ETA, arrival (never triggers, D06), reroute | B | T14, T04 | 2 | ☐ |
-| T20 | Search UI09 + facility finder (A04): matching (D12), filter, sort by walking distance | B | T14 (stub works) | 2 | ☐ |
+| T20 | Search UI09 + facility finder (A04): matching (D12), filter, sort by walking distance (via B's `TrailRouter`) | A | T17 (list widget), T14 (stub works) | 2 | ☐ |
 | T21 | Explore screen composition: map + banners + bottom sheet (built in the `shell` module) | B | T04, T09 | 2 | ☐ |
 | T22 | W12 end-to-end run on replay + demo video | all | T01–T21 | 2 | ☐ |
-| T23 | `ReminderScheduler` + closing reminder (A03) | A | T14, T16 | 3 | ☐ |
-| T24 | Recommendation F07 (filter + `ScoreFactor`s + UI08) | A | T14, T16 | 3 | ☐ |
+| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ☐ |
+| T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
 | T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C | T01, T16 | 3 | ☐ |
 | T28 | Hydration reminder (a `Reminder` strategy plugged into T23's scheduler) | C | T23 | 3 | ☐ |
-| T29 | Session summary UI14 + Settings UI15 | C | T16, T27 | 3 | ☐ |
+| T29 | Session summary UI14, composed in `shell` from `session` + `wellness` data, with the walked route on the map | B | T16, T27 | 3 | ☐ |
 | T30 | Accessibility pass (A07), contrast fix #19 | C | screens | 3 | ☐ |
+| T31 | Settings UI15 (Auto-Play, voice navigation, hydration interval, text size, body weight, version, hidden debug menu) | C | T15, T28 | 3 | ☐ |
+
+**Load per coder (rebalanced 2026-11-06).** A: T01, T02, T08–T10, ½T12, T16, T17, T20, T24, T25. B: T04, T05, T13, T14, T19, T21, T23, T26, T29 + integrator. C: T03, T06, T07, T11, ½T12, T15, T18, T27, T28, T30, T31 (more tasks, mostly smaller UI ones). T01–T02 are built by all three on day 1 (rule 6).
+
+| Wave | Coder A | Coder B | Coder C |
+|---|---|---|---|
+| 0 | T01–T02 (with everyone), T08 start | T04, T05 | T03, T06, T07 |
+| 1 | T08 finish, T09, T10, ½T12 | T13, T14 | T11, ½T12, T15 start |
+| 2 | T16 first, T17, T20 | T19, T21 + W12 integration build | T15 finish, T18 |
+| 3 | T24, T25 | T23 first, T26, T29 | T27, T28, T30, T31 |
+
+The remaining differences are in the kind of work (A logic, B map/router + integration, C UI/audio), not the amount.
+
+Every coder builds the screens for their own features (vertical slices): there is no separate "UI coder".
 
 **Why these pairings** (same owner on purpose):
 - **Trigger + QR + Session → A.** They all change the same per-POI state; splitting them means two people editing one state machine.
-- **Recommendation + closing reminder → A.** Same time budget (walk to POI + visit + walk to gate ≤ closing − 15 min); written once.
-- **Hydration → C, plugged into A's `ReminderScheduler`.** Open/Closed in practice: a new `Reminder` class, no edits to the scheduler.
-- **Map + Navigation + Explore screen → B.** Navigation draws on the map's layers; one owner for the Explore screen file. A and C hand over their pieces (approaching banner, stats strip) as widgets.
-- **Search + Router → B.** Results are sorted by walking distance from the router.
+- **Closing reminder + `TimeBudget` → B; recommendation → A, using B's `TimeBudget`.** Both need "walk to gate before closing − 15 min", and walk-to-gate comes from B's router. The rule is written once, in `routing`, so the two features can't disagree (TC-10 checks both).
+- **Hydration → C, plugged into B's `ReminderScheduler`.** Open/Closed in practice: a new `Reminder` class, no edits to the scheduler.
+- **Map + Navigation + Explore screen + Session summary → B.** Navigation draws on the map's layers; one owner for the Explore and summary screen files in `shell`. A and C hand over their pieces (approaching banner, stats strip, summary numbers) as widgets or data.
+- **Search + manual POI pick → A.** Both are a searchable POI list (one widget); search adds matching (D12) and sorting by walking distance, which is one call to B's router. Moved from B so B has room for navigation + integration before W12.
 - **POI Detail + Audio + Notifications + Eyes-free → C.** One user experience with one voice-priority system (`VoiceArbiter`).
+- **Permissions (T03) + Onboarding (T18) → C.** One permission flow with one owner, built up in two steps instead of written twice.
+- **Integrator → B, not A.** A is on the critical path (T01 → T08 → T09). Merging every PR on top of that made A a single point of failure.
 
 **Scope rules for the W12 review:** waves 0–2 only. Say explicitly that Recommendation and Wellness (wave 3) are Sprint 4 scope. T05 (map tiles) may slip: for W12, trail lines from `trail_graph.json` on a plain background are acceptable.
 
@@ -153,8 +169,8 @@ These were gaps or contradictions in PRD v0.9 that blocked implementation. **All
 | 1 | `content` (C) · `location` (A) · `audio` (C) · `notify` (C) |
 | 2 | `routing` (B) · `trigger` (A) |
 | 3 | `session` (A) · `map` (B) · `navigation` (B) · `poi` (C) |
-| 4 | `search` (B) · `recommendation` (A) · `reminders` (A closing / C hydration) · `wellness` (C) |
-| 5 | `shell` (C, wiring with A) — onboarding, Home, Settings, composition root, debug menu |
+| 4 | `search` (A) · `recommendation` (A) · `reminders` (B scheduler + closing / C hydration) · `wellness` (C) |
+| 5 | `shell` (C onboarding/Home/Settings · B Explore + summary composition · A session wiring) — composition root, debug menu |
 
 A module may depend only on lower levels, through its public file `lib/modules/<m>/<m>.dart`. Questions go through direct calls, news through domain events. This is enforced by `tools/check_architecture.dart` in CI.
 
@@ -305,6 +321,12 @@ abstract class TrailRouter {   // not "Router": clashes with Flutter's Router wi
   double walkingDistanceM(GeoPoint from, String toNodeId);
   Duration walkingTime(GeoPoint from, String toNodeId);        // incl. slope (D09)
   Duration walkingTimeBetween(String fromNodeId, String toNodeId);
+}
+// added in T23 (owner B); used by the closing reminder (B) and the recommendation filter (A)
+class TimeBudget {
+  Duration walkToGate(GeoPoint from);                           // TrailRouter.walkingTime(from, gate node)
+  Duration remaining(DateTime now);                             // close − now − closing_buffer (park.json)
+  bool fits(GeoPoint from, String poiNodeId, Duration visit, DateTime now); // walk + visit + walk to gate ≤ remaining
 }
 
 // modules/audio — owner C   (publishes E5 PoiEngaged(listened/autoplay), E7 PoiFinished(narrationDone))
@@ -632,7 +654,7 @@ Graph covers all POIs/facilities, connected; UI10/UI11 work on replay and on one
 ---
 
 ### F05 — Search & Destination
-**Owner** B · **Sprint** S3 (PB13) · **Screens** UI09 · **Priority** Must
+**Owner** A · **Sprint** S3 (PB13) · **Screens** UI09 · **Priority** Must
 
 **Summary.** Search POIs and facilities by name (partial, case-insensitive, light typo tolerance), filter by category, sort by **walking** distance with distance + ETA, and open detail or start navigation.
 
@@ -659,7 +681,7 @@ TC-07 passes in airplane mode; unit tests pass; result tap opens detail or navig
 ---
 
 ### A04 — Facility Finder
-**Owner** B · **Sprint** S3 (with F05) · **Priority** Should
+**Owner** A · **Sprint** S3 (with F05) · **Priority** Should
 
 **Summary.** Facilities (toilet, musala, warung, pos petugas, istirahat) show as distinct Slate Post markers, are searchable via the "Fasilitas" filter and navigable, and **never** trigger notifications.
 
@@ -781,7 +803,7 @@ candidates = pois where
      id ∉ sessionLog.visitedPoiIds                      // D05: "Nanti" POIs stay candidates
      and id ≠ gate POI
      and (id ≠ P11 or activeRoute == trekking)
-     and router.walkingTime(pos, poi) + poi.visit_minutes + router.walkingTimeBetween(poi, gate) ≤ budget
+     and router.walkingTime(pos, poi) + poi.visit_minutes + router.walkingTimeBetween(poi, gate) ≤ budget   // = timeBudget.fits(...) from T23
 if candidates empty → BackToGate(router.walkingTime(pos, gate))
 for c in candidates:
      dist       = 1 − walkingDistance(c) / max(walkingDistance over candidates)      // 0..1, nearest = 1
@@ -810,7 +832,7 @@ Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10
 ---
 
 ### A03 — Closing-Time Reminder
-**Owner** A · **Sprint** S4 (PB17, closing part) · **Screens** UI13 (closing) · **Priority** Should
+**Owner** B · **Sprint** S4 (PB17, closing part), first task of the sprint · **Screens** UI13 (closing) · **Priority** Should
 
 **Summary.** Continuously compute walking time to the gate and remind the visitor (voice + notification, with *Navigasi ke gerbang*) when `now ≥ close − walk_to_gate − 15 min`.
 
@@ -823,7 +845,7 @@ Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10
 **UC-A03-3 Session started late** — threshold already passed at session start → remind immediately, and Home's route chooser shows which routes no longer fit (F08).
 
 #### Implementation
-`ClosingReminder` subscribes to `Clock` ticks + `LocationService.fixes`; uses `TrailRouter.walkingTime(pos, gateNode)`. Hours from `park.json` (marked `verified: false` until the PM confirms — Lampiran B #4). Unit-tested with `FakeClock`.
+`ClosingReminder` subscribes to `Clock` ticks + `LocationService.fixes`; uses `TimeBudget.walkToGate(pos)` (§4), the same helper F07's filter uses. Hours from `park.json` (marked `verified: false` until the PM confirms — Lampiran B #4). Unit-tested with `FakeClock`.
 
 #### Verify
 TC-10 (fake clock, fixed position) — reminder fires at the computed minute, not ±1 min off. Unit tests: fires once, fires immediately when late, threshold moves as position changes.
@@ -831,7 +853,7 @@ TC-10 (fake clock, fixed position) — reminder fires at the computed minute, no
 ---
 
 ### F08 — Wellness Trail Explorer
-**Owner** C · **Sprint** S4 (PB16, PB17 hydration, PB18) · **Screens** UI02 route chooser, UI03 stats strip, UI13 hydration, UI14 summary · **Priority** Must
+**Owner** C (tracking, hydration, summary data) · B (summary screen UI14, in `shell`) · **Sprint** S4 (PB16, PB17 hydration, PB18) · **Screens** UI02 route chooser, UI03 stats strip, UI13 hydration, UI14 summary · **Priority** Must
 
 **Summary.** The domain innovation: three graded trails (Santai / Sedang / Trekking) with distance, elevation gain, duration and POIs; activity tracking (steps, GPS distance, duration, estimated calories); rest/facility markers; periodic hydration/rest reminders; session summary; flora-fauna content on nature POIs.
 
@@ -885,7 +907,7 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 ---
 
 ### App shell — Onboarding (UI01), Home (UI02), Session lifecycle, Settings (UI15)
-**Owner** C (screens), A (session controller) · **Sprint** S3 (Onboarding/Home), S4 (Settings)
+**Owner** C (Onboarding, Home, Settings screens), A (session controller), B (summary screen UI14) · **Sprint** S2 (minimal permissions, T03), S3 (Onboarding/Home), S4 (Settings)
 
 **UC-SH-1 First launch (UI01).** 3 short pages (what the app does, eyes-free with earphones, offline) → permission requests **in context, one at a time**, each with a one-line reason: location → notifications → physical activity → (camera only when the QR scanner is first opened) → battery-optimization exemption prompt (Risk R2) → offline Indonesian TTS voice check (Risk R3). Denials are allowed; the app explains the degraded mode.
 
@@ -951,10 +973,10 @@ Every location fix (session only), trigger event, recommendation, reminder and n
 | TC-04 | F02, A02 | Yes (printed QR) | A |
 | TC-05 | F03 | Yes | C |
 | TC-06 | F04 | Yes (replay, locked) | C + A |
-| TC-07 | F05 | Yes | B |
+| TC-07 | F05 | Yes | A |
 | TC-08 | F06 | Partly (replay detour) | B |
 | TC-09 | F07 | Yes (replay) | A |
-| TC-10 | F07, A03 | Yes (fake clock + fixed position) | A |
+| TC-10 | F07, A03 | Yes (fake clock + fixed position) | A (F07) + B (A03) |
 | TC-11 | F08 | Yes (needs survey data) | C |
 | TC-12 | F08 | Field (200 steps anywhere) | C |
 | TC-13 | A01 | Field | All |
@@ -971,7 +993,7 @@ Sprint 3 goal: Start → Explore → Trigger → Information → Search → Navi
 4. **Trigger, eyes-free** — lock the phone; voice prompt; tap *Dengarkan* on the lock screen; pause/resume with earphones. (A, C)
 5. **Information** — unlock, open POI Detail: photos, text, facts, player. (C)
 6. **QR fallback** — scan the printed Gua Jepang QR in airplane mode. (A)
-7. **Search** — type "toilet" → sorted by walking distance. (B)
+7. **Search** — type "toilet" → sorted by walking distance. (A)
 8. **Navigation** — *Navigasi* → route on the trail, ETA, voice instruction at a junction, deliberate detour → reroute, arrival. (B)
 
 Report items (PRD §7 W12 table): planned PB06–PB14, done/not done, evidence links (video, APK, unit test output, `visit_events` export), blockers and recovery plan. Recommendation and Wellness are **S4 scope** — say so explicitly instead of half-demoing them.
@@ -990,5 +1012,5 @@ Report items (PRD §7 W12 table): planned PB06–PB14, done/not done, evidence l
 | R6 | Tile licensing (OSM bulk download banned) | Offline map not legally packageable | Render own tiles from OSM data; attribution | B |
 | R7 | Rainy season (late Nov) during field tests | Field tests postponed | Do desk tests first; schedule field days early in S5 with a backup date | PM + QA |
 | R8 | Notification "Dengarkan" can't start audio without opening the app | F04 AC1 fails | S2 spike, three fallback options (F04) | A + C |
-| R9 | One coder blocked on another's module | Schedule slip before W12 | Day-1 contracts + stubs; integration owner (A) merges daily | All |
+| R9 | One coder blocked on another's module | Schedule slip before W12 | Day-1 contracts + stubs; integration owner (B) merges daily | All |
 | R10 | Every requirement is "Must", no descoping order | No graceful plan if late | PROPOSED cut order if S4 slips: A06 → A07 → F07 alternatives/reasons → calorie estimate → final-call reminder. Never cut F01–F06, A01, A02. | PM |

@@ -50,11 +50,11 @@ R1, R2, R5 and R7 are checked by `tools/check_architecture.dart` (§10) on every
 | 3 | `map` | B | Explore map (UI03), tile layer, marker/ring/route layers. | MBTiles provider, `flutter_map` |
 | 3 | `navigation` | B | Active navigation, progress, off-route → reroute, arrival, UI10/UI11. | — |
 | 3 | `poi` | C | POI Detail screen (UI06), gallery, player widget. Publishes engagement events. | — |
-| 4 | `search` | B | Search matching + UI09. | — |
+| 4 | `search` | A | Search matching + facility finder + UI09 (sorting via `TrailRouter`). | — |
 | 4 | `recommendation` | A | Candidate filter, `ScoreFactor` scoring, UI08. | — |
-| 4 | `reminders` | A (closing) / C (hydration) | `ReminderScheduler` + `Reminder` implementations, UI13. | — |
-| 4 | `wellness` | C | Route chooser data, pedometer, distance/kcal, summary UI14. | `pedometer` |
-| 5 | `shell` | C (+A for wiring) | App entry, composition root, routing table (go_router), onboarding UI01, Home UI02, Settings UI15, debug menu. | `go_router`, `permission_handler` |
+| 4 | `reminders` | B (scheduler + closing) / C (hydration) | `ReminderScheduler` + `Reminder` implementations, UI13. | — |
+| 4 | `wellness` | C | Route chooser data, pedometer, distance/kcal, session summary data for UI14. | `pedometer` |
+| 5 | `shell` | C (onboarding/Home/Settings) · B (Explore + summary composition, integration) · A (session wiring) | App entry, composition root, routing table (go_router), onboarding UI01, Home UI02, Explore screen, session summary UI14, Settings UI15, debug menu. | `go_router`, `permission_handler` |
 
 **Ownership ≠ exclusivity.** Anyone may open a PR anywhere, but the owner reviews changes to their module.
 
