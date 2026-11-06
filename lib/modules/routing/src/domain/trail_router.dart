@@ -35,11 +35,15 @@ class TurnInstruction {
   const TurnInstruction({
     required this.nodeId,
     required this.direction,
+    required this.distanceFromStartM,
     required this.text,
   });
 
   final String nodeId;
   final TurnDirection direction;
+
+  /// Along the route from where it was computed; navigation (T19) speaks it ~20 m ahead.
+  final double distanceFromStartM;
 
   /// Spoken/display text, e.g. "Di pertigaan, ambil jalur kiri menurun."
   final String text;

@@ -1,9 +1,9 @@
 /// Module `routing` (level 2, owner B) — public front door.
 ///
-/// Trail graph, snapping, Dijkstra, ETA with slope (D09), turn instructions.
-/// Currently backed by [StubTrailRouter] (haversine × 1.3).
+/// Trail graph, snapping, Dijkstra on walking time, ETA with slope (D09), turn instructions.
+/// Backed by [GraphTrailRouter]; works on the dummy graph and on the surveyed one alike.
 library;
 
-export 'src/domain/stub_trail_router.dart' show StubTrailRouter;
+export 'src/domain/graph_trail_router.dart' show GraphTrailRouter;
 export 'src/domain/trail_router.dart';
 export 'src/routing_providers.dart';

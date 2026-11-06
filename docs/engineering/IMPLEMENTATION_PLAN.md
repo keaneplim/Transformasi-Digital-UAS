@@ -86,8 +86,8 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ☐ |
 | T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ☐ |
 | T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ☐ |
-| T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX | B | survey | 1 | ☐ |
-| T14 | Real `TrailRouter`: snapping, Dijkstra on time cost, ETA with slope (D09) + tests | B | T13 (dummy graph is fine to start) | 1 | ☐ |
+| T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX (script + tests done; run on the survey GPX pending) | B | survey | 0–1 | ◐ |
+| T14 | Real `TrailRouter`: snapping, Dijkstra on time cost, ETA with slope (D09) + tests | B | T13 (dummy graph is fine to start) | 1 | ☑ |
 | T15 | Lock-screen/earphone media controls, Auto-Play, voice prompt on trigger, `VoiceArbiter` | C | T07, T11 | 1–2 | ☐ |
 | T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table. **A's first task in wave 2:** C's T18 needs `SessionController.start()`. | A | T08 | 2 | ☐ |
 | T17 | GPS-weak banner (60 s) + manual POI pick (builds the POI list widget that T20 reuses) | A | T09 | 2 | ☐ |
@@ -314,8 +314,10 @@ abstract class SessionLog {
   Stream<void> get changes;
 }
 
-// modules/routing — owner B   (stub on day 1: haversine × 1.3, ETA = d / 50)
+// modules/routing — owner B   (GraphTrailRouter since T14; the day-1 stub is gone)
 class RouteResult { final List<GeoPoint> polyline; final List<String> nodeIds; final double distanceM; final Duration eta; final List<TurnInstruction> turns; }
+class TurnInstruction { final String nodeId; final TurnDirection direction; /* straight|left|right|arrive */ final double distanceFromStartM; final String text; }
+// unknown node → route() null, others ArgumentError · unreachable → route() null, others StateError
 abstract class TrailRouter {   // not "Router": clashes with Flutter's Router widget
   RouteResult? route(GeoPoint from, String toNodeId);
   double walkingDistanceM(GeoPoint from, String toNodeId);
