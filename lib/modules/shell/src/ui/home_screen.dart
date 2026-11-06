@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/theme/app_theme.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 
@@ -15,7 +16,17 @@ class HomeScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Jelajah Taman')),
+      appBar: AppBar(
+        title: const Text('Jelajah Taman'),
+        actions: [
+          // Temporary entry to the Explore map (B, T04) until C's UI02 has "Mulai Jelajah".
+          IconButton(
+            tooltip: 'Peta',
+            icon: const Icon(Icons.map_outlined),
+            onPressed: () => context.push('/explore'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [

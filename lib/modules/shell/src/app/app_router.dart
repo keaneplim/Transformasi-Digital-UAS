@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../ui/explore_screen.dart';
 import '../ui/home_screen.dart';
 
 /// Route table. Modules expose screens/route builders; only `shell` registers routes.
@@ -7,5 +8,9 @@ import '../ui/home_screen.dart';
 GoRouter buildAppRouter() => GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+        GoRoute(
+          path: '/explore',
+          builder: (context, state) => const ExploreScreen(),
+        ),
       ],
     );

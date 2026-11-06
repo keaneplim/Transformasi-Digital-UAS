@@ -35,7 +35,7 @@ Feature-level build plan for the 3 coders. **What** the product must do lives in
 | Role | Person | Owns |
 |---|---|---|
 | **Coder A — "Where am I"** | _TBD_ | F01, F02, A02, F05, A04, A06 → then F07. `LocationService`, `TriggerEngine`, QR, `SessionLog`, Search + facility finder, debug tools (GPX replay, fake clock). The hardest logic and the critical path, so no integration duty. |
-| **Coder B — "Where do I go"** + integrator | _TBD_ | A01 (map), F06 → then A03 (`ReminderScheduler` + closing reminder), session summary UI14. `TrailRouter` (graph, Dijkstra, ETA), `TimeBudget`, map widget, Explore + summary screens in `shell`. Merges to `main` and keeps the build installed on the test phones. |
+| **Coder B — "Where do I go"** + integrator | Keane | A01 (map), F06 → then A03 (`ReminderScheduler` + closing reminder), session summary UI14. `TrailRouter` (graph, Dijkstra, ETA), `TimeBudget`, map widget, Explore + summary screens in `shell`. Merges to `main` and keeps the build installed on the test phones. |
 | **Coder C — "What do I experience"** | _TBD_ | F03, F04, A05 loader → then F08 tracking + hydration, A07, permissions/Onboarding/Home/Settings. `AudioService`, `TtsService`, notifications (`notify`), content repository. |
 | **Content & data** (non-coder) | _TBD_ (BA fits) | Survey (coordinates, GPX, photos, walk times), `pois.json` / `routes.json` / `park.json` contents, narration scripts + recordings, source log for every fact, PRD updates. |
 | **Design & QA** (non-coder) | _TBD_ | Hi-fi screens **one sprint ahead** of the coder building them, GPX replay files, test scripts TC-01…TC-13, field + usability tests (SUS), AI & Tools Disclosure log. |
@@ -61,7 +61,7 @@ PM duties (permits, PMO, W12 report) go to whichever non-coder is the PM, or are
 
 ### 0.4 Task list
 
-Coder A = _TBD_ · Coder B = _TBD_ · Coder C = _TBD_ (the three coders are Keane, Ballard and Khalfani; who takes which track is not decided yet). Within a wave the three coders work **in parallel**; the waves run in order. A task can start as soon as everything in "Needs first" is done (or stubbed).
+Coder A = _TBD_ · Coder B = **Keane** · Coder C = _TBD_ (Ballard and Khalfani take A and C; not decided yet). Within a wave the three coders work **in parallel**; the waves run in order. A task can start as soon as everything in "Needs first" is done (or stubbed).
 
 | Wave | Dates (2026) | Goal |
 |---|---|---|
@@ -77,7 +77,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T01 | `LocationService` + `GeolocatorSource` (3 s, foreground service, GPS quality) | A | — | 0 | ☐ |
 | T02 | `GpxReplaySource` + debug menu (replay picker, fake clock, teleport, debug overlay) | A | T01 | 0 | ☐ |
 | T03 | Minimal permission request (location, notifications) so testing can start. First slice of the onboarding flow; T18 builds on it. | C | — | 0 | ☐ |
-| T04 | Explore map UI03: MBTiles tiles, POI/facility markers, geofence rings, user dot | B | T01 (or teleport) | 0 | ☐ |
+| T04 | Explore map UI03: MBTiles tiles, POI/facility markers, geofence rings, user dot | B | T01 (or teleport) | 0 | ◐ |
 | T05 | Offline tiles: generate `dago_pakar.mbtiles` legally (not bulk-downloaded from OSM's servers) | B | — | 0 | ☐ |
 | T06 | POI Detail UI06: gallery, text, facts, player widget; publishes `PoiEngaged`/`PoiFinished` | C | content (done) | 0 | ☐ |
 | T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C | — | 0 | ☐ |
