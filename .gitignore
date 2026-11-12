@@ -53,3 +53,8 @@ survey/raw/osm/trail_graph.geojson
 # Raw Google Maps Platform responses (Places, Elevation): their terms limit storing them, so they stay local
 survey/raw/geo/places.json
 survey/raw/osm/dem_google.json
+
+# Personal local files (design references, local preview launcher)
+tmp/
+.claude/launch.json
+.claude/settings.local.json
