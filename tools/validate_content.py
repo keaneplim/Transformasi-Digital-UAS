@@ -79,6 +79,10 @@ for p in pois:
     text = p.get("text") or ""
     if text.startswith("[ISI]"):
         warnings.append(f"{pid}: text placeholder")
+        if p.get("draft_text"):
+            if not (pois_f.get("dummy") is True):
+                errors.append(f"{pid}: draft_text (unverified UI mock copy) is only allowed in dummy content")
+            warnings.append(f"{pid}: showing unverified draft_text (observational mock copy)")
     else:
         words = len(text.split())
         if not 80 <= words <= 150:
@@ -103,6 +107,9 @@ for f in facilities:
         errors.append(f"{f.get('id')}: unknown facility type '{f.get('type')}'")
     if f.get("graph_node") not in nodes:
         errors.append(f"{f.get('id')}: graph_node not in trail_graph")
+    for img in f.get("images", []):
+        if not (IMAGES / img).exists():
+            errors.append(f"{f.get('id')}: image file missing assets/images/{img}")
 
 # ---- routes ------------------------------------------------------------------------------
 for r in routes:

@@ -25,6 +25,15 @@ flutter:
   uses-material-design: true
   assets:
     - assets/content/
-    # - assets/images/     (enable when the first photo is added)
+    - assets/images/
     # - assets/audio/      (enable when the first narration is added)
     # - assets/map/        (enable when the MBTiles file exists)
+
+  # Bundled (offline, A01) variable fonts, SIL OFL — licences in assets/fonts/.
+  fonts:
+    - family: Bricolage
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque.ttf
+    - family: Jakarta
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans.ttf

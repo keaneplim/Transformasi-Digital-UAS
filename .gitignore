@@ -31,3 +31,9 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# Survey photo originals (large; kept on team Drive)
+survey/raw/photos/
+
+# Golden test diff output
+test_goldens/failures/
