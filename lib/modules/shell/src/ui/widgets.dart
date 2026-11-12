@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 
 /// Photo (or illustrated stand-in) for a place, Hero-tagged so it flies into POI Detail.
 class PlacePhoto extends StatelessWidget {
@@ -75,7 +75,7 @@ class PlaceTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final visited = demo.visited.contains(place.id);
     return Pressable(
       onTap: onTap,
@@ -180,7 +180,7 @@ class WalkMeta extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final fg = color ?? JT.ink;
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -273,7 +273,7 @@ class PlaceCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final visited = demo.visited.contains(place.id);
     return Pressable(
       onTap: onTap,
@@ -360,7 +360,7 @@ class StatStrip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final fg = dark ? Colors.white : JT.ink;
     final sub = dark ? Colors.white70 : JT.muted;
     final ico = dark ? JT.sun : JT.forestBright;

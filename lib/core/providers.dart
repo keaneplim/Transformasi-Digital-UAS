@@ -10,3 +10,7 @@ final eventBusProvider = Provider<EventBus>((ref) {
   ref.onDispose(bus.dispose);
   return bus;
 });
+
+/// Persistent settings; in-memory until the composition root binds shared_preferences.
+final keyValueStoreProvider =
+    Provider<KeyValueStore>((ref) => MemoryKeyValueStore());

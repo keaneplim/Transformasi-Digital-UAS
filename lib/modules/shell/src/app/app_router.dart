@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
+import '../ui/about_screen.dart';
 import '../ui/arrived_screen.dart';
 import '../ui/main_shell.dart';
 import '../ui/navigation_screen.dart';
@@ -56,6 +57,9 @@ GoRouter buildAppRouter() => GoRouter(
         GoRoute(
             path: '/settings',
             pageBuilder: (c, s) => _slide(s, const SettingsScreen())),
+        GoRoute(
+            path: '/about',
+            pageBuilder: (c, s) => _slide(s, const AboutScreen())),
       ],
     );
 

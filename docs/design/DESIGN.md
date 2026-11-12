@@ -77,7 +77,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 | `/welcome` | Welcome screen that **waits for the visitor**: full-screen sun band, large Pako, doodle burst that keeps floating with parallax, typed speech bubble "Halo, saya Pako!", greeting "Sampurasun! Selamat datang di Jelajah Taman", button "Ayo, mulai". No hint text. Pako's eyes follow the finger; tapping Pako makes him cheer, hop and say a new line. "Ayo, mulai" (or a tap anywhere) folds the band into the header, Pako hops and glides into page 1, then the pages rise in. Pages: "Tarik napas, mulai melangkah" (photo cards fan out beside Pako), "Biarkan hutan bercerita", permissions "Siapkan diri, kita berangkat" (band shrinks for room). Text is centred in the space below the band; "Lewati"/"Nanti saja" share one slot under the button | UI01 |
 | `/setup` | Interests (2 steps, progress) → route cards with elevation sparkline + "selesai sebelum 16.00" check | UI01 |
 | `/home` tab Beranda | Greeting + status pills, start/active-session card, time-to-close bar, route highlights carousel, nearest facilities | UI02 |
-| `/home` tab Peta | Illustrated map, nearest strip, marker preview (Navigasi / Detail / Saya di sini) | UI03 |
+| `/home` tab Peta | Real offline map (§11), status chip, layers sheet, nearest strip, marker preview (Navigasi / Detail / Saya di sini); "Mode demo" pill while demo mode is on | UI03 |
 | overlay | Approaching banner, trigger card, closing + hydration reminders, recommendation sheet | UI04, UI05, UI08, UI13 |
 | `/poi/:id` | Parallax gallery (Hero), meta, audio card, safety note, short observational text, facts | UI06 |
 | `/play/:id` | Mode dengar: dusk screen, big controls, waveform | UI07 |
@@ -86,12 +86,13 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 | `/arrived` | Large photo straddling the sun edge, short description, steps/km/closing pills, listen or next | UI11 |
 | `/scan` | QR viewfinder (animated corners, scan line), weak-signal note, codes for the caves | UI12 |
 | `/summary` | Counters, walked line on a mini map, visited / next time, on-device note | UI14 |
-| `/settings` | Guide, health, display, privacy; collapsed "Mode demo" panel | UI15 |
+| `/settings` | Guide, health, display, privacy, "Tentang & atribusi"; collapsed "Mode demo" panel with an on/off switch (confirm dialog) | UI15 |
+| `/about` | Map, photo and narration credits (OSM ODbL, Google Elevation, Esri, Wikimedia Commons authors/licences, one retouch note) | — |
 
 ## 8. Content & Copy
 - Bahasa Indonesia, warm-formal, "Anda". Onboarding copy sells the experience (air, pines, stories, walking), not the feature list or how it works. Visitor-facing only: **no radius, GPS accuracy, coordinates, DUMMY labels or debug text in the UI.** The one exception is the collapsed "Mode demo" panel in Settings.
 - Place text: until the survey/manager text exists (`[ISI]`), POIs show `draft_text`: observational copy without historical claims (PRD §8.2). Never invent history.
-- Photos: survey photos 7 Nov 2026 (`assets/images/`, metadata stripped); credit line "Foto: dokumentasi tim Jelajah Taman". POIs without a photo use the illustrated placeholder.
+- Photos: survey photos 7 Nov 2026 plus Wikimedia Commons (CC0/PD/CC BY/CC BY-SA), lightly retouched with Gemini (exposure, white balance, faces blurred; nothing added, removed or restyled; similarity check ≥ 0.9). Every file has a credit in `assets/content/image_credits.json`; the POI gallery shows a small caption and `/about` lists all of them. POIs without a photo use the illustrated placeholder.
 - Number formatting: 1.722 langkah · 1,2 km · 16.00 · 37 mnt.
 
 ## 9. Anti-patterns
@@ -101,8 +102,17 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 - Out-of-scope UI: accounts, social, tickets, AR, SOS (NG01–NG07).
 
 ## 10. Visual baselines
-`test_goldens/screens_golden_test.dart` renders 30 screens/states at 390×844 (incl. two welcome frames, lower Home, search results) and 11 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
+`test_goldens/screens_golden_test.dart` renders 31 screens/states at 390×844 (incl. two welcome frames, lower Home, search results, map without GPS in real mode) and 11 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
 ```bash
 flutter test test_goldens --update-goldens   # regenerate after a UI change
 flutter test test_goldens                    # diff against the saved baselines
 ```
+
+## 11. Map (`lib/modules/map`, tokens in `map_style.dart`)
+- **Base:** bundled vector basemap, works offline. Bottom to top: warm paper, landcover (forest, scrub, grass, farmland, residential), Tahura tint, soft hillshade (0.45), water, contours (index lines always, others from z15, elevation labels from z16), streams and rivers (names along the line from z16), Tahura boundary band + dashed line, roads (casing + fill by class), buildings (z16+), OSM footpaths (z15+, steps dotted), then the trail graph (white casing + sand dashes) on top.
+- **Satellite** (layers sheet, "Butuh internet"): Esri World Imagery under a white dashed boundary and a dark-cased trail; after repeated tile errors the map falls back to Peta with a toast. Attribution chip changes with the layer ("© OpenStreetMap" / "Citra © Esri · © OpenStreetMap"), next to the scale bar; both hide while a marker preview is open.
+- **Line widths** scale with zoom like a printed map (`MapStyle.scaled`, base at z16); layers rebuild only per zoom bucket.
+- **Markers:** category disc + icon with a soft shadow; labels placed greedily in screen space so they never overlap (selected > destination > highlighted > POI > facility; selected and destination always show, selected drawn on top). Facilities from z16.9.
+- **User:** dot glides between fixes, accuracy circle in metres, heading cone from the compass; grey without pulse when GPS is weak. Off screen: edge arrow with distance, tap to glide back. Locate button: centre → follow; panning returns to free.
+- **Status chip** (real mode only, plain Bahasa Indonesia, no numbers about accuracy): "Aktifkan lokasi untuk memandu Anda", "Anda di luar kawasan · 4,2 km ke gerbang", "GPS lemah, posisi kurang akurat". Distances are measured from the gate while the position is unknown or outside the park.
+- Camera is clamped to the basemap; initial view fits the park, min zoom 14.

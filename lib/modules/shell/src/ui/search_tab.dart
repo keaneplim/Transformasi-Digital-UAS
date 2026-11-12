@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
-import '../demo/search.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
+import '../state/search.dart';
 import 'main_shell.dart';
 import 'widgets.dart';
 
@@ -57,7 +57,7 @@ class _SearchTabState extends ConsumerState<SearchTab> {
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final pad = MediaQuery.paddingOf(context);
     final results = demo
         .nearest(group: _group)
@@ -260,7 +260,7 @@ class _Shortcuts extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     double? nearestM(bool Function(Place) test) {
       final list = demo.places.where(test).map(demo.walkingM).toList()..sort();
       return list.isEmpty ? null : list.first;
@@ -365,7 +365,7 @@ class _NavButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     return CircleIconButton(
       icon: Icons.navigation_rounded,
       tooltip: 'Navigasi ke ${place.name}',

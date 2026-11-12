@@ -5,8 +5,8 @@ import 'package:jelajah_taman/core/ui/ui.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'park_map.dart';
 import 'widgets.dart';
 
@@ -34,7 +34,7 @@ class _NavigationScreenState extends ConsumerState<NavigationScreen>
   }
 
   void _fit() {
-    final nav = ref.read(demoProvider).navigation;
+    final nav = ref.read(guideProvider).navigation;
     if (nav == null || nav.route.polyline.length < 2) return;
     mapController.fit(nav.route.polyline, padding: _fitPadding, maxZoom: 18);
   }
@@ -47,10 +47,23 @@ class _NavigationScreenState extends ConsumerState<NavigationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final nav = demo.navigation;
-    ref.listen(demoProvider.select((d) => d.position), (_, p) {
-      if (ref.read(demoProvider).walking) {
+    ref.listen(guideProvider.select((d) => d.reroutes), (_, __) {
+      ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(
+              'Anda keluar dari rute. Rute baru dibuat dari posisi Anda.',
+              style: JTText.body.copyWith(color: Colors.white)),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: JT.ink,
+        ));
+    });
+    ref.listen(guideProvider.select((d) => d.position), (_, p) {
+      final g = ref.read(guideProvider);
+      // demo walk, or live GPS inside the park: keep the visitor in view
+      if (g.walking || (!g.isDemo && g.showUser && !g.outsideZone)) {
         mapController.move(
             p, mapController.zoom < 17.3 ? 17.6 : mapController.zoom);
       }
@@ -85,6 +98,8 @@ class _NavigationScreenState extends ConsumerState<NavigationScreen>
               initialZoom: 16.6,
               fitPadding: _fitPadding,
               showLabels: false,
+              chromeInsets:
+                  EdgeInsets.fromLTRB(16, pad.top + 150, 84, 290 + pad.bottom),
             ),
           ),
           Positioned(
@@ -208,7 +223,7 @@ class _BottomPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final pad = MediaQuery.paddingOf(context);
     final frac = total == 0 ? 1.0 : (demo.navProgressM / total).clamp(0.0, 1.0);
     final arriveAt = demo.now().add(demo.navRemainingTime);
@@ -280,16 +295,39 @@ class _BottomPanel extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          PrimaryPill(
-            label: demo.walking
-                ? 'Berhenti sejenak'
-                : (frac > 0 ? 'Lanjut jalan' : 'Mulai jalan'),
-            icon: demo.walking
-                ? Icons.pause_rounded
-                : Icons.directions_walk_rounded,
-            color: demo.walking ? JT.ink : JT.forest,
-            onTap: demo.toggleWalking,
-          ),
+          if (!demo.isDemo)
+            Row(
+              children: [
+                Icon(
+                    demo.noPosition || demo.outsideZone
+                        ? Icons.location_off_rounded
+                        : Icons.directions_walk_rounded,
+                    color: JT.forest,
+                    size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    demo.noPosition
+                        ? 'Aktifkan lokasi agar arah mengikuti langkah Anda.'
+                        : demo.outsideZone
+                            ? 'Anda di luar kawasan. Arah dimulai dari gerbang.'
+                            : 'Ikuti garis hijau. Arah diperbarui saat Anda berjalan.',
+                    style: JTText.caption.copyWith(color: JT.ink),
+                  ),
+                ),
+              ],
+            )
+          else
+            PrimaryPill(
+              label: demo.walking
+                  ? 'Berhenti sejenak'
+                  : (frac > 0 ? 'Lanjut jalan' : 'Mulai jalan'),
+              icon: demo.walking
+                  ? Icons.pause_rounded
+                  : Icons.directions_walk_rounded,
+              color: demo.walking ? JT.ink : JT.forest,
+              onTap: demo.toggleWalking,
+            ),
         ],
       ),
     );

@@ -1,0 +1,22 @@
+id,name,lat,lng,source,ref,check_ref,check_dist_m,moved_from_dummy_m,note
+P01,Gerbang Dago Pakar,-6.858122,107.630767,SURVEY_EXIF,IMG_4276.HEIC,places:ChIJi6PweI3naC4RSdamjt3t5vc (Pintu Pos 1 Tahura Djuanda),23,0,
+P02,Monumen Ir. H. Djuanda,-6.857724,107.630033,ESTIMATE,plaza museum–gerbang,,,0,"No source places the bust; photos on Commons have no geotag. Plaza between museum and gate, to confirm on site."
+P03,Museum Ir. H. Djuanda,-6.857607,107.629174,OSM,osm:node/4553213462,places:ChIJ_ZoVtyXnaC4RvRZdbVftT00 (BP (UPTD) Tahura Ir.H.Djuanda),17,0,
+P04,Kolam Pakar,-6.858287,107.630426,OSM,osm:way/98110034 (nearest path),places:ChIJi-YfLODnaC4RZnCd-gg5LBw (Pakar Lake),158,0,"Lakeside path point nearest the OSM lake. Survey photo IMG_4250 shows Kolam Tando Harian PLTA Bengkok, not Kolam Pakar."
+P05,Gua Jepang,-6.856573,107.632489,OSM,osm:node/3955116392,places:ChIJXSLHyTrnaC4RMY_BBnhygJY (Gua Jepang),41,0,
+P06,Gua Belanda,-6.854162,107.637772,SURVEY_EXIF,IMG_4238.HEIC,osm:node/12180637634,12,0,
+P07,Penangkaran Rusa,-6.84367,107.647955,SURVEY_EXIF,IMG_4252.HEIC,osm:way/1315972950,31,0,
+P08,Kawasan Hutan Pinus,-6.855966,107.635367,ESTIMATE,jalur Gua Jepang–Gua Belanda,,,0,Pine stands line the path between Gua Jepang and Gua Belanda; the point is the path vertex nearest their midpoint.
+P09,Area Rumput / Piknik,-6.843878,107.648283,OSM,osm:node/12180637296,,,1960,"Only tourism=picnic_site in the core zone (by the Penangkaran Rusa meadow, ~45 m from P07, overlapping radii: D01 handles it). Confirm on site which lawn is meant."
+P10,Titik Koleksi Flora,-6.857952,107.630361,ESTIMATE,commons:File:Tahura Dago - panoramio.jpg (geotag),,,0,"Commemorative plant collection by the entrance plaza (Commons photo geotag, low precision)."
+P11,Curug Omas,-6.834375,107.658131,OSM,osm:node/5655820623,places:ChIJ5dLO4q_gaC4Rju6dXCoozUM (Curug Omas Waterfall),58,0,
+FS01,Toilet dekat Gerbang,-6.857295,107.632737,SURVEY_EXIF,IMG_4275.HEIC,,,0,
+FS02,Musala,-6.857456,107.629205,ESTIMATE,places:ChIJ_ZoVtyXnaC4RvRZdbVftT00 (BP (UPTD) Tahura Ir.H.Djuanda),,,0,No musala mapped inside the park; placed at the park office (BP UPTD Tahura).
+FS03,Warung dekat Kolam,-6.85811,107.630884,OSM,osm:node/9840550617,places:ChIJnTF4AiXnaC4R1dzrsVFMdZw (Kopi_Tahura),23,0,
+FS04,Pos Petugas,-6.85717,107.633048,GMAPS,places:ChIJbVV2hH3naC4RLd2CpXbKfJU (Pintu Pos 2 Tahura Djuanda),osm:node/4258118513,7,0,
+FS05,Bangku Hutan Pinus,-6.855846,107.635467,ESTIMATE,±20 m dari P08,,,0,"Bench in the pine stand, a few metres from P08."
+FS06,Toilet dekat Gua Belanda,-6.854742,107.637558,SURVEY_EXIF,IMG_4266.HEIC,,,0,
+FS07,Musala dekat Gua Belanda,-6.855075,107.637297,SURVEY_EXIF,IMG_4267.HEIC,,,0,
+FS08,Saung Penangkaran Rusa,-6.844505,107.646378,SURVEY_EXIF,IMG_4262.HEIC,osm:node/12180637269,91,0,
+FS09,Saung Jalur Gua,-6.849067,107.643412,SURVEY_EXIF,IMG_4264.HEIC,osm:node/12180637246,37,0,
+FS10,Gazebo Jalur Kolam,-6.855725,107.635178,SURVEY_EXIF,IMG_4274.HEIC,,,0,

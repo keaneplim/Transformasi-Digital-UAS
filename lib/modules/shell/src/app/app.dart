@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
+import '../state/guide_controller.dart';
 import '../ui/overlays.dart';
 import 'app_router.dart';
 
@@ -26,7 +26,7 @@ class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
 
   @override
   Widget build(BuildContext context) {
-    final scale = ref.watch(demoProvider.select((d) => d.textScale));
+    final scale = ref.watch(guideProvider.select((d) => d.textScale));
     return MaterialApp.router(
       title: 'Jelajah Taman',
       theme: AppTheme.light(),

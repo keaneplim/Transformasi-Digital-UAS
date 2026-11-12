@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'park_map.dart';
 import 'widgets.dart';
 
@@ -15,7 +15,7 @@ class SummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final pad = MediaQuery.paddingOf(context);
     final pois = demo.routePois;
     final visitedPois =

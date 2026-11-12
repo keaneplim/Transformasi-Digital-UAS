@@ -220,10 +220,12 @@ void main() {
     });
   });
 
-  group('real content (dummy now, survey graph later)', () {
+  group('real content (OSM trail graph)', () {
     final content = loadTestContent();
     final router = GraphTrailRouter.fromContent(content);
     final gate = content.gate;
+    // Items are snapped onto the trail: route between graph-node positions.
+    final gateNode = content.graph.nodes[gate.graphNode]!.position;
     final targets = <(String, GeoPoint, String)>[
       for (final p in content.pois) (p.id, p.position, p.graphNode),
       for (final f in content.facilities) (f.id, f.position, f.graphNode),
@@ -232,12 +234,14 @@ void main() {
     test('every POI and facility is reachable from the gate along the trails',
         () {
       for (final (id, pos, node) in targets) {
-        final r = router.route(gate.position, node);
-        expect(r, isNotNull, reason: id);
-        expect(r!.distanceM,
-            greaterThanOrEqualTo(haversineM(gate.position, pos) * 0.99),
-            reason: '$id: a route is never shorter than the straight line');
+        final r = router.route(gateNode, node);
         final end = content.graph.nodes[node]!.position;
+        expect(r, isNotNull, reason: id);
+        expect(haversineM(pos, end), lessThan(100),
+            reason: '$id: attached to the trail within 100 m');
+        expect(r!.distanceM,
+            greaterThanOrEqualTo(haversineM(gateNode, end) * 0.99),
+            reason: '$id: a route is never shorter than the straight line');
         expect(haversineM(r.polyline.last, end), lessThan(0.5), reason: id);
         expect(r.turns.last.direction, TurnDirection.arrive, reason: id);
       }
@@ -246,7 +250,7 @@ void main() {
     test('node-to-node time matches route time from the gate node', () {
       for (final (id, _, node) in targets) {
         expect(router.walkingTimeBetween(gate.graphNode, node),
-            router.route(gate.position, node)!.eta,
+            router.route(gateNode, node)!.eta,
             reason: id);
       }
     });

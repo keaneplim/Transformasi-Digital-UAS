@@ -8,15 +8,18 @@ void main() {
   final content = loadTestContent();
   final scene = MapScene.fromContent(content);
 
-  test('zone contains every POI, facility and graph node', () {
+  test(
+      'zone contains every POI and facility; the basemap extent every graph node',
+      () {
     for (final p in content.pois) {
       expect(scene.isInsideZone(p.position), isTrue, reason: p.id);
     }
     for (final f in content.facilities) {
       expect(scene.isInsideZone(f.position), isTrue, reason: f.id);
     }
+    final withMap = MapScene.fromContent(content, basemap: loadTestBasemap());
     for (final n in content.graph.nodes.values) {
-      expect(scene.isInsideZone(n.position), isTrue, reason: n.id);
+      expect(withMap.extent.contains(n.position), isTrue, reason: n.id);
     }
   });
 

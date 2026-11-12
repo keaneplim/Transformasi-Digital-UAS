@@ -40,3 +40,16 @@ test_goldens/failures/
 
 # Per-machine AI assistant notes (paths, installed tools)
 CLAUDE.local.md
+
+# Local secrets (API keys for tools/*.py), documented in CLAUDE.local.md
+.env.local
+
+# Photo pipeline originals and intermediates (tools/photos.py), large and regenerable
+survey/raw/commons/
+survey/raw/photo_work/
+# Public-terrain fallback cache and graph preview (regenerable)
+survey/raw/osm/dem_z14.json
+survey/raw/osm/trail_graph.geojson
+# Raw Google Maps Platform responses (Places, Elevation): their terms limit storing them, so they stay local
+survey/raw/geo/places.json
+survey/raw/osm/dem_google.json

@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "dummy": true,
+  "facilities": [
+    {
+      "id": "FS01",
+      "type": "toilet",
+      "name": "Toilet dekat Gerbang",
+      "lat": -6.85818,
+      "lng": 107.633272,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS01",
+      "keywords": [
+        "toilet",
+        "wc",
+        "kamar mandi"
+      ],
+      "images": [
+        "fs01_toilet.jpg"
+      ]
+    },
+    {
+      "id": "FS02",
+      "type": "musala",
+      "name": "Musala",
+      "lat": -6.856111,
+      "lng": 107.632638,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS02",
+      "keywords": [
+        "musala",
+        "mushola",
+        "masjid",
+        "salat",
+        "sholat"
+      ],
+      "images": []
+    },
+    {
+      "id": "FS03",
+      "type": "warung",
+      "name": "Warung dekat Kolam",
+      "lat": -6.853279,
+      "lng": 107.635446,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS03",
+      "keywords": [
+        "warung",
+        "kios",
+        "makan",
+        "minum",
+        "jajan"
+      ],
+      "images": []
+    },
+    {
+      "id": "FS04",
+      "type": "pos_petugas",
+      "name": "Pos Petugas",
+      "lat": -6.848332,
+      "lng": 107.638163,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS04",
+      "keywords": [
+        "pos",
+        "petugas",
+        "informasi",
+        "bantuan"
+      ],
+      "images": []
+    },
+    {
+      "id": "FS05",
+      "type": "istirahat",
+      "name": "Bangku Hutan Pinus",
+      "lat": -6.852244,
+      "lng": 107.633181,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS05",
+      "keywords": [
+        "istirahat",
+        "bangku",
+        "duduk"
+      ],
+      "images": []
+    },
+    {
+      "id": "FS06",
+      "type": "toilet",
+      "name": "Toilet dekat Gua Belanda",
+      "lat": -6.848107,
+      "lng": 107.63762,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS06",
+      "keywords": [
+        "toilet",
+        "wc",
+        "kamar mandi"
+      ],
+      "images": [
+        "fs06_toilet.jpg"
+      ]
+    },
+    {
+      "id": "FS07",
+      "type": "musala",
+      "name": "Musala dekat Gua Belanda",
+      "lat": -6.847838,
+      "lng": 107.637755,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS07",
+      "keywords": [
+        "musala",
+        "mushola",
+        "masjid",
+        "salat",
+        "sholat"
+      ],
+      "images": [
+        "fs07_musala.jpg"
+      ]
+    },
+    {
+      "id": "FS08",
+      "type": "istirahat",
+      "name": "Saung Penangkaran Rusa",
+      "lat": -6.846354,
+      "lng": 107.639703,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS08",
+      "keywords": [
+        "istirahat",
+        "saung",
+        "gazebo",
+        "duduk",
+        "teduh"
+      ],
+      "images": [
+        "fs08_saung.jpg"
+      ]
+    },
+    {
+      "id": "FS09",
+      "type": "istirahat",
+      "name": "Saung Jalur Gua",
+      "lat": -6.850149,
+      "lng": 107.636949,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS09",
+      "keywords": [
+        "istirahat",
+        "saung",
+        "gazebo",
+        "duduk",
+        "teduh"
+      ],
+      "images": [
+        "fs09_saung.jpg"
+      ]
+    },
+    {
+      "id": "FS10",
+      "type": "istirahat",
+      "name": "Gazebo Jalur Kolam",
+      "lat": -6.854223,
+      "lng": 107.634585,
+      "coord_source": "DUMMY",
+      "graph_node": "N_FS10",
+      "keywords": [
+        "istirahat",
+        "gazebo",
+        "saung",
+        "duduk",
+        "foto"
+      ],
+      "images": [
+        "fs10_gazebo.jpg"
+      ]
+    }
+  ]
+}
