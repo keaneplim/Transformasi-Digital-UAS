@@ -39,7 +39,7 @@ R1, R2, R5 and R7 are checked by `tools/check_architecture.dart` (§10) on every
 
 | Level | Module | Owner | Responsibility | Owns plugin / tables |
 |---|---|---|---|---|
-| 0 | `core` | A (+all) | Shared kernel: `Clock`, geo maths, `EventBus` + event definitions, DB handle, logging, `Result`/failure types, theme tokens. **No feature logic.** | `sqflite` (connection only), `shared_preferences` |
+| 0 | `core` | A (+all) | Shared kernel: `Clock`, geo maths, `EventBus` + event definitions, DB handle, logging, `Result`/failure types, theme tokens, generic UI kit (`core/ui`: components, mascot, doodles, motion; see DESIGN.md). **No feature logic.** | `sqflite` (connection only), `shared_preferences` |
 | 1 | `content` | C | Load and validate the JSON assets: POIs, facilities, routes, park config, trail graph. Immutable models. | — (assets) |
 | 1 | `location` | A | GPS fixes, GPS quality, foreground tracking, interval switching (A06), GPX replay source. | `geolocator`; table `activity_samples` |
 | 1 | `audio` | C | Narration playback, TTS, `VoiceArbiter` (priority/duck/queue), media session for the lock screen. | `just_audio`, `audio_service`, `flutter_tts` |
@@ -47,14 +47,14 @@ R1, R2, R5 and R7 are checked by `tools/check_architecture.dart` (§10) on every
 | 2 | `routing` | B | Trail graph, snapping, Dijkstra, ETA with slope, turn instructions. Pure logic plus the graph from `content`. | — |
 | 2 | `trigger` | A | Geofence state machine, debounce/hysteresis/cooldown, QR + manual triggers, trigger notification, UI04/UI05/UI12, QR scanner. | `mobile_scanner`; table `visit_events` |
 | 3 | `session` | A | Session lifecycle (start/end/restore), session log (triggered vs visited), session metrics. | table `sessions` |
-| 3 | `map` | B | Explore map (UI03), tile layer, marker/ring/route layers. | MBTiles provider, `flutter_map` |
+| 3 | `map` | B | Explore map (UI03): `ParkMapView`/`ParkMapController` (illustrated base until the MBTiles layer, markers, rings, route, user dot). | MBTiles provider, `flutter_map` |
 | 3 | `navigation` | B | Active navigation, progress, off-route → reroute, arrival, UI10/UI11. | — |
 | 3 | `poi` | C | POI Detail screen (UI06), gallery, player widget. Publishes engagement events. | — |
 | 4 | `search` | A | Search matching + facility finder + UI09 (sorting via `TrailRouter`). | — |
 | 4 | `recommendation` | A | Candidate filter, `ScoreFactor` scoring, UI08. | — |
 | 4 | `reminders` | B (scheduler + closing) / C (hydration) | `ReminderScheduler` + `Reminder` implementations, UI13. | — |
 | 4 | `wellness` | C | Route chooser data, pedometer, distance/kcal, session summary data for UI14. | `pedometer` |
-| 5 | `shell` | C (onboarding/Home/Settings) · B (Explore + summary composition, integration) · A (session wiring) | App entry, composition root, routing table (go_router), onboarding UI01, Home UI02, Explore screen, session summary UI14, Settings UI15, debug menu. | `go_router`, `permission_handler` |
+| 5 | `shell` | C (onboarding/Home/Settings) · B (Explore + summary composition, integration) · A (session wiring) | App entry, composition root, routing table (go_router), onboarding UI01, Home UI02, Explore screen, session summary UI14, Settings UI15, debug menu. **Temporarily** also all other screens plus the demo state (`src/demo/`) that drives them; they move to their owner modules when the engines land. | `go_router`, `permission_handler` |
 
 **Ownership ≠ exclusivity.** Anyone may open a PR anywhere, but the owner reviews changes to their module.
 

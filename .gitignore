@@ -37,3 +37,6 @@ survey/raw/photos/
 
 # Golden test diff output
 test_goldens/failures/
+
+# Per-machine AI assistant notes (paths, installed tools)
+CLAUDE.local.md

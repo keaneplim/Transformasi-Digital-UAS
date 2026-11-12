@@ -3,20 +3,23 @@
 Android app (Flutter) that guides visitors through **Tahura Ir. H. Djuanda, zona Dago Pakar** with GPS geofence triggers, audio narration, offline trail navigation, closing-time-aware recommendations and a Wellness Trail mode.
 Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wellness Explorer.
 
-> **Content is DUMMY data.** Coordinates, distances and durations in `assets/content/` are synthetic until the survey data replaces them. The app shows a banner while any file is dummy. Don't use them for field tests.
+> **Content is DUMMY data.** Coordinates, distances and durations in `assets/content/` are synthetic until the survey data replaces them. Dummy records carry `"dummy": true` / `"coord_source": "DUMMY"` in the JSON; the visitor UI never shows this. Don't use them for field tests.
 
 ## Repository layout
 
 | Path | What |
 |---|---|
-| `lib/core/` | Shared kernel: Clock, geo maths, EventBus + events E1–E10, logging, Result, theme |
+| `lib/core/` | Shared kernel: Clock, geo maths, EventBus + events E1–E10, logging, Result, theme tokens, generic UI kit (`core/ui`) |
 | `lib/modules/<module>/` | Feature modules. Import only `<module>/<module>.dart` from outside. |
+| `lib/modules/shell/src/ui/`, `src/demo/` | All screens UI01–UI15 and the demo state that drives them until the engines exist |
 | `assets/content/` | `pois.json`, `facilities.json`, `routes.json`, `park.json`, `trail_graph.json` |
+| `assets/images/`, `assets/fonts/` | Survey photos (metadata stripped) and bundled fonts (offline) |
+| `test_goldens/` | Screen baselines, not in CI (`baselines/*.png`) |
 | `test/` | Mirrors `lib/` |
 | `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py`, `prd_to_md.py`, `gpx_to_graph.py` (survey GPX → `trail_graph.json`); tests in `tools/tests/` (`python -m unittest discover -s tools/tests`) |
 | `docs/prd/` | PRD: docx = canonical, pdf export, `PRD.md` = generated readable copy (`python tools/prd_to_md.py`); kickoff report |
 | `docs/presentation/` | Deck (pptx + pdf) |
-| `docs/design/` | Design system, Stitch prompts, hi-fi screen exports (`screens/`) |
+| `docs/design/` | `DESIGN.md` = design system v2 (source of truth); Stitch prompts and `screens/` = v1, history only |
 | `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, `DEVICE_CHECK.md`, `SURVEY_CHECKLIST.md` |
 | `PROGRESS.md` | Living status, open issues, decisions, log |
 
@@ -43,6 +46,14 @@ flutter test
 git add android pubspec.lock && git commit
 ```
 `flutter create .` only adds missing files; it doesn't overwrite `lib/`, `pubspec.yaml` or `test/widget_test.dart`.
+
+Other platforms are **local only**, never committed (add them to `.git/info/exclude`):
+
+```bash
+flutter create --platforms=web .              # browser preview: flutter build web, then serve build/web
+flutter create --platforms=ios --org id.ac.itb.kel5 .   # Mac + Xcode only: flutter run -d ios (simulator)
+```
+Afterwards revert `analysis_options.yaml` and `.metadata` if Flutter touched them.
 
 ## Daily commands
 

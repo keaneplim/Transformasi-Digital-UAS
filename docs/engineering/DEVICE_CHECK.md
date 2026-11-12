@@ -16,7 +16,7 @@ Options, in order of recommendation:
 | Option | What it takes | Verdict |
 |---|---|---|
 | **A. Get ≥2 Android phones** (team members, family, borrowed) | Nothing new; matches the PRD | **Do this.** Two different brands if possible (one Samsung/Pixel-like, one Xiaomi/Oppo/Vivo-like) so the battery-killer risk is tested. |
-| B. Also build for iOS | A **Mac with Xcode** (Flutter can't build iOS on Windows); a free Apple ID can install on your own iPhone but the install expires after 7 days; extra iOS work: background-location mode, `Info.plist` permission texts, a different notification/audio setup; every test case run twice | Don't, unless someone has a Mac **and** the team accepts the extra testing. It is not in the PRD scope; adding it is a Change Log item. |
+| B. Also build for iOS | A **Mac with Xcode** (Flutter can't build iOS on Windows); a free Apple ID can install on your own iPhone but the install expires after 7 days; extra iOS work: background-location mode, `Info.plist` permission texts, a different notification/audio setup; every test case run twice | Don't, unless someone has a Mac **and** the team accepts the extra testing. It is not in the PRD scope; adding it is a Change Log item. *Note 2026-11-12:* the app builds for the iOS Simulator on a team Mac (`ios/` kept local, not committed), useful for UI demos only; this does not change the verdict. |
 | C. Use the iPhone for what it's good at | Nothing | **Yes, in addition to A:** survey GPX recording, photos, barometric elevation, reference readings, the stopwatch for ETA tests. |
 
 **Decision needed today:** whose Android phones are the two test devices? If none exist in the team, borrowing two is now the most urgent blocker. Record the decision in PROGRESS.md.
