@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'overlays.dart';
 import 'widgets.dart';
 
@@ -23,7 +23,7 @@ class _ArrivedScreenState extends ConsumerState<ArrivedScreen> {
   @override
   void initState() {
     super.initState();
-    final demo = ref.read(demoProvider);
+    final demo = ref.read(guideProvider);
     _place = demo.arrivedAt ?? demo.navigation?.to;
     WidgetsBinding.instance.addPostFrameCallback((_) => demo.finishArrival());
   }
@@ -38,7 +38,7 @@ class _ArrivedScreenState extends ConsumerState<ArrivedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final place = _place;
     if (place == null) {
       return Scaffold(
@@ -242,7 +242,7 @@ class _Actions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.read(demoProvider);
+    final demo = ref.read(guideProvider);
     if (!place.isPoi) {
       return PrimaryPill(
           label: 'Oke, lanjut', icon: Icons.check_rounded, onTap: onClose);

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
+import '../state/guide_controller.dart';
 
 /// Splash for returning visitors: the sun rises, Pako pops up and waves, the wordmark types
 /// itself in. First-time visitors skip it: a plain sun-yellow frame hands straight over to
@@ -23,7 +23,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       vsync: this, duration: const Duration(milliseconds: 1500))
     ..forward();
   Timer? _go;
-  late final bool _firstRun = !ref.read(demoProvider).onboarded;
+  late final bool _firstRun = !ref.read(guideProvider).onboarded;
 
   @override
   void initState() {
@@ -36,7 +36,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     }
     _go = Timer(const Duration(milliseconds: 2300), () {
       if (!mounted) return;
-      final onboarded = ref.read(demoProvider).onboarded;
+      final onboarded = ref.read(guideProvider).onboarded;
       context.go(onboarded ? '/home' : '/welcome');
     });
   }

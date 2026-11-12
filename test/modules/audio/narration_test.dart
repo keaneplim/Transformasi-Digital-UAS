@@ -7,7 +7,7 @@ import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/modules/audio/audio.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
-import 'package:jelajah_taman/modules/shell/src/demo/demo_controller.dart';
+import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
 
 import '../../helpers/test_content.dart';
 
@@ -59,10 +59,10 @@ void main() {
     });
   });
 
-  group('DemoController with a narration player', () {
+  group('GuideController with a narration player', () {
     late FakeNarrationPlayer player;
     late ProviderContainer container;
-    late DemoController demo;
+    late GuideController demo;
 
     setUp(() {
       player = FakeNarrationPlayer();
@@ -71,7 +71,7 @@ void main() {
             content: content, clock: FakeClock(DateTime(2026, 11, 14, 10))),
         narrationPlayerProvider.overrideWithValue(player),
       ]);
-      demo = container.read(demoProvider);
+      demo = container.read(guideProvider);
     });
     tearDown(() => container.dispose());
 

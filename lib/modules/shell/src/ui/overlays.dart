@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'widgets.dart';
 
 /// Root navigator key (set on the GoRouter) so sheets can open after a route pops.
@@ -26,7 +26,7 @@ class DemoOverlayHost extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final approaching = demo.approaching;
     final trigger = demo.pendingTrigger;
     final reminder = demo.reminder;
@@ -321,14 +321,14 @@ class _ReminderCard extends ConsumerWidget {
   const _ReminderCard(
       {required this.kind, required this.onNavigate, required this.onDismiss});
 
-  final DemoReminder kind;
+  final GuideReminder kind;
   final ValueChanged<Place> onNavigate;
   final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
-    final closing = kind == DemoReminder.closing;
+    final demo = ref.watch(guideProvider);
+    final closing = kind == GuideReminder.closing;
     final gate = demo.place('P01')!;
     final rest = demo.nearest(group: 'fasilitas').firstWhere(
         (p) => p.kind == 'istirahat',
@@ -434,7 +434,7 @@ class _RecommendationSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final rec = demo.recommend();
     void navigate(Place p) {
       Navigator.of(context).pop();
@@ -527,7 +527,7 @@ class _MainRec extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final p = item.place;
     return Entrance(
       child: Container(

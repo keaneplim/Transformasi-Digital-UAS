@@ -1,12 +1,15 @@
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 
+import '../domain/basemap.dart';
 import '../domain/map_geometry.dart';
 
 /// Everything static the Explore map draws, derived once from the content (A01).
 class MapScene {
   MapScene({
     required this.zone,
+    required this.extent,
+    this.basemap,
     required List<List<GeoPoint>> trails,
     required List<Poi> pois,
     required List<Facility> facilities,
@@ -18,6 +21,7 @@ class MapScene {
   factory MapScene.fromContent(
     ContentRepository content, {
     double zonePaddingM = defaultZonePaddingM,
+    BasemapData? basemap,
   }) {
     final graph = content.graph;
     final trails = <List<GeoPoint>>[
@@ -28,12 +32,13 @@ class MapScene {
           if (graph.nodes[e.to] case final to?) [from.position, to.position],
     ];
     final zone = GeoBounds.around([
-      for (final n in graph.nodes.values) n.position,
       for (final p in content.pois) p.position,
       for (final f in content.facilities) f.position,
     ]).expandedBy(zonePaddingM);
     return MapScene(
       zone: zone,
+      extent: basemap?.bounds ?? zone.expandedBy(600),
+      basemap: basemap,
       trails: trails,
       pois: content.pois,
       facilities: content.facilities,
@@ -44,8 +49,14 @@ class MapScene {
   /// Margin around the content so markers at the edge aren't glued to the screen border.
   static const defaultZonePaddingM = 150.0;
 
-  /// The Dago Pakar zone: camera is clamped to it; a user outside it gets the "di luar zona" chip.
+  /// The visitor zone (all POIs and facilities + margin): a user outside it gets the
+  /// "di luar kawasan" chip.
   final GeoBounds zone;
+
+  /// What the camera may show: the basemap extent (or the zone + 600 m without one).
+  final GeoBounds extent;
+
+  final BasemapData? basemap;
 
   /// One polyline per trail-graph edge (surveyed trails, drawn on top of the tiles).
   final List<List<GeoPoint>> trails;

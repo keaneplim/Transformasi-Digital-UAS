@@ -52,6 +52,7 @@ const allowed = <String, Set<String>>{
 /// ARCHITECTURE.md §3 — plugin package → owning module.
 const pluginOwner = <String, String>{
   'geolocator': 'location',
+  'flutter_compass': 'location',
   'just_audio': 'audio',
   'audio_service': 'audio',
   'flutter_tts': 'audio',

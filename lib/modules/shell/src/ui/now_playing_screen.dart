@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'widgets.dart';
 
 /// UI07 Eyes-free "Mode dengar": dusk-green full screen, oversized controls, Pako listening.
@@ -15,7 +15,7 @@ class NowPlayingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final place = demo.place(id);
     if (place == null) return const Scaffold();
     final mine = demo.nowPlaying?.id == id;

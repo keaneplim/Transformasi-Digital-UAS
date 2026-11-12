@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'main_shell.dart';
 import 'widgets.dart';
 
@@ -17,7 +17,7 @@ class HomeTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final top = MediaQuery.paddingOf(context).top;
     final highlights = demo.routePois;
     return CustomScrollView(
@@ -166,9 +166,12 @@ class _StartCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final r = demo.route;
-    final atGate = demo.walkingM(demo.place('P01')!) < 40;
+    // distances fall back to the gate without a position: only claim "di gerbang" for a real one
+    final atGate = !demo.noPosition &&
+        !demo.outsideZone &&
+        demo.walkingM(demo.place('P01')!) < 40;
     final finish = demo.now().add(Duration(minutes: r.durationMin));
     final fits =
         finish.isBefore(demo.closingTime.subtract(const Duration(minutes: 15)));
@@ -510,7 +513,7 @@ class _TimeLeft extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final total = demo.closingTime.difference(demo.openingTime).inMinutes;
     final left = math.max(0, demo.timeToClose.inMinutes);
     final elapsed = total == 0 ? 1.0 : (1 - left / total).clamp(0.0, 1.0);
@@ -649,7 +652,7 @@ class _Facilities extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     Place? nearestOf(String type) {
       final list = demo.facilities.where((f) => f.kind == type).toList()
         ..sort((a, b) => demo.walkingM(a).compareTo(demo.walkingM(b)));

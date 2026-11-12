@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "images": {
+    "p01_gerbang.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4276.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p02_monumen.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Monumen_Patung_Taman_Hutan_Raya_Ir._Djuanda_-_panoramio.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p02_monumen_2.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Monumen_Patung_Taman_Hutan_Raya_Ir._Djuanda_-_panoramio_(1).jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p04_kolam.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tahura_Dago_-_panoramio_(10).jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p04_kolam_2.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Danau_Tahura_Dago_-_panoramio.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p05_gua_jepang.jpg": {
+      "source": "commons",
+      "author": "Oceanmuse",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Gua_Jepang_di_Tahura_tampak_dari_depan.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p05_tugu.jpg": {
+      "source": "commons",
+      "author": "Oceanmuse",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tugu_gua_Jepang_di_Tahura.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p06_mulut_gua.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4238.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p06_goa_belanda.jpg": {
+      "source": "commons",
+      "author": "Raflinoer32",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Goa_Belanda_di_Bandung.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p06_lorong.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4241.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p07_rusa.jpg": {
+      "source": "commons",
+      "author": "Nuryahya64",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:RUSA_di_TAHURA_JUANDA_BANDUNG.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p07_kandang.jpg": {
+      "source": "commons",
+      "author": "Oceanmuse",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Penangkaran_Rusa_Timor_di_Tahura.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p07_papan.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4252.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p08_pinus.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tahura_Dago_-_panoramio_(5).jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p10_flora.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Tahura_Dago_-_panoramio.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p10_pasang.jpg": {
+      "source": "commons",
+      "author": "Devitapra",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Taman_Hutan_Raya_Ir._Djuanda_Dago_Bandung_-_panoramio_(6).jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p11_curug_omas.jpg": {
+      "source": "commons",
+      "author": "Aswaralif",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Air_Terjun_Curug_Omas_Maribaya_Lembang,10062017.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "p11_curug_omas_2.jpg": {
+      "source": "commons",
+      "author": "Raflinoer32",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Curug_Omas_Bandung.jpg",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs01_toilet.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4275.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs06_toilet.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4266.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs07_musala.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4267.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs08_saung.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4262.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs09_saung.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4264.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    },
+    "fs10_gazebo.jpg": {
+      "source": "survey",
+      "author": "Kelompok 5 Jelajah Taman (survei 7 Nov 2026)",
+      "license": "Milik tim",
+      "license_url": "",
+      "source_url": "survey/raw/photos/IMG_4274.HEIC",
+      "edit": "Retouch ringan gemini-3-pro-image (eksposur, white balance, wajah diburamkan), 2026-11-12"
+    }
+  }
+}

@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 
-/// The illustrated park map fed with the demo state (places, visited, simulated position).
+/// The park map fed with the guide state (places, visited, live or simulated position).
 /// Rendering lives in the `map` module ([ParkMapView]); this only maps data across.
 class ParkMap extends ConsumerWidget {
   const ParkMap({
@@ -26,7 +26,24 @@ class ParkMap extends ConsumerWidget {
     this.initialCenter,
     this.fitPadding = const EdgeInsets.fromLTRB(40, 140, 40, 300),
     this.trailOverride,
+    this.chromeInsets = const EdgeInsets.all(12),
+    this.satellite = false,
+    this.onSatelliteError,
+    this.followUser = false,
+    this.onUserGesture,
+    this.showChrome,
   });
+
+  /// Scale bar + attribution; defaults to [interactive].
+  final bool? showChrome;
+
+  final bool satellite;
+  final VoidCallback? onSatelliteError;
+  final bool followUser;
+  final VoidCallback? onUserGesture;
+
+  /// Space the screen's own overlays take (scale bar + attribution stay inside it).
+  final EdgeInsets chromeInsets;
 
   final ParkMapController? controller;
   final String? selectedId;
@@ -50,7 +67,7 @@ class ParkMap extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     return ParkMapView(
       pins: [
         for (final p in demo.places)
@@ -67,7 +84,10 @@ class ParkMap extends ConsumerWidget {
           ),
       ],
       user: demo.position,
-      headingDeg: demo.headingDeg,
+      headingDeg: demo.heading,
+      accuracyM: demo.accuracyM,
+      gpsWeak: demo.gpsWeak,
+      showUser: demo.showUser,
       trail: trailOverride ?? demo.trail,
       overview: [for (final p in demo.routePois) p.position],
       controller: controller,
@@ -89,6 +109,12 @@ class ParkMap extends ConsumerWidget {
       initialZoom: initialZoom,
       initialCenter: initialCenter,
       fitPadding: fitPadding,
+      chromeInsets: chromeInsets,
+      satellite: satellite,
+      onSatelliteError: onSatelliteError,
+      followUser: followUser,
+      onUserGesture: onUserGesture,
+      showChrome: showChrome,
     );
   }
 }

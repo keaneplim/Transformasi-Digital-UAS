@@ -3,10 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/credits.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'overlays.dart';
 import 'widgets.dart';
 
@@ -35,9 +37,9 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
     _gallery.addListener(() => setState(() => _page = _gallery.page ?? 0));
     // Opening the detail counts as engaging with the POI (D05).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final demo = ref.read(demoProvider);
+      final demo = ref.read(guideProvider);
       final p = demo.place(widget.id);
-      if (p != null && demo.sessionActive) demo.markVisited(p);
+      if (p != null) demo.engage(p, EngagementKind.opened);
     });
   }
 
@@ -50,7 +52,7 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final place = demo.place(widget.id);
     if (place == null || !place.isPoi) {
       return const Scaffold(
@@ -61,6 +63,7 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final headerH = math.min(width * 1.05, 440.0);
     final images = place.images.isEmpty ? [null] : place.images;
+    final credits = ref.watch(imageCreditsProvider).valueOrNull ?? const {};
     final visited = demo.visited.contains(place.id);
     final gateM =
         demo.router.walkingDistanceM(demo.content.gate.position, place.node);
@@ -250,8 +253,18 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
                       if (place.images.isNotEmpty) ...[
                         const SizedBox(height: 22),
                         Center(
-                          child: Text('Foto: dokumentasi tim Jelajah Taman',
-                              style: JTText.caption.copyWith(color: JT.faint)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              credits[place.images[_page
+                                          .round()
+                                          .clamp(0, place.images.length - 1)]]
+                                      ?.caption ??
+                                  'Foto: dokumentasi tim Jelajah Taman',
+                              textAlign: TextAlign.center,
+                              style: JTText.caption.copyWith(color: JT.faint),
+                            ),
+                          ),
                         ),
                       ],
                       SizedBox(height: 120 + pad.bottom),
@@ -325,7 +338,7 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
                 label: 'Selesai, lihat berikutnya',
                 trailingIcon: Icons.arrow_forward_rounded,
                 onTap: () {
-                  demo.markVisited(place);
+                  demo.engage(place, EngagementKind.opened);
                   showRecommendations(context);
                 },
               ),
@@ -362,7 +375,7 @@ class _AudioCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final mine = demo.nowPlaying?.id == place.id;
     final playing = mine && demo.audioPlaying;
     final len = demo.audioLength(place);

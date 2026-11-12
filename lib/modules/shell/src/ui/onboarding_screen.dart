@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
@@ -6,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+
+import '../state/guide_controller.dart';
 
 /// UI01 Onboarding.
 ///
@@ -147,6 +150,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     if (_page.round() < 2) {
       _pages.nextPage(duration: JTMotion.lazy, curve: JTMotion.emphasized);
     } else {
+      // "Izinkan & berangkat": the real OS location prompt (real mode); notifications,
+      // pedometer and camera are asked when their engines land.
+      final guide = ref.read(guideProvider);
+      if (_perms['lokasi'] == true && !guide.isDemo) {
+        unawaited(guide.requestLocation());
+      }
       context.go('/setup');
     }
   }

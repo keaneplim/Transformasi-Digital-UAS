@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:jelajah_taman/modules/content/content.dart';
+import 'package:jelajah_taman/modules/map/map.dart';
 
 /// Loads the real assets/content/*.json from disk (tests run from the project root).
 ContentRepository loadTestContent() {
@@ -17,3 +18,8 @@ ContentRepository loadTestContent() {
     graph: read('trail_graph.json'),
   );
 }
+
+/// The bundled basemap from disk.
+BasemapData loadTestBasemap() => BasemapData.fromJson(
+    jsonDecode(File('assets/map/basemap.json').readAsStringSync())
+        as Map<String, Object?>);

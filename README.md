@@ -3,7 +3,7 @@
 Android app (Flutter) that guides visitors through **Tahura Ir. H. Djuanda, zona Dago Pakar** with GPS geofence triggers, audio narration, offline trail navigation, closing-time-aware recommendations and a Wellness Trail mode.
 Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wellness Explorer.
 
-> **Content is DUMMY data.** Coordinates, distances and durations in `assets/content/` are synthetic until the survey data replaces them. Dummy records carry `"dummy": true` / `"coord_source": "DUMMY"` in the JSON; the visitor UI never shows this. Don't use them for field tests.
+> **Coordinates are real, texts are still draft.** Every POI/facility position has a `coord_source` (`SURVEY_EXIF` from the 7 Nov photos, `OSM`, `GMAPS`, or `ESTIMATE` = needs checking on site) and a `coord_ref`. Place texts, hours and route durations stay `[VERIFIKASI]` until the manager confirms them.
 
 ## Repository layout
 
@@ -11,12 +11,13 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 |---|---|
 | `lib/core/` | Shared kernel: Clock, geo maths, EventBus + events E1–E10, logging, Result, theme tokens, generic UI kit (`core/ui`) |
 | `lib/modules/<module>/` | Feature modules. Import only `<module>/<module>.dart` from outside. |
-| `lib/modules/shell/src/ui/`, `src/demo/` | All screens UI01–UI15 and the demo state that drives them until the engines exist |
-| `assets/content/` | `pois.json`, `facilities.json`, `routes.json`, `park.json`, `trail_graph.json` |
+| `lib/modules/shell/src/ui/`, `src/state/` | All screens UI01–UI15 and `GuideController` (real GPS mode, or demo mode from Settings) |
+| `assets/content/` | `pois.json`, `facilities.json`, `routes.json`, `park.json`, `trail_graph.json`, `image_credits.json` |
+| `assets/map/` | Offline basemap `basemap.json` + `hillshade.png` (generated, OSM ODbL + Google Elevation) |
 | `assets/images/`, `assets/fonts/` | Survey photos (metadata stripped) and bundled fonts (offline) |
 | `test_goldens/` | Screen baselines, not in CI (`baselines/*.png`) |
 | `test/` | Mirrors `lib/` |
-| `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py`, `prd_to_md.py`, `gpx_to_graph.py` (survey GPX → `trail_graph.json`); tests in `tools/tests/` (`python -m unittest discover -s tools/tests`) |
+| `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py`, `prd_to_md.py`, `gpx_to_graph.py` (survey GPX → `trail_graph.json`), `resolve_coords.py` (photo EXIF / OSM / Places → coordinates), `osm_to_basemap.py` (OSM + elevation → `assets/map/`), `osm_to_graph.py` (OSM paths → `trail_graph.json` + routes), `photos.py` (Commons + survey photos, Gemini retouch, credits), `narration.py` (audio); tests in `tools/tests/` (`python -m unittest discover -s tools/tests`) |
 | `docs/prd/` | PRD: docx = canonical, pdf export, `PRD.md` = generated readable copy (`python tools/prd_to_md.py`); kickoff report |
 | `docs/presentation/` | Deck (pptx + pdf) |
 | `docs/design/` | `DESIGN.md` = design system v2 (source of truth); Stitch prompts and `screens/` = v1, history only |

@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 
 /// UI15 Settings. Visitor preferences first; the "Mode demo" panel (preview tools to
 /// move around the park without GPS) sits collapsed at the bottom.
@@ -14,7 +14,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
       backgroundColor: JT.cream,
@@ -160,6 +160,17 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                _Group(
+                  title: 'Tentang',
+                  children: [
+                    _ActionRow(
+                      icon: Icons.info_outline_rounded,
+                      color: JT.muted,
+                      title: 'Tentang & atribusi',
+                      onTap: () => context.push('/about'),
+                    ),
+                  ],
+                ),
                 const _DemoPanel(),
                 const SizedBox(height: 20),
                 Center(
@@ -182,7 +193,8 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-Future<bool> _confirm(BuildContext context, String title, String body) async =>
+Future<bool> _confirm(BuildContext context, String title, String body,
+        {String confirm = 'Hapus', Color color = JT.terracotta}) async =>
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -197,8 +209,8 @@ Future<bool> _confirm(BuildContext context, String title, String body) async =>
               child: const Text('Batal')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: JT.terracotta),
-            child: const Text('Hapus'),
+            style: TextButton.styleFrom(foregroundColor: color),
+            child: Text(confirm),
           ),
         ],
       ),
@@ -528,7 +540,8 @@ class _ActionRow extends StatelessWidget {
       );
 }
 
-/// Preview tools: move without GPS, speed up the walk, fire reminders, fake the clock.
+/// "Mode demo": the switch between live GPS and the simulated position, plus the preview
+/// tools (move without GPS, speed up the walk, fake the clock) that only work in demo mode.
 class _DemoPanel extends ConsumerStatefulWidget {
   const _DemoPanel();
 
@@ -541,7 +554,7 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     return Container(
       decoration: BoxDecoration(
         color: JT.dusk,
@@ -564,11 +577,34 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
                       children: [
                         Text('Mode demo',
                             style: JTText.title.copyWith(color: Colors.white)),
-                        Text('Coba fitur tanpa berada di taman.',
+                        Text(
+                            demo.isDemo
+                                ? 'Aktif: posisi Anda disimulasikan.'
+                                : 'Coba fitur tanpa berada di taman.',
                             style:
                                 JTText.caption.copyWith(color: Colors.white60)),
                       ],
                     ),
+                  ),
+                  Switch.adaptive(
+                    value: demo.isDemo,
+                    activeTrackColor: JT.sun,
+                    inactiveTrackColor: Colors.white24,
+                    inactiveThumbColor: Colors.white70,
+                    trackOutlineColor:
+                        const WidgetStatePropertyAll(Colors.transparent),
+                    onChanged: (on) async {
+                      final ok = await _confirm(
+                        context,
+                        on ? 'Nyalakan Mode demo?' : 'Kembali ke lokasi asli?',
+                        on
+                            ? 'Posisi Anda akan disimulasikan dari gerbang. Jelajah yang sedang berjalan dimulai ulang.'
+                            : 'Pemandu akan memakai GPS ponsel Anda. Jelajah demo dimulai ulang.',
+                        confirm: on ? 'Nyalakan' : 'Pakai GPS',
+                        color: JT.forest,
+                      );
+                      if (ok) demo.setMode(on ? AppMode.demo : AppMode.real);
+                    },
                   ),
                   AnimatedRotation(
                     turns: _open ? 0.5 : 0,
@@ -591,51 +627,64 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _label('PINDAH KE'),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final p in demo.pois)
+                        if (!demo.isDemo)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Nyalakan Mode demo untuk berpindah tempat, mempercepat jalan, dan mengatur jam.',
+                              style: JTText.caption
+                                  .copyWith(color: Colors.white70),
+                            ),
+                          ),
+                        if (demo.isDemo) ...[
+                          _label('PINDAH KE'),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final p in demo.pois)
+                                _DarkChip(
+                                  label: p.name,
+                                  onTap: () {
+                                    if (!demo.sessionActive) {
+                                      demo.startSession();
+                                    }
+                                    demo.teleportTo(p);
+                                    if (!p.isGate) demo.triggerNow(p);
+                                  },
+                                ),
+                            ],
+                          ),
+                          _label('KECEPATAN JALAN SIMULASI'),
+                          _Segmented<double>(
+                            options: const [
+                              (10.0, '10×'),
+                              (25.0, '25×'),
+                              (60.0, '60×')
+                            ],
+                            value: demo.walkSpeedFactor,
+                            onChanged: (v) =>
+                                demo.update(() => demo.walkSpeedFactor = v),
+                          ),
+                          _label('JAM (${clockLabel(demo.now())})'),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
                               _DarkChip(
-                                label: p.name,
-                                onTap: () {
-                                  if (!demo.sessionActive) demo.startSession();
-                                  demo.teleportTo(p);
-                                  if (!p.isGate) demo.triggerNow(p);
-                                },
-                              ),
-                          ],
-                        ),
-                        _label('KECEPATAN JALAN SIMULASI'),
-                        _Segmented<double>(
-                          options: const [
-                            (10.0, '10×'),
-                            (25.0, '25×'),
-                            (60.0, '60×')
-                          ],
-                          value: demo.walkSpeedFactor,
-                          onChanged: (v) =>
-                              demo.update(() => demo.walkSpeedFactor = v),
-                        ),
-                        _label('JAM (${clockLabel(demo.now())})'),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _DarkChip(
-                                label: '09.00',
-                                onTap: () => demo.setDemoTime(9, 0)),
-                            _DarkChip(
-                                label: '13.00',
-                                onTap: () => demo.setDemoTime(13, 0)),
-                            _DarkChip(
-                                label: '15.30',
-                                onTap: () => demo.setDemoTime(15, 30)),
-                            _DarkChip(
-                                label: 'Sekarang', onTap: demo.resetDemoTime),
-                          ],
-                        ),
+                                  label: '09.00',
+                                  onTap: () => demo.setDemoTime(9, 0)),
+                              _DarkChip(
+                                  label: '13.00',
+                                  onTap: () => demo.setDemoTime(13, 0)),
+                              _DarkChip(
+                                  label: '15.30',
+                                  onTap: () => demo.setDemoTime(15, 30)),
+                              _DarkChip(
+                                  label: 'Sekarang', onTap: demo.resetDemoTime),
+                            ],
+                          ),
+                        ],
                         _label('PENGINGAT'),
                         Wrap(
                           spacing: 8,
@@ -646,7 +695,7 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
                               icon: Icons.schedule_rounded,
                               onTap: () {
                                 context.pop();
-                                demo.showReminder(DemoReminder.closing);
+                                demo.showReminder(GuideReminder.closing);
                               },
                             ),
                             _DarkChip(
@@ -654,7 +703,7 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
                               icon: Icons.water_drop_rounded,
                               onTap: () {
                                 context.pop();
-                                demo.showReminder(DemoReminder.hydration);
+                                demo.showReminder(GuideReminder.hydration);
                               },
                             ),
                           ],

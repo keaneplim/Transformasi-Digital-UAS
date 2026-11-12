@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 import 'main_shell.dart';
 import 'widgets.dart';
 
@@ -37,7 +37,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     setState(() => _found = p.id);
     await Future<void>.delayed(const Duration(milliseconds: 650));
     if (!mounted) return;
-    final demo = ref.read(demoProvider);
+    final demo = ref.read(guideProvider);
     if (!demo.sessionActive) demo.startSession();
     demo.teleportTo(p);
     context.pop();
@@ -46,7 +46,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final qrPlaces = [
       for (final p in demo.pois)
         if (p.poi?.qrCode != null) p,

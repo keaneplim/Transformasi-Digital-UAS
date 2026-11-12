@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 
-import '../demo/demo_controller.dart';
-import '../demo/places.dart';
+import '../state/guide_controller.dart';
+import '../state/places.dart';
 
 /// UI02 personalisation: interests, then the Wellness Trail route.
 class SetupScreen extends ConsumerStatefulWidget {
@@ -20,13 +20,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   PakoPose _pose = PakoPose.idle;
 
   void _finish() {
-    ref.read(demoProvider).finishOnboarding();
+    ref.read(guideProvider).finishOnboarding();
     context.go('/home');
   }
 
   @override
   Widget build(BuildContext context) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
       backgroundColor: JT.cream,
@@ -130,7 +130,7 @@ class _Interests extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       children: [
@@ -259,7 +259,7 @@ class _Routes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       children: [
@@ -305,7 +305,7 @@ class RouteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(demoProvider);
+    final demo = ref.watch(guideProvider);
     final graph = demo.content.graph;
     final elev = [
       for (final id in route.nodePath)

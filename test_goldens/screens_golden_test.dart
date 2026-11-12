@@ -14,8 +14,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/core.dart';
+import 'package:jelajah_taman/core/providers.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
-import 'package:jelajah_taman/modules/shell/src/demo/demo_controller.dart';
+import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
 import 'package:jelajah_taman/modules/shell/src/ui/main_shell.dart';
 import 'package:jelajah_taman/modules/shell/src/ui/overlays.dart';
 
@@ -24,6 +25,7 @@ import '../test/helpers/test_content.dart';
 const _phone = Size(390, 844);
 const _small = Size(360, 780);
 const _dpr = 2.0;
+final _basemap = loadTestBasemap();
 
 Future<void> _loadFonts() async {
   Future<ByteData> file(String path) async =>
@@ -49,7 +51,7 @@ class _Harness {
   final WidgetTester tester;
   final ProviderContainer container;
 
-  DemoController get demo => container.read(demoProvider);
+  GuideController get demo => container.read(guideProvider);
   BuildContext get nav => rootNavigatorKey.currentContext!;
   GoRouter get router => GoRouter.of(nav);
 
@@ -78,29 +80,43 @@ class _Harness {
 Future<void> _precache(WidgetTester tester) async {
   final dir = Directory('assets/images');
   final ctx = rootNavigatorKey.currentContext!;
+  // ~25 full-size photos + the hillshade don't fit the default 100 MB cache
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 512 << 20;
   await tester.runAsync(() async {
     for (final f in dir.listSync().whereType<File>()) {
       await precacheImage(
           AssetImage('assets/images/${f.uri.pathSegments.last}'), ctx);
     }
+    await precacheImage(const AssetImage('assets/map/hillshade.png'), ctx);
   });
 }
 
 void _shot(String name, Future<void> Function(_Harness h) setup,
-    {int? introMs, int? foldMs, bool returning = false, Size size = _phone}) {
+    {int? introMs,
+    int? foldMs,
+    bool returning = false,
+    bool realMode = false,
+    Size size = _phone}) {
   testWidgets(name, (tester) async {
     tester.view.physicalSize = size * _dpr;
     tester.view.devicePixelRatio = _dpr;
     addTearDown(tester.view.reset);
 
     final container = ProviderContainer(
-      overrides: buildOverrides(
-        content: loadTestContent(),
-        clock: FakeClock(DateTime(2026, 11, 14, 10, 30)),
-      ),
+      overrides: [
+        ...buildOverrides(
+          content: loadTestContent(),
+          basemap: _basemap,
+          clock: FakeClock(DateTime(2026, 11, 14, 10, 30)),
+        ),
+        // the screens are shot in demo mode (simulated position at the gate); `realMode`
+        // shots start in real mode without GPS, as on a phone that hasn't granted location
+        keyValueStoreProvider.overrideWithValue(
+            MemoryKeyValueStore({'app_mode': realMode ? 'real' : 'demo'})),
+      ],
     );
     addTearDown(container.dispose);
-    if (returning) container.read(demoProvider).finishOnboarding();
+    if (returning) container.read(guideProvider).finishOnboarding();
     await tester.pumpWidget(
       UncontrolledProviderScope(
           container: container, child: const JelajahTamanApp()),
@@ -303,13 +319,13 @@ void main() {
       ..setDemoTime(15, 20)
       ..teleportTo(h.demo.place('P06')!);
     await h.go('/home');
-    h.demo.showReminder(DemoReminder.closing);
+    h.demo.showReminder(GuideReminder.closing);
     await h.frames();
   });
   _shot('23_pengingat_minum', (h) async {
     await h.onboarded();
     await h.go('/home');
-    h.demo.showReminder(DemoReminder.hydration);
+    h.demo.showReminder(GuideReminder.hydration);
     await h.frames();
   });
   _shot('24_ringkasan', (h) async {
@@ -341,6 +357,13 @@ void main() {
   });
 
   // Narrow phone (360×780): catches overflow on the densest screens.
+  // real mode on a device without location: no dot, "Aktifkan lokasi" chip, distances from the gate
+  _shot('27_peta_tanpa_gps', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 1;
+    await h.frames();
+  }, realMode: true);
   _shot('s360_welcome', (_) async {}, introMs: 3400, size: _small);
   _shot('s360_onboarding_1', (h) async => h.frames(), size: _small);
   _shot('s360_onboarding_izin', (h) async {
