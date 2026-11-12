@@ -97,6 +97,11 @@ for p in pois:
     if p.get("audio"):
         if not (AUDIO / p["audio"]).exists():
             errors.append(f"{pid}: audio file missing assets/audio/{p['audio']}")
+        secs = p.get("audio_seconds")
+        if not isinstance(secs, int) or not 120 <= secs <= 180:
+            errors.append(f"{pid}: audio_seconds {secs} (narration must be 120–180 s, PRD F03)")
+        if not p.get("sources"):
+            errors.append(f"{pid}: narration but no 'sources' (PRD §8.2: no fact without a source)")
     else:
         warnings.append(f"{pid}: no audio (TTS fallback)")
 

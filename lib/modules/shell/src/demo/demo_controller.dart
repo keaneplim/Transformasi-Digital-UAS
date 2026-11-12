@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/providers.dart';
+import 'package:jelajah_taman/modules/audio/audio.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
 
@@ -18,7 +19,10 @@ import 'places.dart';
 /// Trigger rules are simplified (no debounce/cooldown) — the real TriggerEngine owns those.
 class DemoController extends ChangeNotifier {
   DemoController(
-      {required this.content, required this.router, required Clock clock})
+      {required this.content,
+      required this.router,
+      required Clock clock,
+      this.player})
       : _baseClock = clock,
         position = content.gate.position {
     places = [
@@ -31,6 +35,7 @@ class DemoController extends ChangeNotifier {
   final ContentRepository content;
   final TrailRouter router;
   final Clock _baseClock;
+  final NarrationPlayer? player;
   late final List<Place> places;
   late final Map<String, Place> _byId;
 
@@ -401,33 +406,94 @@ class DemoController extends ChangeNotifier {
     return line.last;
   }
 
-  // ---- audio (mock: progress only, no sound until T07) -----------------------------------
+  // ---- audio -------------------------------------------------------------------------------
+  // POIs with a narration file (`audio` in pois.json) play it through [player] (just_audio,
+  // bound in the composition root). Without a player (tests) or without a file (TTS fallback,
+  // T07) the progress is simulated with a timer.
   Place? nowPlaying;
   double audioPos = 0; // seconds
   bool audioPlaying = false;
   Timer? _audioTimer;
+  StreamSubscription<Duration>? _posSub;
+  StreamSubscription<void>? _doneSub;
+  final Map<String, double> _fileSeconds = {};
 
-  int audioLength(Place p) => p.poi?.audioSeconds ?? 90;
+  bool _usesFile(Place p) => player != null && p.poi?.audio != null;
+
+  double audioLength(Place p) =>
+      _fileSeconds[p.id] ?? (p.poi?.audioSeconds ?? 90).toDouble();
   double get audioProgress => nowPlaying == null
       ? 0
       : (audioPos / audioLength(nowPlaying!)).clamp(0, 1);
 
   void playAudio(Place p) {
-    if (nowPlaying?.id != p.id) audioPos = 0;
+    final switching = nowPlaying?.id != p.id;
+    if (switching) {
+      _stopPlayback();
+      audioPos = 0;
+    }
     nowPlaying = p;
     audioPlaying = true;
     markVisited(p);
+    if (_usesFile(p)) {
+      unawaited(_playFile(p, fresh: switching));
+    } else {
+      _startTimer();
+    }
+    notifyListeners();
+  }
+
+  Future<void> _playFile(Place p, {required bool fresh}) async {
+    final pl = player!;
+    try {
+      if (fresh) {
+        final d = await pl.open(narrationAsset(p.poi!.audio!));
+        if (d != null) _fileSeconds[p.id] = d.inMilliseconds / 1000;
+        _posSub = pl.position.listen((d) {
+          if (nowPlaying?.id != p.id) return;
+          audioPos = (d.inMilliseconds / 1000).clamp(0, audioLength(p));
+          notifyListeners();
+        });
+        _doneSub = pl.completed.listen((_) {
+          if (nowPlaying?.id != p.id) return;
+          audioPos = audioLength(p);
+          audioPlaying = false;
+          notifyListeners();
+        });
+      }
+      // Paused or switched while loading: don't start.
+      if (nowPlaying?.id != p.id || !audioPlaying) return;
+      // Replay from the start after the end.
+      if (audioPos >= audioLength(p) - 0.3) audioPos = 0;
+      await pl.seek(Duration(milliseconds: (audioPos * 1000).round()));
+      await pl.play();
+    } catch (e) {
+      AppLog.info('Narration file failed for ${p.id}: $e — simulating instead');
+      _startTimer();
+    }
+  }
+
+  void _startTimer() {
     _audioTimer?.cancel();
+    if (audioPos >= audioLength(nowPlaying!)) audioPos = 0;
     _audioTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
       audioPos += 0.2;
       if (audioPos >= audioLength(nowPlaying!)) {
-        audioPos = audioLength(nowPlaying!).toDouble();
+        audioPos = audioLength(nowPlaying!);
         audioPlaying = false;
         _audioTimer?.cancel();
       }
       notifyListeners();
     });
-    notifyListeners();
+  }
+
+  void _stopPlayback() {
+    _audioTimer?.cancel();
+    _posSub?.cancel();
+    _doneSub?.cancel();
+    _posSub = null;
+    _doneSub = null;
+    if (player != null) unawaited(player!.stop());
   }
 
   void toggleAudio(Place p) =>
@@ -436,24 +502,30 @@ class DemoController extends ChangeNotifier {
   void pauseAudio() {
     audioPlaying = false;
     _audioTimer?.cancel();
+    if (nowPlaying != null && _usesFile(nowPlaying!)) {
+      unawaited(player!.pause());
+    }
     notifyListeners();
   }
 
   void seekAudio(double fraction) {
     if (nowPlaying == null) return;
     audioPos = fraction * audioLength(nowPlaying!);
+    if (_usesFile(nowPlaying!)) {
+      unawaited(
+          player!.seek(Duration(milliseconds: (audioPos * 1000).round())));
+    }
     notifyListeners();
   }
 
   void skipAudio(double seconds) {
     if (nowPlaying == null) return;
-    audioPos =
-        (audioPos + seconds).clamp(0, audioLength(nowPlaying!).toDouble());
-    notifyListeners();
+    seekAudio(((audioPos + seconds).clamp(0, audioLength(nowPlaying!))) /
+        audioLength(nowPlaying!));
   }
 
   void stopAudio() {
-    _audioTimer?.cancel();
+    _stopPlayback();
     audioPlaying = false;
     nowPlaying = null;
     audioPos = 0;
@@ -552,7 +624,7 @@ class DemoController extends ChangeNotifier {
   @override
   void dispose() {
     _walkTimer?.cancel();
-    _audioTimer?.cancel();
+    _stopPlayback();
     super.dispose();
   }
 }
@@ -573,4 +645,5 @@ final demoProvider =
           content: ref.watch(contentRepositoryProvider),
           router: ref.watch(trailRouterProvider),
           clock: ref.watch(clockProvider),
+          player: ref.watch(narrationPlayerProvider),
         ));

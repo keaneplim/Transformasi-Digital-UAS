@@ -15,6 +15,8 @@ import json
 import math
 from pathlib import Path
 
+from narration import content_fields  # audio narration + its sources (docs/content/narration/)
+
 OUT = Path(__file__).resolve().parent.parent / "assets" / "content"
 
 # Arbitrary anchor for the synthetic layout. NOT a surveyed coordinate. [VERIFIKASI]
@@ -201,6 +203,7 @@ for pid, name, cat, x, y, r, trig, visit, diff, routes in POIS:
         "key_facts": [], "images": IMAGES.get(pid, []), "audio": None, "audio_seconds": None,
         "routes": routes, "safety_note": SAFETY.get(pid), "sources": [],
     })
+    pois_out[-1].update(content_fields(pid))
 
 facilities_out = []
 for fid, ftype, name, x, y, kw in FACILITIES:

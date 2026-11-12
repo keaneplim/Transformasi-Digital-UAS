@@ -395,13 +395,13 @@ class _AudioCard extends ConsumerWidget {
                     Text(
                         place.poi?.audio == null
                             ? 'Dibacakan suara otomatis'
-                            : 'Narasi tim',
+                            : 'Narasi audio',
                         style: JTText.caption),
                   ],
                 ),
               ),
               Pill(
-                  label: durationClock(Duration(seconds: len)),
+                  label: durationClock(Duration(seconds: len.round())),
                   color: JT.forest),
             ],
           ),
@@ -421,7 +421,7 @@ class _AudioCard extends ConsumerWidget {
               Text(durationClock(Duration(seconds: pos.round())),
                   style: JTText.number(13, color: JT.muted, w: 600)),
               const Spacer(),
-              Text(durationClock(Duration(seconds: len)),
+              Text(durationClock(Duration(seconds: len.round())),
                   style: JTText.number(13, color: JT.muted, w: 600)),
             ],
           ),
