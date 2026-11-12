@@ -179,6 +179,13 @@ void main() {
     await h.onboarded();
     await h.go('/home');
   });
+  _shot('06b_home_bawah', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    await h.tester
+        .drag(find.byType(CustomScrollView).first, const Offset(0, -820));
+    await h.frames();
+  });
   _shot('07_home_sesi_aktif', (h) async {
     await h.onboarded();
     final d = h.demo..startSession();
@@ -206,6 +213,14 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
+    await h.frames();
+  });
+  _shot('10b_cari_hasil', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames();
   });
   _shot('11_cari_kosong', (h) async {
@@ -331,6 +346,12 @@ void main() {
   _shot('s360_onboarding_izin', (h) async {
     await h.tester.tap(find.text('Lewati'));
     await h.frames(1600);
+  }, size: _small);
+  _shot('s360_cari', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames();
   }, size: _small);
   _shot('s360_home_sesi', (h) async {
     await h.onboarded();

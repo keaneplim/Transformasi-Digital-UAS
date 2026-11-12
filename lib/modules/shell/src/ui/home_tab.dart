@@ -104,7 +104,7 @@ class HomeTab extends ConsumerWidget {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 18)),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
         const SliverToBoxAdapter(child: _TimeLeft()),
         const SliverToBoxAdapter(child: SizedBox(height: 26)),
         SliverToBoxAdapter(
@@ -116,7 +116,7 @@ class HomeTab extends ConsumerWidget {
         ),
         SliverToBoxAdapter(
           child: SizedBox(
-            height: 268,
+            height: 272,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
@@ -155,93 +155,280 @@ class HomeTab extends ConsumerWidget {
   }
 }
 
+/// Route pass shown before a session, styled as a trail ticket: a sun-tinted stub with
+/// faint doodles, the route medallion, name and an honest finish-time check; a perforated
+/// tear line with side notches; then the stats and the start button. Light and warm, so it
+/// reads differently from the dark "Sedang menjelajah" card.
 class _StartCard extends ConsumerWidget {
   const _StartCard();
+
+  static const _stubHeight = 132.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demo = ref.watch(demoProvider);
     final r = demo.route;
     final atGate = demo.walkingM(demo.place('P01')!) < 40;
-    return JTCard(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    final finish = demo.now().add(Duration(minutes: r.durationMin));
+    final fits =
+        finish.isBefore(demo.closingTime.subtract(const Duration(minutes: 15)));
+    final diffColor = switch (r.difficulty) {
+      1 => JT.leaf,
+      2 => JT.doodle,
+      _ => JT.terracotta,
+    };
+    final stubColor = Color.lerp(JT.sun, JT.surface, 0.72)!;
+    Widget notch(bool left) => Positioned(
+          left: left ? -11 : null,
+          right: left ? null : -11,
+          top: _stubHeight - 11,
+          child: Container(
+            width: 22,
+            height: 22,
+            decoration:
+                const BoxDecoration(color: JT.cream, shape: BoxShape.circle),
+          ),
+        );
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: JT.surface,
+            borderRadius: BorderRadius.circular(JT.rCard),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
             children: [
-              IconBadge(
-                  icon: atGate
-                      ? Icons.door_front_door_rounded
-                      : Icons.route_rounded),
-              const SizedBox(width: 12),
-              Expanded(
+              // Backgrounds: sun-tinted stub over a white body.
+              Positioned.fill(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                        atGate
-                            ? 'Anda di Gerbang Dago Pakar'
-                            : 'Rute pilihan Anda',
-                        style: JTText.caption),
-                    const SizedBox(height: 2),
-                    Text('Rute ${r.name}', style: JTText.h2),
+                    SizedBox(
+                        height: _stubHeight,
+                        width: double.infinity,
+                        child: ColoredBox(color: stubColor)),
+                    const Expanded(
+                        child: SizedBox(
+                            width: double.infinity,
+                            child: ColoredBox(color: JT.surface))),
                   ],
                 ),
               ),
-              TextButton(
-                onPressed: () => context.go('/setup'),
-                style: TextButton.styleFrom(
-                    foregroundColor: JT.forest,
-                    minimumSize: const Size(48, 44)),
-                child: Text('Ganti',
-                    style: JTText.label.copyWith(color: JT.forest)),
+              // One doodle layer across stub and body, fading out towards the left.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ShaderMask(
+                    blendMode: BlendMode.dstIn,
+                    shaderCallback: (rect) => const LinearGradient(
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                      colors: [Colors.white, Colors.transparent],
+                      stops: [0.0, 0.6],
+                    ).createShader(rect),
+                    child: const DoodlePattern(
+                        color: JT.doodle,
+                        seed: 13,
+                        cell: 50,
+                        iconSize: 24,
+                        opacity: 0.28),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Stub.
+                  SizedBox(
+                    height: _stubHeight,
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 8, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Pill(
+                                    label: atGate
+                                        ? 'Anda di gerbang'
+                                        : 'Rute pilihan Anda',
+                                    dot: atGate,
+                                    icon: atGate ? null : Icons.route_rounded,
+                                    color: JT.forest,
+                                    background: Colors.white,
+                                  ),
+                                  const Spacer(),
+                                  TextButton.icon(
+                                    onPressed: () => context.go('/setup'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: JT.forest,
+                                      minimumSize: const Size(48, 40),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                    ),
+                                    icon: const Icon(Icons.swap_horiz_rounded,
+                                        size: 18),
+                                    label: Text('Ganti',
+                                        style: JTText.label
+                                            .copyWith(color: JT.forest)),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text('Rute ${r.name}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: JTText.h1),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Pill(
+                                      label: difficultyLabel(r.difficulty),
+                                      icon: Icons.terrain_rounded,
+                                      color: diffColor,
+                                      background: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  Icon(
+                                      fits
+                                          ? Icons.check_circle_rounded
+                                          : Icons.schedule_rounded,
+                                      size: 16,
+                                      color: fits
+                                          ? JT.forestBright
+                                          : JT.terracotta),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      fits
+                                          ? 'Selesai ±${clockLabel(finish)}, sebelum tutup'
+                                          : 'Tidak cukup waktu sebelum tutup ${clockLabel(demo.closingTime)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: JTText.bodySm.copyWith(
+                                          color: fits
+                                              ? JT.ink.withValues(alpha: 0.7)
+                                              : JT.terracotta),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Tear line.
+                  const SizedBox(
+                    height: 1,
+                    width: double.infinity,
+                    child: CustomPaint(painter: _TearLinePainter()),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                    child: Column(
+                      children: [
+                        IntrinsicHeight(
+                          child: Row(
+                            children: [
+                              _Stat(
+                                  icon: Icons.straighten_rounded,
+                                  value: '${km(r.distanceM)} km',
+                                  label: 'JARAK'),
+                              const VerticalDivider(
+                                  width: 1, thickness: 1, color: JT.line),
+                              _Stat(
+                                  icon: Icons.schedule_rounded,
+                                  value: minutesLabel(
+                                      Duration(minutes: r.durationMin)),
+                                  label: 'DURASI'),
+                              const VerticalDivider(
+                                  width: 1, thickness: 1, color: JT.line),
+                              _Stat(
+                                  icon: Icons.place_rounded,
+                                  value: '${demo.routePois.length}',
+                                  label: 'TEMPAT'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        PrimaryPill(
+                          label: 'Mulai Jelajah',
+                          icon: Icons.explore_rounded,
+                          onTap: () {
+                            demo.startSession();
+                            ref.read(tabProvider.notifier).state = 1;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _Stat(value: '${km(r.distanceM)} km', label: 'JARAK'),
-              _Stat(
-                  value: minutesLabel(Duration(minutes: r.durationMin)),
-                  label: 'DURASI'),
-              _Stat(value: '${demo.routePois.length}', label: 'TEMPAT'),
-              _Stat(value: difficultyLabel(r.difficulty), label: 'TINGKAT'),
-            ],
-          ),
-          const SizedBox(height: 16),
-          PrimaryPill(
-            label: 'Mulai Jelajah',
-            icon: Icons.explore_rounded,
-            onTap: () {
-              demo.startSession();
-              ref.read(tabProvider.notifier).state = 1;
-            },
-          ),
-        ],
-      ),
+        ),
+        notch(true),
+        notch(false),
+      ],
     );
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label});
+class _TearLinePainter extends CustomPainter {
+  const _TearLinePainter();
 
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round
+      ..color = JT.line;
+    for (var x = 18.0; x < size.width - 18; x += 9) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 4, 0), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TearLinePainter old) => false;
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.icon, required this.value, required this.label});
+
+  final IconData icon;
   final String value;
   final String label;
 
   @override
   Widget build(BuildContext context) => Expanded(
         child: Padding(
-          padding: const EdgeInsets.only(right: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(value, maxLines: 1, style: JTText.number(17))),
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 15, color: JT.forestBright),
+                    const SizedBox(width: 5),
+                    Text(value, maxLines: 1, style: JTText.number(17)),
+                  ],
+                ),
+              ),
               const SizedBox(height: 4),
               Text(label, style: JTText.overline),
             ],
@@ -316,7 +503,8 @@ class _ActiveSession extends ConsumerWidget {
       );
 }
 
-/// Time left before closing as a draining bar (A03 context).
+/// Opening hours as the sun's path: a dashed arc from opening to closing time with the
+/// sun at "now", the walked part of the day drawn solid (A03 context).
 class _TimeLeft extends ConsumerWidget {
   const _TimeLeft();
 
@@ -325,48 +513,135 @@ class _TimeLeft extends ConsumerWidget {
     final demo = ref.watch(demoProvider);
     final total = demo.closingTime.difference(demo.openingTime).inMinutes;
     final left = math.max(0, demo.timeToClose.inMinutes);
-    final frac = total == 0 ? 0.0 : (left / total).clamp(0.0, 1.0);
+    final elapsed = total == 0 ? 1.0 : (1 - left / total).clamp(0.0, 1.0);
     final warn = left < 60;
+    final accent = left == 0
+        ? JT.muted
+        : warn
+            ? JT.terracotta
+            : JT.doodle;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
-      child: Row(
-        children: [
-          Icon(Icons.wb_twilight_rounded,
-              size: 22, color: warn ? JT.terracotta : JT.doodle),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  left == 0
-                      ? 'Kawasan sudah tutup'
-                      : 'Sisa ${minutesLabel(Duration(minutes: left))} sebelum tutup',
-                  style: JTText.label
-                      .copyWith(color: warn ? JT.terracotta : JT.ink),
-                ),
-                const SizedBox(height: 7),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: frac),
-                    duration: JTMotion.lazy,
-                    curve: JTMotion.emphasized,
-                    builder: (context, v, _) => LinearProgressIndicator(
-                      value: v,
-                      minHeight: 7,
-                      color: warn ? JT.terracotta : JT.sun,
-                      backgroundColor: JT.line,
-                    ),
-                  ),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: JT.surface,
+          borderRadius: BorderRadius.circular(JT.rCard),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 74,
+              height: 44,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: elapsed),
+                duration: const Duration(milliseconds: 1100),
+                curve: JTMotion.emphasized,
+                builder: (context, v, _) => CustomPaint(
+                    painter: _SunArcPainter(progress: v, color: accent)),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(children: [
+                      if (left == 0)
+                        const TextSpan(text: 'Kawasan sudah tutup')
+                      else ...[
+                        const TextSpan(text: 'Sisa '),
+                        TextSpan(
+                          text: minutesLabel(Duration(minutes: left)),
+                          style: JTText.number(16,
+                              color: warn ? JT.terracotta : JT.ink),
+                        ),
+                        const TextSpan(text: ' sebelum tutup'),
+                      ],
+                    ]),
+                    style: JTText.label
+                        .copyWith(color: warn ? JT.terracotta : JT.ink),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Buka ${clockLabel(demo.openingTime)} · Tutup ${clockLabel(demo.closingTime)}',
+                    style: JTText.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _SunArcPainter extends CustomPainter {
+  _SunArcPainter({required this.progress, required this.color});
+
+  final double progress;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = math.min(size.width / 2 - 6, size.height - 8);
+    final c = Offset(size.width / 2, size.height - 3);
+    final rect = Rect.fromCircle(center: c, radius: r);
+
+    // Horizon.
+    canvas.drawLine(
+        Offset(0, c.dy),
+        Offset(size.width, c.dy),
+        Paint()
+          ..strokeWidth = 1.5
+          ..strokeCap = StrokeCap.round
+          ..color = JT.line);
+
+    // Dashed path of the whole day.
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..color = JT.line;
+    const dashes = 14;
+    for (var i = 0; i < dashes; i++) {
+      final a = math.pi + i * math.pi / dashes;
+      canvas.drawArc(rect, a, math.pi / dashes * 0.55, false, track);
+    }
+
+    // Elapsed part, solid.
+    canvas.drawArc(
+        rect,
+        math.pi,
+        math.pi * progress,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: 0.55));
+
+    // The sun, with short rays.
+    final a = math.pi + math.pi * progress;
+    final sun = c + Offset(math.cos(a), math.sin(a)) * r;
+    final ray = Paint()
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    for (var i = 0; i < 8; i++) {
+      final ra = i * math.pi / 4;
+      final d = Offset(math.cos(ra), math.sin(ra));
+      canvas.drawLine(sun + d * 8.5, sun + d * 11, ray);
+    }
+    canvas.drawCircle(sun, 7, Paint()..color = JT.surface);
+    canvas.drawCircle(sun, 5.5, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_SunArcPainter old) =>
+      old.progress != progress || old.color != color;
 }
 
 class _Facilities extends ConsumerWidget {
@@ -407,32 +682,69 @@ class _Facilities extends ConsumerWidget {
   }
 }
 
+/// Door to search: a mint card with drifting doodles and Pako peeking in from the corner.
 class _ExploreAll extends StatelessWidget {
   const _ExploreAll({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => JTCard(
+  Widget build(BuildContext context) => Pressable(
         onTap: onTap,
-        color: JT.mint,
-        child: Row(
-          children: [
-            const Pako(pose: PakoPose.curious, size: 64, shadow: false),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Cari tempat lain', style: JTText.h3),
-                  const SizedBox(height: 2),
-                  Text('Gua, toilet, musala, saung…',
-                      style: JTText.bodySm.copyWith(color: JT.muted)),
-                ],
+        scale: 0.98,
+        semanticLabel: 'Cari tempat lain',
+        child: Container(
+          height: 108,
+          decoration: BoxDecoration(
+            color: JT.mint,
+            borderRadius: BorderRadius.circular(JT.rCard),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              const Positioned.fill(
+                child: DoodlePattern(
+                    color: JT.mintDeep, seed: 9, cell: 52, iconSize: 24),
               ),
-            ),
-            const Icon(Icons.arrow_forward_rounded, color: JT.forest),
-          ],
+              const Positioned(
+                left: 6,
+                bottom: -22,
+                child: Pako(pose: PakoPose.curious, size: 104, shadow: false),
+              ),
+              Positioned.fill(
+                left: 118,
+                right: 16,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Cari tempat lain', style: JTText.h3),
+                          const SizedBox(height: 3),
+                          Text('Gua, toilet, saung…',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: JTText.bodySm.copyWith(
+                                  color: JT.ink.withValues(alpha: 0.65))),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                          color: JT.forest, shape: BoxShape.circle),
+                      child: const Icon(Icons.search_rounded,
+                          color: Colors.white, size: 22),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
 }

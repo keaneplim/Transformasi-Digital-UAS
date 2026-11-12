@@ -232,7 +232,7 @@ class _NearbyStrip extends ConsumerWidget {
             ),
           ),
         SizedBox(
-          height: 96,
+          height: 98,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -248,8 +248,8 @@ class _NearbyStrip extends ConsumerWidget {
                   scale: 0.96,
                   semanticLabel: p.name,
                   child: Container(
-                    width: 238,
-                    padding: const EdgeInsets.all(10),
+                    width: 248,
+                    padding: const EdgeInsets.fromLTRB(9, 9, 12, 9),
                     decoration: BoxDecoration(
                       color: JT.surface,
                       borderRadius: BorderRadius.circular(JT.rCard),
@@ -257,9 +257,19 @@ class _NearbyStrip extends ConsumerWidget {
                     child: Row(
                       children: [
                         SizedBox.square(
-                          dimension: 74,
-                          child: PlacePhoto(
-                              place: p, radius: 15, heroSuffix: '-near'),
+                          dimension: 76,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Positioned.fill(
+                                child: PlacePhoto(
+                                    place: p, radius: 16, heroSuffix: '-near'),
+                              ),
+                              if (demo.visited.contains(p.id))
+                                const Positioned(
+                                    right: -4, top: -4, child: VisitedTick()),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -267,23 +277,15 @@ class _NearbyStrip extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                  i == 0
-                                      ? 'TERDEKAT'
-                                      : p.groupLabel.toUpperCase(),
-                                  style: JTText.overline.copyWith(
-                                      color:
-                                          i == 0 ? JT.forestBright : JT.muted)),
+                              CategoryLabel(
+                                  place: p, text: i == 0 ? 'Terdekat' : null),
                               const SizedBox(height: 3),
                               Text(p.name,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: JTText.label),
-                              const SizedBox(height: 3),
-                              Text(
-                                '${distanceLabel(demo.walkingM(p))} · ${minutesLabel(demo.walkingTime(p))}',
-                                style: JTText.caption,
-                              ),
+                                  style: JTText.label.copyWith(fontSize: 15)),
+                              const SizedBox(height: 4),
+                              WalkMeta(place: p),
                             ],
                           ),
                         ),
@@ -327,7 +329,7 @@ class _Preview extends ConsumerWidget {
               children: [
                 SizedBox(
                   width: 96,
-                  height: 96,
+                  height: 98,
                   child: PlacePhoto(
                       place: place, radius: 18, heroSuffix: '-preview'),
                 ),

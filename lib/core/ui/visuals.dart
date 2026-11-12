@@ -64,16 +64,31 @@ class _Illustration extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, c) {
           final s = math.min(c.maxWidth, c.maxHeight);
+          final badge = (s * 0.34).clamp(22.0, 92.0);
           return Stack(
             fit: StackFit.expand,
             children: [
               CustomPaint(painter: _ScenePainter(tint, seed)),
+              // The place's emblem as a white stamp, like a trail marker.
               Align(
-                alignment: const Alignment(0.0, -0.05),
-                child: DoodleIcon(doodle,
-                    size: s * 0.42,
-                    color: Colors.white.withValues(alpha: 0.92),
-                    stroke: 1.5),
+                alignment: const Alignment(0, -0.12),
+                child: Container(
+                  width: badge,
+                  height: badge,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        width: badge * 0.07,
+                        strokeAlign: BorderSide.strokeAlignOutside),
+                  ),
+                  alignment: Alignment.center,
+                  child: DoodleIcon(doodle,
+                      size: badge * 0.58,
+                      color: Color.lerp(tint, JT.ink, 0.25)!,
+                      stroke: 1.8),
+                ),
               ),
             ],
           );
@@ -81,6 +96,8 @@ class _Illustration extends StatelessWidget {
       );
 }
 
+/// Duotone landscape in the place's tint: soft sky, sun with halo, a cloud, three hill
+/// layers with a row of pines on the middle one.
 class _ScenePainter extends CustomPainter {
   _ScenePainter(this.tint, this.seed);
 
@@ -89,39 +106,79 @@ class _ScenePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
     final r = Offset.zero & size;
-    final sky = Color.lerp(tint, JT.sunSoft, 0.55)!;
+    final rnd = math.Random(seed);
+    final sky = Color.lerp(tint, JT.cream, 0.72)!;
     canvas.drawRect(
       r,
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color.lerp(sky, Colors.white, 0.35)!, sky],
+          colors: [Color.lerp(sky, Colors.white, 0.45)!, sky],
         ).createShader(r),
     );
-    final rnd = math.Random(seed);
+
+    // Sun with a soft halo.
+    final sun = Offset(w * (0.18 + rnd.nextDouble() * 0.64), h * 0.22);
+    final sr = size.shortestSide * 0.1;
     canvas.drawCircle(
-      Offset(size.width * (0.2 + rnd.nextDouble() * 0.6), size.height * 0.24),
-      size.shortestSide * 0.12,
-      Paint()..color = JT.sun.withValues(alpha: 0.85),
-    );
+        sun, sr * 1.9, Paint()..color = JT.sunSoft.withValues(alpha: 0.45));
+    canvas.drawCircle(sun, sr, Paint()..color = JT.sun);
+
+    // A small cloud on the other side of the sky.
+    final cx = sun.dx > w / 2 ? w * 0.24 : w * 0.72;
+    final cloud = Paint()..color = Colors.white.withValues(alpha: 0.75);
+    final cs = size.shortestSide * 0.045;
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            Rect.fromCenter(
+                center: Offset(cx, h * 0.3), width: cs * 7, height: cs * 2.2),
+            Radius.circular(cs * 1.1)),
+        cloud);
+    canvas.drawCircle(
+        Offset(cx - cs * 0.8, h * 0.3 - cs * 1.1), cs * 1.4, cloud);
+    canvas.drawCircle(Offset(cx + cs * 1.2, h * 0.3 - cs * 0.7), cs, cloud);
+
+    // Hills, back to front.
     for (var layer = 0; layer < 3; layer++) {
-      final base = size.height * (0.55 + layer * 0.14);
-      final color = Color.lerp(tint, JT.ink, 0.08 + layer * 0.16)!
-          .withValues(alpha: 0.55 + layer * 0.2);
-      final p = Path()..moveTo(0, size.height);
+      final base = h * (0.6 + layer * 0.13);
+      final color = Color.lerp(Color.lerp(tint, JT.cream, 0.45 - layer * 0.2)!,
+          JT.ink, layer * 0.1)!;
       final phase = rnd.nextDouble() * math.pi * 2;
-      final amp = size.height * (0.06 + rnd.nextDouble() * 0.05);
-      for (var x = 0.0; x <= size.width; x += 6) {
-        final y = base +
-            amp * math.sin(x / size.width * math.pi * (1.4 + layer) + phase);
-        p.lineTo(x, y);
+      final amp = h * (0.05 + rnd.nextDouble() * 0.04);
+      double y(double x) =>
+          base + amp * math.sin(x / w * math.pi * (1.3 + layer * 0.8) + phase);
+      final p = Path()..moveTo(0, h);
+      for (var x = 0.0; x <= w; x += 4) {
+        p.lineTo(x, y(x));
       }
       p
-        ..lineTo(size.width, size.height)
+        ..lineTo(w, h)
         ..close();
       canvas.drawPath(p, Paint()..color = color);
+
+      // Pines on the middle hill.
+      if (layer == 1) {
+        final pine = Paint()..color = Color.lerp(color, JT.ink, 0.18)!;
+        final n = 3 + rnd.nextInt(3);
+        for (var i = 0; i < n; i++) {
+          final x = w * (0.08 + rnd.nextDouble() * 0.84);
+          final ph = h * (0.07 + rnd.nextDouble() * 0.05);
+          final pw = ph * 0.55;
+          final top = y(x) - ph;
+          canvas.drawPath(
+            Path()
+              ..moveTo(x, top)
+              ..lineTo(x - pw / 2, y(x) + 1)
+              ..lineTo(x + pw / 2, y(x) + 1)
+              ..close(),
+            pine,
+          );
+        }
+      }
     }
   }
 

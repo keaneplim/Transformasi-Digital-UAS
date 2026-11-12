@@ -46,8 +46,10 @@ Category tints (always paired with an icon): sejarah #B0683A, alam #3E8A4F, rekr
 - `SoftButton`: 54 dp pill, mint fill, ink label.
 - `CircleIconButton`: 48 dp flat disc with tooltip.
 - `SkipChip`, `ChipToggle` (category/interest chips with pop + haptic), `Pill` (meta labels), `JTCard` (22 dp radius surface), `PageDots`, `AnimatedCount`, `SectionHeader`, `Grabber`, `showJTSheet`.
-- Visuals (`visuals.dart`): `SceneImage` (photo or illustrated hill scene + doodle with the same ratio, so a real photo can simply replace it), `Waveform`, `Sparkline` (route elevation), `LeafConfetti`, `PulseRings`.
+- Visuals (`visuals.dart`): `SceneImage` (photo, or an illustrated duotone landscape in the category tint: sky, haloed sun, cloud, three hills with pines, and the place's doodle as a white stamp; same ratio, so a real photo simply replaces it), `Waveform`, `Sparkline` (route elevation), `LeafConfetti`, `PulseRings`.
 - Motion (`motion.dart`): `Pressable` (spring scale 0.96 + selection haptic), `Entrance` (delayed fade/slide/scale).
+- Place widgets (`shell/src/ui/widgets.dart`): `PlaceCard` (polaroid: inset photo + category pill, white footer with name, walk meta, mint arrow), `PlaceTile` (thumbnail with `VisitedTick`, `CategoryLabel` eyebrow in the category tint, `MatchText` name with the search match on sun yellow, `WalkMeta`, chevron or custom trailing), `StatStrip` (icons under each value).
+- Home: start card as a **trail ticket** (sun-tinted stub, perforated tear line with side notches, one doodle layer across both halves fading left, honest "Selesai ±12.54, sebelum tutup" check, stats with icons); closing time as a **sun arc** (dashed day path, sun at now, Buka/Tutup times); "Cari tempat lain" as a mint doodle card with Pako peeking from the corner.
 - Map (`lib/modules/map`, R5): `ParkMapView`, `MapPin`, `ParkMapController` (fit, move, eased glide), `PlaceMarker`, `UserDot`. Facilities appear from zoom 16.9 so they never cover POI labels.
 - Radii: 22 cards, 30 sheets, full pills. Touch targets ≥ 48 dp. Gutter 20 dp.
 
@@ -79,7 +81,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 | overlay | Approaching banner, trigger card, closing + hydration reminders, recommendation sheet | UI04, UI05, UI08, UI13 |
 | `/poi/:id` | Parallax gallery (Hero), meta, audio card, safety note, short observational text, facts | UI06 |
 | `/play/:id` | Mode dengar: dusk screen, big controls, waveform | UI07 |
-| `/home` tab Cari | Search with synonyms + typo tolerance, category chips, walking distance/ETA, navigate button | UI09 |
+| `/home` tab Cari | "Mau ke mana hari ini?" with Pako peeking at the field (thinking when nothing matches); pinned field (mint search disc that turns forest on focus) + category chips, hairline once scrolled; "Cepat temukan" quick finds (toilet, musala, saung, gua with nearest distance); results header ("Semua tempat 21" / "5 hasil untuk “gua”", terdekat dulu); rows with highlighted match and a navigate button; empty state card with suggestion chips | UI09 |
 | `/navigate` | Instruction card, route drawn on, remaining distance/time/arrival, "Mulai jalan" | UI10 |
 | `/arrived` | Large photo straddling the sun edge, short description, steps/km/closing pills, listen or next | UI11 |
 | `/scan` | QR viewfinder (animated corners, scan line), weak-signal note, codes for the caves | UI12 |
@@ -99,7 +101,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 - Out-of-scope UI: accounts, social, tickets, AR, SOS (NG01–NG07).
 
 ## 10. Visual baselines
-`test_goldens/screens_golden_test.dart` renders 28 screens/states at 390×844 (incl. two welcome-intro frames) and 10 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
+`test_goldens/screens_golden_test.dart` renders 30 screens/states at 390×844 (incl. two welcome frames, lower Home, search results) and 11 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
 ```bash
 flutter test test_goldens --update-goldens   # regenerate after a UI change
 flutter test test_goldens                    # diff against the saved baselines
