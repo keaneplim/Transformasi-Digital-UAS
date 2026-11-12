@@ -6,9 +6,9 @@
       "id": "P01",
       "name": "Gerbang Dago Pakar",
       "category": "informasi",
-      "lat": -6.858,
-      "lng": 107.633,
-      "coord_source": "DUMMY",
+      "lat": -6.858122,
+      "lng": 107.630767,
+      "coord_source": "SURVEY_EXIF",
       "radius_m": 30,
       "trigger": [
         "gps"
@@ -23,25 +23,34 @@
         "dago pakar"
       ],
       "text": "[ISI] Teks Gerbang Dago Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di sinilah perjalanan Anda dimulai. Gerbang batu berlengkung tiga ini menjadi penanda masuk kawasan hutan, dengan deretan pinus tinggi yang langsung menyambut di baliknya. Udara terasa lebih sejuk begitu Anda melangkah masuk. Sebelum berjalan lebih jauh, pastikan botol minum terisi, alas kaki nyaman, dan baterai ponsel cukup. Peta dan cerita di aplikasi ini sudah tersimpan di ponsel, jadi tetap bisa dipakai walau sinyal hilang di tengah hutan. Pilih rute yang sesuai tenaga Anda hari ini, lalu nikmati jalan setapak yang teduh menuju gua dan titik-titik menarik lainnya.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p01_gerbang.jpg"
+      ],
+      "audio": "p01.mp3",
+      "audio_seconds": 145,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (±7 km dari pusat Bandung; Dago Pakar–Maribaya; Sub-DAS Cikapundung; usulan Gubernur Mashudi 1960; peresmian 14 Jan 1985 = hari lahir Djuanda; disebut Tahura pertama di Indonesia)",
+        "S2: https://en.wikipedia.org/wiki/Djuanda_Forest_Park (ketinggian 770–1.330 mdpl)",
+        "S3: https://peraturan.bpk.go.id/Details/64892/keppres-no-3-tahun-1985 (Keppres 3/1985, 12 Jan 1985)",
+        "S4: PRD F04/A01 (getaran saat mendekati POI, konten offline)"
+      ],
+      "coord_ref": "IMG_4276.HEIC"
     },
     {
       "id": "P02",
       "name": "Monumen Ir. H. Djuanda",
       "category": "sejarah",
-      "lat": -6.855662,
-      "lng": 107.633543,
-      "coord_source": "DUMMY",
+      "lat": -6.857724,
+      "lng": 107.630033,
+      "coord_source": "ESTIMATE",
       "radius_m": 25,
       "trigger": [
         "gps"
@@ -56,25 +65,35 @@
         "juanda"
       ],
       "text": "[ISI] Teks Monumen Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Sebuah monumen berdiri di area terbuka yang dikelilingi pepohonan, menjadi salah satu titik paling mudah dikenali di awal jalur. Banyak pengunjung berhenti sejenak di sini untuk berfoto dan mengatur napas sebelum melanjutkan perjalanan. Perhatikan papan informasi di sekitarnya untuk mengenal tokoh yang namanya diabadikan menjadi nama taman hutan raya ini. Area sekitarnya relatif datar dan cocok untuk anak-anak. Saat siang hari, cari sisi yang teduh di bawah pohon, lalu dengarkan narasi singkat sambil menikmati suasana hutan kota yang tenang dan jauh dari bising jalan raya.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p02_monumen.jpg",
+        "p02_monumen_2.jpg"
+      ],
+      "audio": "p02.mp3",
+      "audio_seconds": 133,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Djuanda_Kartawidjaja (lahir Tasikmalaya 14 Jan 1911; Technische Hoogeschool te Bandoeng, insinyur sipil 1933; menteri perhubungan & pekerjaan umum; PM 1957–1959, PM terakhir; Rp50.000 emisi 2016/2022)",
+        "S2: https://id.wikipedia.org/wiki/Deklarasi_Djuanda (13 Des 1957; laut 3 mil per pulau → satu kesatuan; UNCLOS 1982; Hari Nusantara 13 Des)",
+        "S3: draft_text / pengamatan lapangan (area terbuka, relatif datar)"
+      ],
+      "coord_ref": "plaza museum–gerbang",
+      "coord_note": "[VERIFIKASI] No source places the bust; photos on Commons have no geotag. Plaza between museum and gate, to confirm on site."
     },
     {
       "id": "P03",
       "name": "Museum Ir. H. Djuanda",
       "category": "sejarah",
-      "lat": -6.855032,
-      "lng": 107.634087,
-      "coord_source": "DUMMY",
+      "lat": -6.857607,
+      "lng": 107.629174,
+      "coord_source": "OSM",
       "radius_m": 25,
       "trigger": [
         "gps"
@@ -89,25 +108,33 @@
         "juanda"
       ],
       "text": "[ISI] Teks Museum Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Bangunan museum ini menjadi tempat yang tepat untuk mengenal kawasan lebih dalam sebelum masuk ke hutan. Di dalamnya, pengunjung dapat melihat koleksi dan papan informasi tentang taman hutan raya dan tokoh yang namanya digunakan. Luangkan waktu sekitar dua puluh menit untuk berkeliling dengan santai. Ruangan yang teduh juga cocok sebagai tempat beristirahat sejenak bagi keluarga dengan anak. Periksa jam buka museum di pintu masuk, karena dapat berbeda dari jam buka kawasan. Setelah dari sini, jalur akan mulai menurun perlahan menuju kolam dan area gua.",
       "key_facts": [],
       "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "audio": "p03.mp3",
+      "audio_seconds": 128,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (Hutan Lindung Pulosari; terowongan Cikapundung 1912; Djawatan Kehutanan; Kebun Raya Rekreasi 23 Agt 1965; Taman Wisata Curug Dago 1980; Tahura 1985; 526,98 ha (2003); Dinas Kehutanan Jabar)",
+        "S2: https://id.wikipedia.org/wiki/Djuanda_Kartawidjaja (wafat 7 Nov 1963)",
+        "S3: https://peraturan.bpk.go.id/Details/64892/keppres-no-3-tahun-1985 (Keppres 3/1985)",
+        "S4: https://journal.unpar.ac.id/index.php/rekayasa/article/view/768 (UNPAR 2014: Tahura penting bagi RTH dan sumber daya air Kota Bandung)",
+        "S5: draft_text (luangkan ±20 menit; jam buka museum bisa berbeda) [VERIFIKASI isi museum]"
+      ],
+      "coord_ref": "osm:node/4553213462"
     },
     {
       "id": "P04",
       "name": "Kolam Pakar",
       "category": "alam",
-      "lat": -6.853503,
-      "lng": 107.635265,
-      "coord_source": "DUMMY",
+      "lat": -6.858287,
+      "lng": 107.630426,
+      "coord_source": "OSM",
       "radius_m": 30,
       "trigger": [
         "gps"
@@ -122,25 +149,35 @@
         "danau"
       ],
       "text": "[ISI] Teks Kolam Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Jalur di sekitar titik ini dikelilingi pohon pisang berdaun lebar dan semak hijau yang rimbun. Di dekatnya terdapat shelter beratap hijau dan papan informasi tentang aliran air dan bendungan di kawasan Bandung Utara. Suara air dan kicau burung membuat tempat ini terasa tenang, cocok untuk berhenti sebentar sebelum menuju gua. Jalan setapak di sekitar air bisa licin setelah hujan, jadi melangkahlah dengan hati-hati dan awasi anak-anak di dekat pagar. Baca papan informasi di lokasi untuk memahami peran air di kawasan hutan ini, lalu lanjutkan perjalanan mengikuti petunjuk arah.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p04_kolam.jpg",
+        "p04_kolam_2.jpg"
+      ],
+      "audio": "p04.mp3",
+      "audio_seconds": 140,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://journal.unpar.ac.id/index.php/rekayasa/article/view/768 (UNPAR LPPM 2014, Bab 3.1–3.2: dibangun & selesai 1923; kolam tandon harian, simpan siang / lepas malam; 31.272 m³; sirip 1,2 m penangkap lumpur; pipa pesat ±500 m; tinggi jatuh ±104 m; kini mirip kolam pengendapan lumpur)",
+        "S2: https://katadata.co.id/amp/ekonomi-hijau/energi-baru/66d7174ba3e7c/profil-plta-bengkok-di-bandung-pembangkit-ebt-tertua-ri-yang-berusia-satu-abad/ (PLTA Bengkok salah satu pembangkit tertua, masih beroperasi, 2024)",
+        "S3: https://mongabay.co.id/2025/09/07/seabad-listrik-tenaga-air-bengkok-di-tengah-alih-fungsi-lahan/ (alih fungsi lahan → sedimentasi Cikapundung)",
+        "S4: survey 7 Nov 2026, papan \"Bendungan PLTA — Selamatkan hutan di utara Bandung\" (assets/images/p04_papan.jpg) [VERIFIKASI lokasi, issue #23]"
+      ],
+      "coord_ref": "osm:way/98110034 (nearest path)"
     },
     {
       "id": "P05",
       "name": "Gua Jepang",
       "category": "sejarah",
-      "lat": -6.850356,
-      "lng": 107.635265,
-      "coord_source": "DUMMY",
+      "lat": -6.856573,
+      "lng": 107.632489,
+      "coord_source": "OSM",
       "radius_m": 20,
       "trigger": [
         "gps",
@@ -156,25 +193,33 @@
         "jepang"
       ],
       "text": "[ISI] Teks Gua Jepang (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Mulut gua terbuka di dinding tebing yang ditumbuhi tanaman paku dan lumut. Begitu melangkah masuk, cahaya meredup dan udara terasa lembap serta jauh lebih dingin dibanding jalur di luar. Lorong-lorongnya bercabang, sehingga sebaiknya Anda tetap bersama rombongan dan mengikuti jalur yang umum dilalui pengunjung. Bawa senter atau gunakan lampu ponsel, dan perhatikan lantai yang bisa basah. Di dalam gua sinyal lokasi biasanya melemah; jika cerita tidak muncul otomatis, pindai kode QR pada papan informasi. Dengarkan narasinya perlahan sambil membayangkan lorong-lorong ini di masa lalu.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p05_gua_jepang.jpg",
+        "p05_tugu.jpg"
+      ],
+      "audio": "p05.mp3",
+      "audio_seconds": 144,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
-      "safety_note": null,
-      "sources": []
+      "safety_note": "Bawa senter. Lorong gelap, lembap, dan lantainya bisa licin.",
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (Gua Jepang: 1942, militer Jepang, barak & perlindungan, romusha \"konon\", fungsi ruang; ±300 m dari Gua Belanda)",
+        "S2: survey 7 Nov 2026 + draft_text (pengamatan lapangan: lorong gelap, lembap, lantai licin, bercabang)"
+      ],
+      "coord_ref": "osm:node/3955116392"
     },
     {
       "id": "P06",
       "name": "Gua Belanda",
       "category": "sejarah",
-      "lat": -6.848107,
-      "lng": 107.637982,
-      "coord_source": "DUMMY",
+      "lat": -6.854162,
+      "lng": 107.637772,
+      "coord_source": "SURVEY_EXIF",
       "radius_m": 20,
       "trigger": [
         "gps",
@@ -190,25 +235,35 @@
         "belanda"
       ],
       "text": "[ISI] Teks Gua Belanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Pintu masuk gua ini berupa lengkungan batu berdinding putih kapur dengan pagar besi hijau di sisinya. Di dalam, lorong panjang menembus bukit dan terasa sejuk sepanjang hari. Langkah kaki dan suara pengunjung bergema pelan di dinding batu. Gunakan senter dan berjalanlah di sisi kiri agar arus pengunjung tetap lancar. Sepeda tidak diperbolehkan masuk. Jika sinyal lokasi melemah di dalam lorong, pindai kode QR di dekat pintu masuk untuk membuka cerita. Setelah keluar, sempatkan beristirahat di saung terdekat sebelum melanjutkan perjalanan ke penangkaran rusa.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p06_mulut_gua.jpg",
+        "p06_goa_belanda.jpg",
+        "p06_lorong.jpg"
+      ],
+      "audio": "p06.mp3",
+      "audio_seconds": 151,
       "routes": [
         "santai",
         "sedang",
         "trekking"
       ],
-      "safety_note": null,
-      "sources": []
+      "safety_note": "Bawa senter dan tetap bersama rombongan. Sepeda dilarang masuk.",
+      "sources": [
+        "S1: https://journal.unpar.ac.id/index.php/rekayasa/article/view/768 (UNPAR 2014 Bab 3.1: dibangun BEM mulai 1906 sebagai terowongan air PLTA; listrik untuk rumah Belanda di Bandung Utara; Bandung kotapraja 1906; 1918 fungsi militer + ruang sayap kiri/kanan; 547 m; tinggi 3,2 m; 15 cabang; saat Jepang masuk dipakai pusat telekomunikasi militer)",
+        "S2: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (buatan manusia, terowongan PLTA, renovasi 1918, 15 lorong, tinggi pintu 3,2 m) — tahun awal berbeda antar-sumber (1901/1906/1912), narasi memakai \"awal abad ke-20\"",
+        "S3: survey 7 Nov 2026 (assets/images/p06_mulut_gua.jpg, p06_lorong.jpg: dinding batu dipahat, pagar besi hijau, papan Goa Belanda; aturan: sisi kiri, sepeda dilarang; toilet FS06 & musala FS07 dekat gua)"
+      ],
+      "coord_ref": "IMG_4238.HEIC"
     },
     {
       "id": "P07",
       "name": "Penangkaran Rusa",
       "category": "alam",
-      "lat": -6.846309,
-      "lng": 107.639341,
-      "coord_source": "DUMMY",
+      "lat": -6.84367,
+      "lng": 107.647955,
+      "coord_source": "SURVEY_EXIF",
       "radius_m": 30,
       "trigger": [
         "gps"
@@ -223,24 +278,34 @@
         "satwa"
       ],
       "text": "[ISI] Teks Penangkaran Rusa (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di balik pagar kawat, area terbuka berumput menjadi tempat rusa merumput dan berteduh di bawah pepohonan. Jika beruntung, Anda dapat melihat beberapa rusa bergerak perlahan atau beristirahat di kejauhan. Amati dengan tenang dan jangan memberi makan sembarangan, karena makanan yang tidak sesuai dapat membuat satwa sakit. Hindari suara keras dan jangan memasukkan tangan ke dalam pagar. Papan informasi di depan kandang mengajak pengunjung menjaga satwa agar tetap lestari. Tempat ini cocok untuk mengenalkan anak-anak pada satwa, sambil beristirahat di saung yang ada di sekitarnya.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p07_rusa.jpg",
+        "p07_kandang.jpg",
+        "p07_papan.jpg"
+      ],
+      "audio": "p07.mp3",
+      "audio_seconds": 138,
       "routes": [
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: survey 7 Nov 2026, papan \"Rusa — Segalanya Berkualitas\" (assets/images/p07_rusa.jpg): Cervus timorensis; satwa asli Indonesia yang dilindungi karena rentan punah; hidup di daerah terbuka, pantai hingga dataran tinggi ±900 mdpl; tanduk disebut antler; \"Jika aku punah, punah pula kehidupan yang berkualitas\"",
+        "S2: https://en.wikipedia.org/wiki/Javan_rusa (Rusa timorensis; asli Jawa, Bali, Timor; dilindungi sejak 2018; makan rumput, daun, buah jatuh; aktif malam, juga merumput siang)",
+        "S3: https://journal.unilak.ac.id/index.php/forestra/article/download/17762/5886 (penangkaran rusa timor Tahura Djuanda sebagai lokasi studi)"
+      ],
+      "coord_ref": "IMG_4252.HEIC"
     },
     {
       "id": "P08",
       "name": "Kawasan Hutan Pinus",
       "category": "alam",
-      "lat": -6.852424,
-      "lng": 107.633,
-      "coord_source": "DUMMY",
+      "lat": -6.855966,
+      "lng": 107.635367,
+      "coord_source": "ESTIMATE",
       "radius_m": 40,
       "trigger": [
         "gps"
@@ -254,24 +319,34 @@
         "hutan"
       ],
       "text": "[ISI] Teks Kawasan Hutan Pinus (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Barisan pohon pinus tinggi menjulang dengan batang lurus dan tajuk yang menyaring cahaya matahari menjadi berkas-berkas lembut. Lantai hutan tertutup daun jarum kering yang empuk diinjak dan beraroma khas. Ini tempat yang baik untuk memperlambat langkah, menarik napas dalam, dan menikmati udara hutan yang sejuk. Banyak pengunjung beristirahat di bangku sekitar sambil minum air. Jika Anda mengikuti rute Wellness, inilah saat yang pas untuk peregangan ringan. Jaga kebersihan dengan membawa kembali sampah Anda, dan jangan menyalakan api di area yang dipenuhi daun kering ini.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p08_pinus.jpg"
+      ],
+      "audio": "p08.mp3",
+      "audio_seconds": 157,
       "routes": [
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (vegetasi dominan Pinus merkusii, kaliandra, bambu)",
+        "S2: https://en.wikipedia.org/wiki/Pinus_merkusii (tusam / pinus sumatra; satu-satunya pinus yang tumbuh alami di selatan khatulistiwa; tinggi 25–45 m)",
+        "S3: draft_text (lantai daun jarum, bangku, jangan menyalakan api, bawa kembali sampah)",
+        "S4: PRD F08 (Wellness Trail: peregangan/hidrasi)"
+      ],
+      "coord_ref": "jalur Gua Jepang–Gua Belanda",
+      "coord_note": "[VERIFIKASI] Pine stands line the path between Gua Jepang and Gua Belanda; the point is the path vertex nearest their midpoint."
     },
     {
       "id": "P09",
       "name": "Area Rumput / Piknik",
       "category": "rekreasi",
-      "lat": -6.851165,
-      "lng": 107.632094,
-      "coord_source": "DUMMY",
+      "lat": -6.843878,
+      "lng": 107.648283,
+      "coord_source": "OSM",
       "radius_m": 40,
       "trigger": [
         "gps"
@@ -286,24 +361,31 @@
         "taman"
       ],
       "text": "[ISI] Teks Area Rumput / Piknik (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Hamparan rumput terbuka ini menjadi ruang lapang di tengah rimbunnya hutan. Keluarga sering menggelar tikar, anak-anak berlarian, dan pengunjung lain sekadar duduk menikmati angin. Pilih tempat yang teduh di tepi pepohonan saat matahari terik. Area ini cocok untuk makan bekal dan beristirahat lebih lama sebelum melanjutkan perjalanan. Mohon jaga kebersihan dengan membawa pulang sampah dan tidak merusak tanaman di sekitarnya. Jika cuaca mendung, perhatikan langit dan bersiaplah kembali ke jalur, karena tanah berumput bisa cepat becek dan licin setelah turun hujan.",
       "key_facts": [],
       "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "audio": "p09.mp3",
+      "audio_seconds": 141,
       "routes": [
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (satwa: tupai Callosciurus notatus, burung kepodang, kutilang, ayam hutan; Sub-DAS Cikapundung)",
+        "S2: https://journal.unpar.ac.id/index.php/rekayasa/article/view/768 (Tahura: ruang terbuka hijau dan sumber daya air bagi Kota Bandung)",
+        "S3: draft_text (hamparan rumput, keluarga piknik, teduh di tepi pohon, sampah, becek saat hujan)",
+        "S4: PRD F08 (Wellness Trail: istirahat/hidrasi/peregangan)"
+      ],
+      "coord_ref": "osm:node/12180637296"
     },
     {
       "id": "P10",
       "name": "Titik Koleksi Flora",
       "category": "alam",
-      "lat": -6.855302,
-      "lng": 107.631641,
-      "coord_source": "DUMMY",
+      "lat": -6.857952,
+      "lng": 107.630361,
+      "coord_source": "ESTIMATE",
       "radius_m": 25,
       "trigger": [
         "gps"
@@ -318,24 +400,33 @@
         "koleksi"
       ],
       "text": "[ISI] Teks Titik Koleksi Flora (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di sepanjang potongan jalur ini, beragam tanaman tumbuh berdampingan dan sebagian diberi label nama. Perhatikan perbedaan bentuk daun, tekstur batang, dan warna bunga dari satu tanaman ke tanaman lain. Titik ini cocok untuk pelajar yang datang dalam rangka kunjungan edukasi, atau siapa pun yang ingin mengenal isi hutan lebih dekat. Berjalanlah perlahan dan baca label yang tersedia. Mohon tidak memetik daun, bunga, atau buah, agar koleksi tetap dapat dinikmati pengunjung berikutnya. Foto dan catatan sudah cukup untuk dibawa pulang sebagai kenang-kenangan dari jalur ini.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p10_flora.jpg",
+        "p10_pasang.jpg"
+      ],
+      "audio": "p10.mp3",
+      "audio_seconds": 145,
       "routes": [
         "sedang",
         "trekking"
       ],
       "safety_note": null,
-      "sources": []
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (1963: penanaman pohon eksotis ±30 ha di sekitar plaza & gua, 40 famili, 112 spesies, ±2.500 pohon; vegetasi dominan pinus, kaliandra, bambu; usulan kebun raya 1960)",
+        "S2: draft_text (tanaman berlabel, jangan memetik) [VERIFIKASI label di lokasi]"
+      ],
+      "coord_ref": "commons:File:Tahura Dago - panoramio.jpg (geotag)",
+      "coord_note": "[VERIFIKASI] Commemorative plant collection by the entrance plaza (Commons photo geotag, low precision)."
     },
     {
       "id": "P11",
       "name": "Curug Omas",
       "category": "alam",
-      "lat": -6.837316,
-      "lng": 107.64387,
-      "coord_source": "DUMMY",
+      "lat": -6.834375,
+      "lng": 107.658131,
+      "coord_source": "OSM",
       "radius_m": 40,
       "trigger": [
         "gps"
@@ -350,15 +441,25 @@
         "omas"
       ],
       "text": "[ISI] Teks Curug Omas (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Titik ini berada di ujung rute Trekking dan membutuhkan tenaga lebih untuk mencapainya. Jalur menuju ke sana lebih panjang, menanjak, dan di beberapa bagian berbatu. Suara gemuruh air akan terdengar sebelum air terjunnya terlihat. Pastikan waktu masih cukup untuk kembali ke gerbang sebelum kawasan tutup, bawa air minum yang cukup, dan kenakan alas kaki yang kuat. Jangan mendekati tepi tebing atau berenang di area arus deras. Nikmati pemandangan dari tempat yang aman, beristirahatlah secukupnya, lalu kembali melalui jalur yang sama dengan hati-hati.",
       "key_facts": [],
-      "images": [],
-      "audio": null,
-      "audio_seconds": null,
+      "images": [
+        "p11_curug_omas.jpg",
+        "p11_curug_omas_2.jpg"
+      ],
+      "audio": "p11.mp3",
+      "audio_seconds": 126,
       "routes": [
         "trekking"
       ],
-      "safety_note": null,
-      "sources": []
+      "safety_note": "Jalur menanjak dan berbatu. Jangan mendekati tepi tebing atau arus deras.",
+      "sources": [
+        "S1: https://id.wikipedia.org/wiki/Taman_Hutan_Raya_Ir._H._Djuanda (Curug Omas: tinggi ±30 m, kedalaman kolam ±10 m; pertemuan Sungai Cikawari & Cigulung → hulu Cikapundung; jembatan di atas curug; kawasan Maribaya)",
+        "S2: https://en.wikipedia.org/wiki/Djuanda_Forest_Park (30 m, pool 10 m)",
+        "S3: draft_text + safety_note (jalur menanjak/berbatu, jangan dekati tepi tebing/arus deras, waktu kembali ke gerbang)",
+        "S4: PRD F07/A03 (pengingat jam tutup)"
+      ],
+      "coord_ref": "osm:node/5655820623"
     }
   ]
 }

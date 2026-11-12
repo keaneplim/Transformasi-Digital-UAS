@@ -23,6 +23,7 @@ class Poi {
     required this.graphNode,
     required this.keywords,
     required this.text,
+    this.draftText,
     required this.keyFacts,
     required this.images,
     required this.audio,
@@ -46,6 +47,7 @@ class Poi {
         graphNode: j['graph_node']! as String,
         keywords: _strings(j['keywords']),
         text: j['text']! as String,
+        draftText: j['draft_text'] as String?,
         keyFacts: _strings(j['key_facts']),
         images: _strings(j['images']),
         audio: j['audio'] as String?,
@@ -74,6 +76,9 @@ class Poi {
   final String graphNode;
   final List<String> keywords;
   final String text;
+
+  /// Unverified, observational UI mock copy (dummy content only). Never a source of facts.
+  final String? draftText;
   final List<String> keyFacts;
   final List<String> images;
 
@@ -86,6 +91,9 @@ class Poi {
 
   bool get hasQr => triggers.contains('qr');
   bool get isPlaceholderText => text.startsWith('[ISI]');
+
+  /// Text for the UI: the real text, or the draft while the real text is still a placeholder.
+  String get displayText => isPlaceholderText ? (draftText ?? '') : text;
 }
 
 class Facility {
@@ -97,6 +105,7 @@ class Facility {
     required this.isDummyCoordinate,
     required this.graphNode,
     required this.keywords,
+    this.images = const [],
   });
 
   factory Facility.fromJson(Map<String, Object?> j) => Facility(
@@ -107,6 +116,7 @@ class Facility {
         isDummyCoordinate: j['coord_source'] == 'DUMMY',
         graphNode: j['graph_node']! as String,
         keywords: _strings(j['keywords']),
+        images: _strings(j['images']),
       );
 
   final String id;
@@ -118,6 +128,7 @@ class Facility {
   final bool isDummyCoordinate;
   final String graphNode;
   final List<String> keywords;
+  final List<String> images;
 }
 
 class TrailRoute {

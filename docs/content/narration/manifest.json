@@ -1,0 +1,112 @@
+{
+  "P05": {
+    "key": "0305f3fd113526ed",
+    "file": "p05.mp3",
+    "seconds": 144.0,
+    "words": 256,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "calm, hushed storyteller, slightly mysterious",
+    "generated": "2026-11-12"
+  },
+  "P01": {
+    "key": "9fe79f67c40ed217",
+    "file": "p01.mp3",
+    "seconds": 144.9,
+    "words": 267,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "warm, welcoming, unhurried storyteller",
+    "generated": "2026-11-12"
+  },
+  "P02": {
+    "key": "88f6817ece1000d5",
+    "file": "p02.mp3",
+    "seconds": 133.1,
+    "words": 262,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "warm, proud, reflective storyteller",
+    "generated": "2026-11-12"
+  },
+  "P03": {
+    "key": "469191c5e8eeb081",
+    "file": "p03.mp3",
+    "seconds": 128.4,
+    "words": 273,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "friendly, curious guide, gently enthusiastic",
+    "generated": "2026-11-12"
+  },
+  "P04": {
+    "key": "2905eb014ab0d49e",
+    "file": "p04.mp3",
+    "seconds": 139.6,
+    "words": 274,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "calm, thoughtful, gentle wonder",
+    "generated": "2026-11-12"
+  },
+  "P06": {
+    "key": "2643abdc08cdd9c8",
+    "file": "p06.mp3",
+    "seconds": 150.7,
+    "words": 260,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "calm storyteller, intrigued, cool and echoing",
+    "generated": "2026-11-12"
+  },
+  "P07": {
+    "key": "c49b6277da74fbdd",
+    "file": "p07.mp3",
+    "seconds": 137.8,
+    "words": 256,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "gentle, soft-spoken, warm nature documentary",
+    "generated": "2026-11-12"
+  },
+  "P08": {
+    "key": "e88d8545c6013756",
+    "file": "p08.mp3",
+    "seconds": 157.0,
+    "words": 247,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "slow, soothing, calm and mindful",
+    "generated": "2026-11-12"
+  },
+  "P09": {
+    "key": "98ee6da10778cbca",
+    "file": "p09.mp3",
+    "seconds": 141.0,
+    "words": 261,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "cheerful, relaxed, friendly",
+    "generated": "2026-11-12"
+  },
+  "P10": {
+    "key": "ba404dade41e7cba",
+    "file": "p10.mp3",
+    "seconds": 145.4,
+    "words": 253,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "curious, warm teacher, gently playful",
+    "generated": "2026-11-12"
+  },
+  "P11": {
+    "key": "f1138468244becba",
+    "file": "p11.mp3",
+    "seconds": 126.3,
+    "words": 256,
+    "model": "gemini-3.8-flash-tts",
+    "voice": "Sulafat",
+    "style": "warm, steady, a little awe-struck, clear on safety",
+    "generated": "2026-11-12"
+  }
+}

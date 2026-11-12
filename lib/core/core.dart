@@ -9,4 +9,5 @@ export 'events/event_bus.dart';
 export 'events/events.dart';
 export 'geo/geo.dart';
 export 'log/app_log.dart';
+export 'prefs/key_value_store.dart';
 export 'result/result.dart';

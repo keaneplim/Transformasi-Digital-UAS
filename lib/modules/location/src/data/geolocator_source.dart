@@ -1,108 +1,115 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:jelajah_taman/core/core.dart';
-import 'package:jelajah_taman/modules/location/src/domain/location_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class GeolocatorSource implements LocationService {
-  final Clock _clock;
-  StreamSubscription<Position>? _positionStream;
-  Timer? _noFixTimer;
-  
-  final _fixController = StreamController<LocationFix>.broadcast();
-  final _qualityController = StreamController<GpsQuality>.broadcast();
-  
-  LocationFix? _lastFix;
-  GpsQuality _lastQuality = GpsQuality.none;
+import '../domain/location_contracts.dart';
 
-  GeolocatorSource(this._clock);
+/// GPS fixes from `geolocator` (F01): high accuracy, distance filter 0 (D14), and an Android
+/// foreground service with an ongoing notification while a session runs.
+class GeolocatorLocationSource implements LocationSource {
+  const GeolocatorLocationSource();
 
   @override
-  Stream<LocationFix> get fixes => _fixController.stream;
-
-  @override
-  Stream<GpsQuality> get quality => _qualityController.stream;
-
-  @override
-  LocationFix? get last => _lastFix;
-
-  @override
-  Future<void> startSession() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _updateQuality(GpsQuality.none);
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-      _updateQuality(GpsQuality.none);
-      return;
-    }
-
-    late LocationSettings locationSettings;
-    if (Platform.isAndroid) {
-      locationSettings = AndroidSettings(
-        accuracy: LocationAccuracy.high,
+  Stream<LocationFix> fixes(
+      {required Duration interval, bool background = false}) {
+    final LocationSettings settings;
+    if (!kIsWeb && Platform.isAndroid) {
+      settings = AndroidSettings(
+        accuracy: LocationAccuracy.best,
         distanceFilter: 0,
-        intervalDuration: const Duration(seconds: 3),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText: "Jelajah Taman sedang memandu Anda",
-          notificationTitle: "Jelajah Taman Aktif",
-          enableWakeLock: true,
-        ),
+        intervalDuration: interval,
+        foregroundNotificationConfig: background
+            ? const ForegroundNotificationConfig(
+                notificationTitle: 'Jelajah Taman',
+                notificationText: 'Jelajah Taman sedang memandu Anda',
+                enableWakeLock: true,
+                setOngoing: true,
+              )
+            : null,
+      );
+    } else if (!kIsWeb && Platform.isIOS) {
+      settings = AppleSettings(
+        accuracy: LocationAccuracy.best,
+        distanceFilter: 0,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+        allowBackgroundLocationUpdates: false,
+        showBackgroundLocationIndicator: background,
       );
     } else {
-      locationSettings = const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
-      );
+      settings = const LocationSettings(
+          accuracy: LocationAccuracy.best, distanceFilter: 0);
     }
+    return Geolocator.getPositionStream(locationSettings: settings).map(
+      (p) => LocationFix(
+        position: GeoPoint(p.latitude, p.longitude),
+        accuracyM: p.accuracy,
+        at: p.timestamp,
+        speedMps: p.speed >= 0 ? p.speed : null,
+        headingDeg: p.heading >= 0 && p.speed > 0.6 ? p.heading : null,
+      ),
+    );
+  }
+}
 
-    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
-      final fix = LocationFix(
-        position: GeoPoint(position.latitude, position.longitude),
-        accuracyM: position.accuracy,
-        speedMps: position.speed,
-        headingDeg: position.heading,
-        at: _clock.now(),
-      );
-      
-      _lastFix = fix;
-      _fixController.add(fix);
-      _resetNoFixTimer();
+class GeolocatorPermissions implements LocationPermissions {
+  const GeolocatorPermissions();
 
-      // D08: Weak GPS logic
-      if (fix.accuracyM > 30.0) {
-        _updateQuality(GpsQuality.weak);
-      } else {
-        _updateQuality(GpsQuality.good);
-      }
-    });
-
-    _resetNoFixTimer();
+  @override
+  Future<LocationAccess> check() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return LocationAccess.serviceOff;
+    }
+    return _map(await Geolocator.checkPermission());
   }
 
   @override
-  Future<void> stopSession() async {
-    await _positionStream?.cancel();
-    _noFixTimer?.cancel();
-    _positionStream = null;
-    _updateQuality(GpsQuality.none);
+  Future<LocationAccess> request() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return LocationAccess.serviceOff;
+    }
+    var p = await Geolocator.checkPermission();
+    if (p == LocationPermission.denied) {
+      p = await Geolocator.requestPermission();
+    }
+    return _map(p);
   }
 
-  void _resetNoFixTimer() {
-    _noFixTimer?.cancel();
-    _noFixTimer = Timer(const Duration(seconds: 10), () {
-      _updateQuality(GpsQuality.none);
-    });
-  }
+  @override
+  Future<void> openSettings() => Geolocator.openAppSettings();
 
-  void _updateQuality(GpsQuality q) {
-    if (_lastQuality != q) {
-      _lastQuality = q;
-      _qualityController.add(q);
+  @override
+  Future<void> openLocationSettings() => Geolocator.openLocationSettings();
+
+  static LocationAccess _map(LocationPermission p) => switch (p) {
+        LocationPermission.always ||
+        LocationPermission.whileInUse =>
+          LocationAccess.granted,
+        LocationPermission.deniedForever => LocationAccess.deniedForever,
+        _ => LocationAccess.denied,
+      };
+}
+
+/// Magnetic compass (`flutter_compass`). Emits nothing on devices without a sensor.
+class CompassHeadingSource implements HeadingSource {
+  const CompassHeadingSource();
+
+  @override
+  Stream<double?> headings() {
+    if (kIsWeb) {
+      return const Stream.empty(); // no web implementation (browser preview)
+    }
+    try {
+      final events = FlutterCompass.events;
+      if (events == null) return const Stream.empty();
+      return events.map((e) => e.heading);
+    } on Object catch (e) {
+      AppLog.info('compass unavailable: $e');
+      return const Stream.empty();
     }
   }
 }

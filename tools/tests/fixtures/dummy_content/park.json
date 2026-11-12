@@ -1,0 +1,32 @@
+{
+  "dummy": true,
+  "hours": {
+    "open": "08:00",
+    "close": "16:00",
+    "verified": false
+  },
+  "gate_poi": "P01",
+  "params": {
+    "gps_interval_s": 3,
+    "gps_weak_accuracy_m": 30,
+    "gps_weak_banner_after_s": 60,
+    "approach_margin_m": 30,
+    "approach_exit_margin_m": 40,
+    "debounce_readings": 2,
+    "retrigger_exit_margin_m": 15,
+    "cooldown_min": 10,
+    "arrival_m": 15,
+    "offroute_m": 30,
+    "offroute_readings": 2,
+    "walk_speed_m_per_min": 50,
+    "ascent_min_per_10m": 1,
+    "closing_buffer_min": 15,
+    "hydration_default_min": 45,
+    "rec_weights": {
+      "dist": 0.5,
+      "interest": 0.25,
+      "route": 0.15,
+      "difficulty": 0.1
+    }
+  }
+}

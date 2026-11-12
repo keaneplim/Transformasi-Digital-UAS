@@ -19,7 +19,8 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 import gpx_to_graph as g2g  # noqa: E402
 
-CONTENT = ROOT / "assets" / "content"
+# Frozen copy of the 2026-11-06 DUMMY content: the synthetic walks need its clean, sparse graph.
+CONTENT = ROOT / "tools" / "tests" / "fixtures" / "dummy_content"
 EARTH_R = 6371000.0
 
 
@@ -241,7 +242,7 @@ class GpxToGraphTest(unittest.TestCase):
 
     def test_cli_writes_graph_and_preview(self):
         out, preview = self.tmp / "graph.json", self.tmp / "preview.geojson"
-        code = g2g.main([str(self.gpx), "--out", str(out), "--geojson", str(preview)])
+        code = g2g.main([str(self.gpx), "--content", str(CONTENT), "--out", str(out), "--geojson", str(preview)])
         self.assertEqual(code, 0)
         graph = json.loads(out.read_text(encoding="utf-8"))
         self.assertFalse(graph["dummy"])

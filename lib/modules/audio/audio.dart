@@ -9,3 +9,4 @@ library;
 
 export 'src/audio_providers.dart';
 export 'src/domain/audio_contracts.dart';
+export 'src/domain/narration_player.dart';

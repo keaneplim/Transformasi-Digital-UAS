@@ -16,6 +16,10 @@ ROOT = Path(__file__).resolve().parent.parent
 CONTENT = ROOT / "assets" / "content"
 IMAGES = ROOT / "assets" / "images"
 AUDIO = ROOT / "assets" / "audio"
+MAP = ROOT / "assets" / "map"
+
+# where a coordinate came from (tools/resolve_coords.py); ESTIMATE = no direct source yet
+COORD_SOURCES = {"SURVEY_EXIF", "OSM", "GMAPS", "ESTIMATE", "DUMMY"}
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -56,6 +60,31 @@ if dupes:
 route_ids = {r["id"] for r in routes}
 poi_ids = {p["id"] for p in pois}
 
+def check_coord(item_id: str, item: dict):
+    src = item.get("coord_source")
+    if src not in COORD_SOURCES:
+        errors.append(f"{item_id}: coord_source '{src}' not one of {sorted(COORD_SOURCES)}")
+    elif src == "DUMMY":
+        warnings.append(f"{item_id}: dummy coordinates")
+    elif src == "ESTIMATE":
+        warnings.append(f"{item_id}: estimated coordinates [VERIFIKASI] ({item.get('coord_note', '')})")
+    elif not item.get("coord_ref"):
+        errors.append(f"{item_id}: coord_source {src} but no coord_ref")
+
+
+credits_f = {}
+if (CONTENT / "image_credits.json").exists():
+    credits_f = load("image_credits.json").get("images", {})
+
+
+def check_images(item_id: str, item: dict):
+    for img in item.get("images", []):
+        if not (IMAGES / img).exists():
+            errors.append(f"{item_id}: image file missing assets/images/{img}")
+        elif img not in credits_f:
+            errors.append(f"{item_id}: no credit for {img} in image_credits.json")
+
+
 # ---- POIs --------------------------------------------------------------------------------
 CATEGORIES = {"informasi", "sejarah", "alam", "rekreasi"}
 for p in pois:
@@ -74,11 +103,14 @@ for p in pois:
     for r in p.get("routes", []):
         if r not in route_ids:
             errors.append(f"{pid}: unknown route '{r}'")
-    if p.get("coord_source") == "DUMMY":
-        warnings.append(f"{pid}: dummy coordinates")
+    check_coord(pid, p)
     text = p.get("text") or ""
     if text.startswith("[ISI]"):
         warnings.append(f"{pid}: text placeholder")
+        if p.get("draft_text"):
+            if not (pois_f.get("dummy") is True):
+                errors.append(f"{pid}: draft_text (unverified UI mock copy) is only allowed in dummy content")
+            warnings.append(f"{pid}: showing unverified draft_text (observational mock copy)")
     else:
         words = len(text.split())
         if not 80 <= words <= 150:
@@ -87,12 +119,15 @@ for p in pois:
             errors.append(f"{pid}: real text but no 'sources' (PRD §8.2: no fact without a source)")
     if not p.get("images"):
         warnings.append(f"{pid}: no images")
-    for img in p.get("images", []):
-        if not (IMAGES / img).exists():
-            errors.append(f"{pid}: image file missing assets/images/{img}")
+    check_images(pid, p)
     if p.get("audio"):
         if not (AUDIO / p["audio"]).exists():
             errors.append(f"{pid}: audio file missing assets/audio/{p['audio']}")
+        secs = p.get("audio_seconds")
+        if not isinstance(secs, int) or not 120 <= secs <= 180:
+            errors.append(f"{pid}: audio_seconds {secs} (narration must be 120–180 s, PRD F03)")
+        if not p.get("sources"):
+            errors.append(f"{pid}: narration but no 'sources' (PRD §8.2: no fact without a source)")
     else:
         warnings.append(f"{pid}: no audio (TTS fallback)")
 
@@ -103,6 +138,8 @@ for f in facilities:
         errors.append(f"{f.get('id')}: unknown facility type '{f.get('type')}'")
     if f.get("graph_node") not in nodes:
         errors.append(f"{f.get('id')}: graph_node not in trail_graph")
+    check_coord(f.get("id"), f)
+    check_images(f.get("id"), f)
 
 # ---- routes ------------------------------------------------------------------------------
 for r in routes:
@@ -141,6 +178,22 @@ if gate_node in adj:
     unreachable = sorted(set(nodes) - seen)
     if unreachable:
         errors.append(f"graph: nodes unreachable from gate: {unreachable}")
+
+# ---- basemap -----------------------------------------------------------------------------
+basemap_path = MAP / "basemap.json"
+if not basemap_path.exists():
+    errors.append("assets/map/basemap.json missing (python3 tools/osm_to_basemap.py)")
+else:
+    bm = json.loads(basemap_path.read_text(encoding="utf-8"))
+    s_, w_, n_, e_ = bm["bounds"]
+    for item in pois + facilities:
+        if not (s_ <= item["lat"] <= n_ and w_ <= item["lng"] <= e_):
+            errors.append(f"{item['id']}: outside the basemap bounds")
+    hill = (bm.get("hillshade") or {}).get("file")
+    if hill and not (MAP / hill).exists():
+        errors.append(f"assets/map/{hill} missing")
+    if not any("OpenStreetMap" in x for x in bm.get("sources", [])):
+        errors.append("basemap.json: sources must credit OpenStreetMap (ODbL)")
 
 # ---- report ------------------------------------------------------------------------------
 for w in warnings:

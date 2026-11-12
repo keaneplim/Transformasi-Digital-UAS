@@ -6,23 +6,27 @@
       "id": "FS01",
       "type": "toilet",
       "name": "Toilet dekat Gerbang",
-      "lat": -6.85818,
-      "lng": 107.633272,
-      "coord_source": "DUMMY",
+      "lat": -6.857295,
+      "lng": 107.632737,
+      "coord_source": "SURVEY_EXIF",
       "graph_node": "N_FS01",
       "keywords": [
         "toilet",
         "wc",
         "kamar mandi"
-      ]
+      ],
+      "images": [
+        "fs01_toilet.jpg"
+      ],
+      "coord_ref": "IMG_4275.HEIC"
     },
     {
       "id": "FS02",
       "type": "musala",
       "name": "Musala",
-      "lat": -6.856111,
-      "lng": 107.632638,
-      "coord_source": "DUMMY",
+      "lat": -6.857456,
+      "lng": 107.629205,
+      "coord_source": "ESTIMATE",
       "graph_node": "N_FS02",
       "keywords": [
         "musala",
@@ -30,15 +34,18 @@
         "masjid",
         "salat",
         "sholat"
-      ]
+      ],
+      "images": [],
+      "coord_ref": "places:ChIJ_ZoVtyXnaC4RvRZdbVftT00 (BP (UPTD) Tahura Ir.H.Djuanda)",
+      "coord_note": "[VERIFIKASI] No musala mapped inside the park; placed at the park office (BP UPTD Tahura)."
     },
     {
       "id": "FS03",
       "type": "warung",
       "name": "Warung dekat Kolam",
-      "lat": -6.853279,
-      "lng": 107.635446,
-      "coord_source": "DUMMY",
+      "lat": -6.85811,
+      "lng": 107.630884,
+      "coord_source": "OSM",
       "graph_node": "N_FS03",
       "keywords": [
         "warung",
@@ -46,36 +53,141 @@
         "makan",
         "minum",
         "jajan"
-      ]
+      ],
+      "images": [],
+      "coord_ref": "osm:node/9840550617"
     },
     {
       "id": "FS04",
       "type": "pos_petugas",
       "name": "Pos Petugas",
-      "lat": -6.848332,
-      "lng": 107.638163,
-      "coord_source": "DUMMY",
+      "lat": -6.85717,
+      "lng": 107.633048,
+      "coord_source": "GMAPS",
       "graph_node": "N_FS04",
       "keywords": [
         "pos",
         "petugas",
         "informasi",
         "bantuan"
-      ]
+      ],
+      "images": [],
+      "coord_ref": "places:ChIJbVV2hH3naC4RLd2CpXbKfJU (Pintu Pos 2 Tahura Djuanda)"
     },
     {
       "id": "FS05",
       "type": "istirahat",
       "name": "Bangku Hutan Pinus",
-      "lat": -6.852244,
-      "lng": 107.633181,
-      "coord_source": "DUMMY",
+      "lat": -6.855846,
+      "lng": 107.635467,
+      "coord_source": "ESTIMATE",
       "graph_node": "N_FS05",
       "keywords": [
         "istirahat",
         "bangku",
         "duduk"
-      ]
+      ],
+      "images": [],
+      "coord_ref": "±20 m dari P08",
+      "coord_note": "[VERIFIKASI] Bench in the pine stand, a few metres from P08."
+    },
+    {
+      "id": "FS06",
+      "type": "toilet",
+      "name": "Toilet dekat Gua Belanda",
+      "lat": -6.854742,
+      "lng": 107.637558,
+      "coord_source": "SURVEY_EXIF",
+      "graph_node": "N_FS06",
+      "keywords": [
+        "toilet",
+        "wc",
+        "kamar mandi"
+      ],
+      "images": [
+        "fs06_toilet.jpg"
+      ],
+      "coord_ref": "IMG_4266.HEIC"
+    },
+    {
+      "id": "FS07",
+      "type": "musala",
+      "name": "Musala dekat Gua Belanda",
+      "lat": -6.855075,
+      "lng": 107.637297,
+      "coord_source": "SURVEY_EXIF",
+      "graph_node": "N_FS07",
+      "keywords": [
+        "musala",
+        "mushola",
+        "masjid",
+        "salat",
+        "sholat"
+      ],
+      "images": [
+        "fs07_musala.jpg"
+      ],
+      "coord_ref": "IMG_4267.HEIC"
+    },
+    {
+      "id": "FS08",
+      "type": "istirahat",
+      "name": "Saung Penangkaran Rusa",
+      "lat": -6.844505,
+      "lng": 107.646378,
+      "coord_source": "SURVEY_EXIF",
+      "graph_node": "N_FS08",
+      "keywords": [
+        "istirahat",
+        "saung",
+        "gazebo",
+        "duduk",
+        "teduh"
+      ],
+      "images": [
+        "fs08_saung.jpg"
+      ],
+      "coord_ref": "IMG_4262.HEIC"
+    },
+    {
+      "id": "FS09",
+      "type": "istirahat",
+      "name": "Saung Jalur Gua",
+      "lat": -6.849067,
+      "lng": 107.643412,
+      "coord_source": "SURVEY_EXIF",
+      "graph_node": "N_FS09",
+      "keywords": [
+        "istirahat",
+        "saung",
+        "gazebo",
+        "duduk",
+        "teduh"
+      ],
+      "images": [
+        "fs09_saung.jpg"
+      ],
+      "coord_ref": "IMG_4264.HEIC"
+    },
+    {
+      "id": "FS10",
+      "type": "istirahat",
+      "name": "Gazebo Jalur Kolam",
+      "lat": -6.855725,
+      "lng": 107.635178,
+      "coord_source": "SURVEY_EXIF",
+      "graph_node": "N_FS10",
+      "keywords": [
+        "istirahat",
+        "gazebo",
+        "saung",
+        "duduk",
+        "foto"
+      ],
+      "images": [
+        "fs10_gazebo.jpg"
+      ],
+      "coord_ref": "IMG_4274.HEIC"
     }
   ]
 }
