@@ -284,7 +284,9 @@ class _DoodlePainter extends CustomPainter {
       old.doodle != doodle || old.color != color || old.stroke != stroke;
 }
 
-/// A drifting tiled pattern of doodles (seeded, so it never jumps between rebuilds).
+/// A tiled pattern of doodles drifting left to right forever (seeded, so it never jumps
+/// between rebuilds). Doodles are chosen by their world column, and one loop moves exactly
+/// one 8-column period, so the end of a loop looks identical to its start: no reset.
 class DoodlePattern extends StatefulWidget {
   const DoodlePattern({
     super.key,
@@ -309,8 +311,15 @@ class DoodlePattern extends StatefulWidget {
 
 class _DoodlePatternState extends State<DoodlePattern>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 28));
+  /// Drift speed in logical pixels per second.
+  static const _speed = 7.0;
+
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: Duration(
+        milliseconds:
+            (_PatternPainter.period * widget.cell / _speed * 1000).round()),
+  );
 
   @override
   void didChangeDependencies() {
@@ -361,6 +370,9 @@ class _PatternPainter extends CustomPainter {
   final double iconSize;
   final int seed;
 
+  /// Columns/rows after which the doodle layout repeats.
+  static const period = 8;
+
   static final _paths = {for (final d in Doodle.values) d: doodlePath(d)};
 
   @override
@@ -371,25 +383,23 @@ class _PatternPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..color = color;
-    // Diagonal drift: one full cell per loop, so the loop is seamless.
-    final dx = -t * cell * 2;
-    final dy = -t * cell;
+    // Horizontal drift by exactly one pattern period per loop (seamless wrap).
+    final shift = t * period * cell;
     final cols = (size.width / cell).ceil() + 3;
-    final rows = (size.height / cell).ceil() + 3;
+    final rows = (size.height / cell).ceil() + 2;
+    final first = (-shift / cell).floor() - 2;
     canvas.save();
     canvas.clipRect(Offset.zero & size);
     for (var r = -1; r < rows; r++) {
-      for (var c = -2; c < cols; c++) {
-        final gr = ((r % 8) + 8) % 8;
-        final gc = ((c % 8) + 8) % 8;
+      for (var c = first; c < first + cols; c++) {
+        final gr = ((r % period) + period) % period;
+        final gc = ((c % period) + period) % period;
         final rnd = math.Random(seed * 1000 + gr * 31 + gc);
         final d = Doodle.values[rnd.nextInt(Doodle.values.length)];
         final jitter =
             Offset(rnd.nextDouble() * 14 - 7, rnd.nextDouble() * 14 - 7);
         final offsetRow = (r.isOdd ? cell / 2 : 0);
-        final pos = Offset(c * cell + offsetRow, r * cell) +
-            jitter +
-            Offset(dx % (cell * 2), dy % cell);
+        final pos = Offset(c * cell + offsetRow + shift, r * cell) + jitter;
         final scale = iconSize / 24 * (0.85 + rnd.nextDouble() * 0.35);
         canvas.save();
         canvas.translate(pos.dx, pos.dy);

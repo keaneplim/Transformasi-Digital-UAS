@@ -8,7 +8,7 @@
 References: `tmp/designs/` (Sliq: cream page, yellow header, wavy cloud edge, doodle pattern, oversized headline with one coloured word) and the Ahead screenshots (soft cards, floating pill navigation + round action button, mascot reacting to state).
 
 Signature motifs:
-1. **Sun header + canopy edge**: a yellow band (`SunHeader`) carrying a slowly drifting doodle pattern, ending in a white-rimmed scalloped edge (`CanopyEdge`) that breathes gently.
+1. **Sun header + canopy edge**: a yellow band (`SunHeader`) carrying a doodle pattern that drifts left to right in a seamless loop (no reset), ending in a white-rimmed scalloped edge (`CanopyEdge`) that breathes gently.
 2. **Pako**: a pinecone mascot (from the Hutan Pinus) with a leaf sprout. It changes pose with the situation (see §5).
 3. **Hand-drawn doodles**: 16 line icons on a 24-grid (pine, cave, deer, leaf, compass, headphones, footprints, sun, mountain, butterfly, bench, drop, map, sparkle, mushroom, binoculars), used as pattern, empty-state art and illustrated photo placeholders.
 4. **Illustrated park map**: procedural contour hills, pine doodles, white-cased dashed footpaths, bubbly markers (no tiles until T05).
@@ -55,7 +55,7 @@ Category tints (always paired with an icon): sejarah #B0683A, alam #3E8A4F, rekr
 CustomPainter vector with random blinking, breathing loop, elastic pop on pose change and eyes that can follow a point. Poses and where they appear:
 | Pose | Used on |
 |---|---|
-| `wave` | splash, onboarding 1, home header |
+| `wave` | welcome intro (large, then glides into the onboarding header), returning-visitor splash, home header |
 | `curious` | trigger card, search header |
 | `navigate` (holds a map) | onboarding permissions, recommendation sheet |
 | `listen` (headphones, music notes) | Mode dengar while playing |
@@ -66,13 +66,13 @@ CustomPainter vector with random blinking, breathing loop, elastic pop on pose c
 | `idle` | elsewhere |
 
 ## 6. Motion
-Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagger 40 ms, emphasized ease-out curves, elastic "pop" for markers and badges. Page transitions: fade-through, slide (detail, settings) and rise (Mode dengar, QR, arrived, summary). Ambient loops: doodle drift (28 s), canopy breathing, Pako breathing/blink, waveform breathing, geofence pulse, route draw-on. `MediaQuery.disableAnimations` → loops stop, entrances skip.
+Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagger 40 ms, emphasized ease-out curves, elastic "pop" for markers and badges. Page transitions: fade-through, slide (detail, settings) and rise (Mode dengar, QR, arrived, summary). Ambient loops: doodle drift (left to right, 7 dp/s, wraps after one 8-column period so it never jumps), canopy breathing, Pako breathing/blink, waveform breathing, geofence pulse, route draw-on. `MediaQuery.disableAnimations` → loops stop, entrances skip.
 
 ## 7. Screens (route → content)
 | Route | Screen | PRD |
 |---|---|---|
-| `/` | Splash: rising sun, Pako wave, letter-by-letter wordmark | — |
-| `/welcome` | Onboarding (3 pages, sun header, parallax art); page 3 = permissions | UI01 |
+| `/` | Returning visitors: rising sun, Pako wave, letter-by-letter wordmark. First run: plain sun-yellow hand-off to `/welcome` | — |
+| `/welcome` | Welcome screen that **waits for the visitor**: full-screen sun band, large Pako, doodle burst that keeps floating with parallax, typed speech bubble "Halo, saya Pako!", greeting "Sampurasun! Selamat datang di Jelajah Taman", button "Ayo, mulai". No hint text. Pako's eyes follow the finger; tapping Pako makes him cheer, hop and say a new line. "Ayo, mulai" (or a tap anywhere) folds the band into the header, Pako hops and glides into page 1, then the pages rise in. Pages: "Tarik napas, mulai melangkah" (photo cards fan out beside Pako), "Biarkan hutan bercerita", permissions "Siapkan diri, kita berangkat" (band shrinks for room). Text is centred in the space below the band; "Lewati"/"Nanti saja" share one slot under the button | UI01 |
 | `/setup` | Interests (2 steps, progress) → route cards with elevation sparkline + "selesai sebelum 16.00" check | UI01 |
 | `/home` tab Beranda | Greeting + status pills, start/active-session card, time-to-close bar, route highlights carousel, nearest facilities | UI02 |
 | `/home` tab Peta | Illustrated map, nearest strip, marker preview (Navigasi / Detail / Saya di sini) | UI03 |
@@ -87,7 +87,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 | `/settings` | Guide, health, display, privacy; collapsed "Mode demo" panel | UI15 |
 
 ## 8. Content & Copy
-- Bahasa Indonesia, warm-formal, "Anda". Visitor-facing only: **no radius, GPS accuracy, coordinates, DUMMY labels or debug text in the UI.** The one exception is the collapsed "Mode demo" panel in Settings.
+- Bahasa Indonesia, warm-formal, "Anda". Onboarding copy sells the experience (air, pines, stories, walking), not the feature list or how it works. Visitor-facing only: **no radius, GPS accuracy, coordinates, DUMMY labels or debug text in the UI.** The one exception is the collapsed "Mode demo" panel in Settings.
 - Place text: until the survey/manager text exists (`[ISI]`), POIs show `draft_text`: observational copy without historical claims (PRD §8.2). Never invent history.
 - Photos: survey photos 7 Nov 2026 (`assets/images/`, metadata stripped); credit line "Foto: dokumentasi tim Jelajah Taman". POIs without a photo use the illustrated placeholder.
 - Number formatting: 1.722 langkah · 1,2 km · 16.00 · 37 mnt.
@@ -99,7 +99,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 - Out-of-scope UI: accounts, social, tickets, AR, SOS (NG01–NG07).
 
 ## 10. Visual baselines
-`test_goldens/screens_golden_test.dart` renders 26 screens/states at 390×844 and 7 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
+`test_goldens/screens_golden_test.dart` renders 28 screens/states at 390×844 (incl. two welcome-intro frames) and 10 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
 ```bash
 flutter test test_goldens --update-goldens   # regenerate after a UI change
 flutter test test_goldens                    # diff against the saved baselines

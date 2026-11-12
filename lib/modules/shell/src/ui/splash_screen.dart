@@ -7,7 +7,9 @@ import 'package:jelajah_taman/core/ui/ui.dart';
 
 import '../demo/demo_controller.dart';
 
-/// Splash: the sun rises, Pako pops up and waves, the wordmark types itself in.
+/// Splash for returning visitors: the sun rises, Pako pops up and waves, the wordmark types
+/// itself in. First-time visitors skip it: a plain sun-yellow frame hands straight over to
+/// the onboarding welcome, which opens on the same yellow.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,10 +23,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       vsync: this, duration: const Duration(milliseconds: 1500))
     ..forward();
   Timer? _go;
+  late final bool _firstRun = !ref.read(demoProvider).onboarded;
 
   @override
   void initState() {
     super.initState();
+    if (_firstRun) {
+      _go = Timer(Duration.zero, () {
+        if (mounted) context.go('/welcome');
+      });
+      return;
+    }
     _go = Timer(const Duration(milliseconds: 2300), () {
       if (!mounted) return;
       final onboarded = ref.read(demoProvider).onboarded;
@@ -42,6 +51,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     const word = 'jelajah taman';
+    if (_firstRun) return const Scaffold(backgroundColor: JT.sun);
     return Scaffold(
       backgroundColor: JT.cream,
       body: AnimatedBuilder(

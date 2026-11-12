@@ -20,16 +20,30 @@ void main() {
       ),
     );
     // The UI has looping ambient motion (mascot, doodles), so pump fixed frames, never settle.
-    await tester.pump(const Duration(milliseconds: 2400));
-    await tester.pump(const Duration(milliseconds: 900));
+    // First run: a sun-yellow hand-off, then the welcome waits for the visitor.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+    expect(find.textContaining('Jelajah Taman', findRichText: true),
+        findsOneWidget);
+    // Page 1 is already laid out underneath, but hidden and not reachable yet.
     expect(
-        find.textContaining('lebih dekat', findRichText: true), findsOneWidget);
+        find
+            .textContaining('mulai melangkah', findRichText: true)
+            .hitTestable(),
+        findsNothing);
+    await tester.tap(find.text('Ayo, mulai'));
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+    expect(find.textContaining('mulai melangkah', findRichText: true),
+        findsOneWidget);
 
     await tester.tap(find.text('Lewati'));
     await tester.pump(const Duration(milliseconds: 900));
     await tester.pump(const Duration(milliseconds: 900));
-    expect(
-        find.textContaining('berangkat', findRichText: true), findsOneWidget);
+    expect(find.textContaining('kita berangkat', findRichText: true),
+        findsOneWidget);
 
     await tester.tap(find.text('Nanti saja'));
     await tester.pump(const Duration(milliseconds: 900));

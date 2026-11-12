@@ -87,7 +87,7 @@ Future<void> _precache(WidgetTester tester) async {
 }
 
 void _shot(String name, Future<void> Function(_Harness h) setup,
-    {bool splash = false, Size size = _phone}) {
+    {int? introMs, int? foldMs, bool returning = false, Size size = _phone}) {
   testWidgets(name, (tester) async {
     tester.view.physicalSize = size * _dpr;
     tester.view.devicePixelRatio = _dpr;
@@ -100,16 +100,26 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
       ),
     );
     addTearDown(container.dispose);
+    if (returning) container.read(demoProvider).finishOnboarding();
     await tester.pumpWidget(
       UncontrolledProviderScope(
           container: container, child: const JelajahTamanApp()),
     );
     final h = _Harness(tester, container);
-    if (splash) {
+    if (returning) {
       await h.frames(1700);
-    } else {
-      await h.frames(3200); // splash → /welcome
+    } else if (introMs != null) {
       await _precache(tester);
+      await h.frames(introMs);
+      if (foldMs != null) {
+        await tester.tap(find.text('Ayo, mulai'));
+        await h.frames(foldMs);
+      }
+    } else {
+      await _precache(tester);
+      await h.frames(3400); // splash → /welcome: the welcome waits for a tap
+      await tester.tap(find.text('Ayo, mulai'));
+      await h.frames(2200);
       await setup(h);
     }
     await expectLater(
@@ -151,7 +161,9 @@ void main() {
       _TolerantComparator(local.basedir.resolve('screens_golden_test.dart'));
   setUpAll(_loadFonts);
 
-  _shot('01_splash', (_) async {}, splash: true);
+  _shot('01_splash_returning', (_) async {}, returning: true);
+  _shot('01a_welcome', (_) async {}, introMs: 3400);
+  _shot('01b_welcome_fold', (_) async {}, introMs: 3400, foldMs: 700);
   _shot('02_onboarding_1', (h) async => h.frames());
   _shot('03_onboarding_izin', (h) async {
     await h.tester.tap(find.text('Lewati'));
@@ -314,6 +326,12 @@ void main() {
   });
 
   // Narrow phone (360×780): catches overflow on the densest screens.
+  _shot('s360_welcome', (_) async {}, introMs: 3400, size: _small);
+  _shot('s360_onboarding_1', (h) async => h.frames(), size: _small);
+  _shot('s360_onboarding_izin', (h) async {
+    await h.tester.tap(find.text('Lewati'));
+    await h.frames(1600);
+  }, size: _small);
   _shot('s360_home_sesi', (h) async {
     await h.onboarded();
     h.demo.startSession();
