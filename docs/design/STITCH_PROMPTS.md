@@ -1,5 +1,7 @@
 # Stitch Prompts — Jelajah Taman
 
+> **Outdated (2026-11-12).** These prompts describe design v1 (amber CTA, no mascot). The app now follows [DESIGN.md](DESIGN.md) v2 "Sunlit Field Guide"; current screens are in `test_goldens/baselines/`. Kept for history only. Issue #18 (unsourced "WWII-era" wording) still applies if the prompts are ever reused.
+
 How to use:
 1. In Stitch, create a new project and choose **App (mobile)**.
 2. Open the theme settings and set: font **Plus Jakarta Sans**, primary color **#D99A2B**, corner radius **medium/large (16dp)**, light mode.

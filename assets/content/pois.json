@@ -23,8 +23,11 @@
         "dago pakar"
       ],
       "text": "[ISI] Teks Gerbang Dago Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di sinilah perjalanan Anda dimulai. Gerbang batu berlengkung tiga ini menjadi penanda masuk kawasan hutan, dengan deretan pinus tinggi yang langsung menyambut di baliknya. Udara terasa lebih sejuk begitu Anda melangkah masuk. Sebelum berjalan lebih jauh, pastikan botol minum terisi, alas kaki nyaman, dan baterai ponsel cukup. Peta dan cerita di aplikasi ini sudah tersimpan di ponsel, jadi tetap bisa dipakai walau sinyal hilang di tengah hutan. Pilih rute yang sesuai tenaga Anda hari ini, lalu nikmati jalan setapak yang teduh menuju gua dan titik-titik menarik lainnya.",
       "key_facts": [],
-      "images": [],
+      "images": [
+        "p01_gerbang.jpg"
+      ],
       "audio": null,
       "audio_seconds": null,
       "routes": [
@@ -56,6 +59,7 @@
         "juanda"
       ],
       "text": "[ISI] Teks Monumen Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Sebuah monumen berdiri di area terbuka yang dikelilingi pepohonan, menjadi salah satu titik paling mudah dikenali di awal jalur. Banyak pengunjung berhenti sejenak di sini untuk berfoto dan mengatur napas sebelum melanjutkan perjalanan. Perhatikan papan informasi di sekitarnya untuk mengenal tokoh yang namanya diabadikan menjadi nama taman hutan raya ini. Area sekitarnya relatif datar dan cocok untuk anak-anak. Saat siang hari, cari sisi yang teduh di bawah pohon, lalu dengarkan narasi singkat sambil menikmati suasana hutan kota yang tenang dan jauh dari bising jalan raya.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -89,6 +93,7 @@
         "juanda"
       ],
       "text": "[ISI] Teks Museum Ir. H. Djuanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Bangunan museum ini menjadi tempat yang tepat untuk mengenal kawasan lebih dalam sebelum masuk ke hutan. Di dalamnya, pengunjung dapat melihat koleksi dan papan informasi tentang taman hutan raya dan tokoh yang namanya digunakan. Luangkan waktu sekitar dua puluh menit untuk berkeliling dengan santai. Ruangan yang teduh juga cocok sebagai tempat beristirahat sejenak bagi keluarga dengan anak. Periksa jam buka museum di pintu masuk, karena dapat berbeda dari jam buka kawasan. Setelah dari sini, jalur akan mulai menurun perlahan menuju kolam dan area gua.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -122,8 +127,11 @@
         "danau"
       ],
       "text": "[ISI] Teks Kolam Pakar (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Jalur di sekitar titik ini dikelilingi pohon pisang berdaun lebar dan semak hijau yang rimbun. Di dekatnya terdapat shelter beratap hijau dan papan informasi tentang aliran air dan bendungan di kawasan Bandung Utara. Suara air dan kicau burung membuat tempat ini terasa tenang, cocok untuk berhenti sebentar sebelum menuju gua. Jalan setapak di sekitar air bisa licin setelah hujan, jadi melangkahlah dengan hati-hati dan awasi anak-anak di dekat pagar. Baca papan informasi di lokasi untuk memahami peran air di kawasan hutan ini, lalu lanjutkan perjalanan mengikuti petunjuk arah.",
       "key_facts": [],
-      "images": [],
+      "images": [
+        "p04_papan.jpg"
+      ],
       "audio": null,
       "audio_seconds": null,
       "routes": [
@@ -156,6 +164,7 @@
         "jepang"
       ],
       "text": "[ISI] Teks Gua Jepang (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Mulut gua terbuka di dinding tebing yang ditumbuhi tanaman paku dan lumut. Begitu melangkah masuk, cahaya meredup dan udara terasa lembap serta jauh lebih dingin dibanding jalur di luar. Lorong-lorongnya bercabang, sehingga sebaiknya Anda tetap bersama rombongan dan mengikuti jalur yang umum dilalui pengunjung. Bawa senter atau gunakan lampu ponsel, dan perhatikan lantai yang bisa basah. Di dalam gua sinyal lokasi biasanya melemah; jika cerita tidak muncul otomatis, pindai kode QR pada papan informasi. Dengarkan narasinya perlahan sambil membayangkan lorong-lorong ini di masa lalu.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -165,7 +174,7 @@
         "sedang",
         "trekking"
       ],
-      "safety_note": null,
+      "safety_note": "Bawa senter. Lorong gelap, lembap, dan lantainya bisa licin.",
       "sources": []
     },
     {
@@ -190,8 +199,12 @@
         "belanda"
       ],
       "text": "[ISI] Teks Gua Belanda (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Pintu masuk gua ini berupa lengkungan batu berdinding putih kapur dengan pagar besi hijau di sisinya. Di dalam, lorong panjang menembus bukit dan terasa sejuk sepanjang hari. Langkah kaki dan suara pengunjung bergema pelan di dinding batu. Gunakan senter dan berjalanlah di sisi kiri agar arus pengunjung tetap lancar. Sepeda tidak diperbolehkan masuk. Jika sinyal lokasi melemah di dalam lorong, pindai kode QR di dekat pintu masuk untuk membuka cerita. Setelah keluar, sempatkan beristirahat di saung terdekat sebelum melanjutkan perjalanan ke penangkaran rusa.",
       "key_facts": [],
-      "images": [],
+      "images": [
+        "p06_mulut_gua.jpg",
+        "p06_lorong.jpg"
+      ],
       "audio": null,
       "audio_seconds": null,
       "routes": [
@@ -199,7 +212,7 @@
         "sedang",
         "trekking"
       ],
-      "safety_note": null,
+      "safety_note": "Bawa senter dan tetap bersama rombongan. Sepeda dilarang masuk.",
       "sources": []
     },
     {
@@ -223,8 +236,11 @@
         "satwa"
       ],
       "text": "[ISI] Teks Penangkaran Rusa (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di balik pagar kawat, area terbuka berumput menjadi tempat rusa merumput dan berteduh di bawah pepohonan. Jika beruntung, Anda dapat melihat beberapa rusa bergerak perlahan atau beristirahat di kejauhan. Amati dengan tenang dan jangan memberi makan sembarangan, karena makanan yang tidak sesuai dapat membuat satwa sakit. Hindari suara keras dan jangan memasukkan tangan ke dalam pagar. Papan informasi di depan kandang mengajak pengunjung menjaga satwa agar tetap lestari. Tempat ini cocok untuk mengenalkan anak-anak pada satwa, sambil beristirahat di saung yang ada di sekitarnya.",
       "key_facts": [],
-      "images": [],
+      "images": [
+        "p07_rusa.jpg"
+      ],
       "audio": null,
       "audio_seconds": null,
       "routes": [
@@ -254,6 +270,7 @@
         "hutan"
       ],
       "text": "[ISI] Teks Kawasan Hutan Pinus (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Barisan pohon pinus tinggi menjulang dengan batang lurus dan tajuk yang menyaring cahaya matahari menjadi berkas-berkas lembut. Lantai hutan tertutup daun jarum kering yang empuk diinjak dan beraroma khas. Ini tempat yang baik untuk memperlambat langkah, menarik napas dalam, dan menikmati udara hutan yang sejuk. Banyak pengunjung beristirahat di bangku sekitar sambil minum air. Jika Anda mengikuti rute Wellness, inilah saat yang pas untuk peregangan ringan. Jaga kebersihan dengan membawa kembali sampah Anda, dan jangan menyalakan api di area yang dipenuhi daun kering ini.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -286,6 +303,7 @@
         "taman"
       ],
       "text": "[ISI] Teks Area Rumput / Piknik (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Hamparan rumput terbuka ini menjadi ruang lapang di tengah rimbunnya hutan. Keluarga sering menggelar tikar, anak-anak berlarian, dan pengunjung lain sekadar duduk menikmati angin. Pilih tempat yang teduh di tepi pepohonan saat matahari terik. Area ini cocok untuk makan bekal dan beristirahat lebih lama sebelum melanjutkan perjalanan. Mohon jaga kebersihan dengan membawa pulang sampah dan tidak merusak tanaman di sekitarnya. Jika cuaca mendung, perhatikan langit dan bersiaplah kembali ke jalur, karena tanah berumput bisa cepat becek dan licin setelah turun hujan.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -318,6 +336,7 @@
         "koleksi"
       ],
       "text": "[ISI] Teks Titik Koleksi Flora (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Di sepanjang potongan jalur ini, beragam tanaman tumbuh berdampingan dan sebagian diberi label nama. Perhatikan perbedaan bentuk daun, tekstur batang, dan warna bunga dari satu tanaman ke tanaman lain. Titik ini cocok untuk pelajar yang datang dalam rangka kunjungan edukasi, atau siapa pun yang ingin mengenal isi hutan lebih dekat. Berjalanlah perlahan dan baca label yang tersedia. Mohon tidak memetik daun, bunga, atau buah, agar koleksi tetap dapat dinikmati pengunjung berikutnya. Foto dan catatan sudah cukup untuk dibawa pulang sebagai kenang-kenangan dari jalur ini.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -350,6 +369,7 @@
         "omas"
       ],
       "text": "[ISI] Teks Curug Omas (80–150 kata) dari sumber resmi/papan informasi.",
+      "draft_text": "Titik ini berada di ujung rute Trekking dan membutuhkan tenaga lebih untuk mencapainya. Jalur menuju ke sana lebih panjang, menanjak, dan di beberapa bagian berbatu. Suara gemuruh air akan terdengar sebelum air terjunnya terlihat. Pastikan waktu masih cukup untuk kembali ke gerbang sebelum kawasan tutup, bawa air minum yang cukup, dan kenakan alas kaki yang kuat. Jangan mendekati tepi tebing atau berenang di area arus deras. Nikmati pemandangan dari tempat yang aman, beristirahatlah secukupnya, lalu kembali melalui jalur yang sama dengan hati-hati.",
       "key_facts": [],
       "images": [],
       "audio": null,
@@ -357,7 +377,7 @@
       "routes": [
         "trekking"
       ],
-      "safety_note": null,
+      "safety_note": "Jalur menanjak dan berbatu. Jangan mendekati tepi tebing atau arus deras.",
       "sources": []
     }
   ]

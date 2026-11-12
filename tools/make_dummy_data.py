@@ -67,7 +67,41 @@ FACILITIES = [
     ("FS03", "warung", "Warung dekat Kolam", 270, 525, ["warung", "kios", "makan", "minum", "jajan"]),
     ("FS04", "pos_petugas", "Pos Petugas", 570, 1075, ["pos", "petugas", "informasi", "bantuan"]),
     ("FS05", "istirahat", "Bangku Hutan Pinus", 20, 640, ["istirahat", "bangku", "duduk"]),
+    # Added 2026-11-12 from survey photos (photo = real, position = still DUMMY layout).
+    ("FS06", "toilet", "Toilet dekat Gua Belanda", 510, 1100, ["toilet", "wc", "kamar mandi"]),
+    ("FS07", "musala", "Musala dekat Gua Belanda", 525, 1130, ["musala", "mushola", "masjid", "salat", "sholat"]),
+    ("FS08", "istirahat", "Saung Penangkaran Rusa", 740, 1295, ["istirahat", "saung", "gazebo", "duduk", "teduh"]),
+    ("FS09", "istirahat", "Saung Jalur Gua", 436, 873, ["istirahat", "saung", "gazebo", "duduk", "teduh"]),
+    ("FS10", "istirahat", "Gazebo Jalur Kolam", 175, 420, ["istirahat", "gazebo", "saung", "duduk", "foto"]),
 ]
+# Survey photos (assets/images/). Real photos of real places; see survey/raw/photo_waypoints.csv.
+IMAGES = {
+    "P01": ["p01_gerbang.jpg"], "P04": ["p04_papan.jpg"],  # P04 photo [VERIFIKASI]: is this Kolam Pakar?
+    "P06": ["p06_mulut_gua.jpg", "p06_lorong.jpg"], "P07": ["p07_rusa.jpg"],
+    "FS01": ["fs01_toilet.jpg"], "FS06": ["fs06_toilet.jpg"], "FS07": ["fs07_musala.jpg"],
+    "FS08": ["fs08_saung.jpg"], "FS09": ["fs09_saung.jpg"], "FS10": ["fs10_gazebo.jpg"],
+}
+# UI mock copy (2026-11-12). OBSERVATIONAL ONLY: atmosphere, what a visitor sees, walking tips.
+# No dates, builders, functions or other historical claims (PRD §8.2). Shown only while "text"
+# is still an [ISI] placeholder; replace by sourced text from the manager/signboards.
+DRAFT_TEXT = {
+    "P01": "Di sinilah perjalanan Anda dimulai. Gerbang batu berlengkung tiga ini menjadi penanda masuk kawasan hutan, dengan deretan pinus tinggi yang langsung menyambut di baliknya. Udara terasa lebih sejuk begitu Anda melangkah masuk. Sebelum berjalan lebih jauh, pastikan botol minum terisi, alas kaki nyaman, dan baterai ponsel cukup. Peta dan cerita di aplikasi ini sudah tersimpan di ponsel, jadi tetap bisa dipakai walau sinyal hilang di tengah hutan. Pilih rute yang sesuai tenaga Anda hari ini, lalu nikmati jalan setapak yang teduh menuju gua dan titik-titik menarik lainnya.",
+    "P02": "Sebuah monumen berdiri di area terbuka yang dikelilingi pepohonan, menjadi salah satu titik paling mudah dikenali di awal jalur. Banyak pengunjung berhenti sejenak di sini untuk berfoto dan mengatur napas sebelum melanjutkan perjalanan. Perhatikan papan informasi di sekitarnya untuk mengenal tokoh yang namanya diabadikan menjadi nama taman hutan raya ini. Area sekitarnya relatif datar dan cocok untuk anak-anak. Saat siang hari, cari sisi yang teduh di bawah pohon, lalu dengarkan narasi singkat sambil menikmati suasana hutan kota yang tenang dan jauh dari bising jalan raya.",
+    "P03": "Bangunan museum ini menjadi tempat yang tepat untuk mengenal kawasan lebih dalam sebelum masuk ke hutan. Di dalamnya, pengunjung dapat melihat koleksi dan papan informasi tentang taman hutan raya dan tokoh yang namanya digunakan. Luangkan waktu sekitar dua puluh menit untuk berkeliling dengan santai. Ruangan yang teduh juga cocok sebagai tempat beristirahat sejenak bagi keluarga dengan anak. Periksa jam buka museum di pintu masuk, karena dapat berbeda dari jam buka kawasan. Setelah dari sini, jalur akan mulai menurun perlahan menuju kolam dan area gua.",
+    "P04": "Jalur di sekitar titik ini dikelilingi pohon pisang berdaun lebar dan semak hijau yang rimbun. Di dekatnya terdapat shelter beratap hijau dan papan informasi tentang aliran air dan bendungan di kawasan Bandung Utara. Suara air dan kicau burung membuat tempat ini terasa tenang, cocok untuk berhenti sebentar sebelum menuju gua. Jalan setapak di sekitar air bisa licin setelah hujan, jadi melangkahlah dengan hati-hati dan awasi anak-anak di dekat pagar. Baca papan informasi di lokasi untuk memahami peran air di kawasan hutan ini, lalu lanjutkan perjalanan mengikuti petunjuk arah.",
+    "P05": "Mulut gua terbuka di dinding tebing yang ditumbuhi tanaman paku dan lumut. Begitu melangkah masuk, cahaya meredup dan udara terasa lembap serta jauh lebih dingin dibanding jalur di luar. Lorong-lorongnya bercabang, sehingga sebaiknya Anda tetap bersama rombongan dan mengikuti jalur yang umum dilalui pengunjung. Bawa senter atau gunakan lampu ponsel, dan perhatikan lantai yang bisa basah. Di dalam gua sinyal lokasi biasanya melemah; jika cerita tidak muncul otomatis, pindai kode QR pada papan informasi. Dengarkan narasinya perlahan sambil membayangkan lorong-lorong ini di masa lalu.",
+    "P06": "Pintu masuk gua ini berupa lengkungan batu berdinding putih kapur dengan pagar besi hijau di sisinya. Di dalam, lorong panjang menembus bukit dan terasa sejuk sepanjang hari. Langkah kaki dan suara pengunjung bergema pelan di dinding batu. Gunakan senter dan berjalanlah di sisi kiri agar arus pengunjung tetap lancar. Sepeda tidak diperbolehkan masuk. Jika sinyal lokasi melemah di dalam lorong, pindai kode QR di dekat pintu masuk untuk membuka cerita. Setelah keluar, sempatkan beristirahat di saung terdekat sebelum melanjutkan perjalanan ke penangkaran rusa.",
+    "P07": "Di balik pagar kawat, area terbuka berumput menjadi tempat rusa merumput dan berteduh di bawah pepohonan. Jika beruntung, Anda dapat melihat beberapa rusa bergerak perlahan atau beristirahat di kejauhan. Amati dengan tenang dan jangan memberi makan sembarangan, karena makanan yang tidak sesuai dapat membuat satwa sakit. Hindari suara keras dan jangan memasukkan tangan ke dalam pagar. Papan informasi di depan kandang mengajak pengunjung menjaga satwa agar tetap lestari. Tempat ini cocok untuk mengenalkan anak-anak pada satwa, sambil beristirahat di saung yang ada di sekitarnya.",
+    "P08": "Barisan pohon pinus tinggi menjulang dengan batang lurus dan tajuk yang menyaring cahaya matahari menjadi berkas-berkas lembut. Lantai hutan tertutup daun jarum kering yang empuk diinjak dan beraroma khas. Ini tempat yang baik untuk memperlambat langkah, menarik napas dalam, dan menikmati udara hutan yang sejuk. Banyak pengunjung beristirahat di bangku sekitar sambil minum air. Jika Anda mengikuti rute Wellness, inilah saat yang pas untuk peregangan ringan. Jaga kebersihan dengan membawa kembali sampah Anda, dan jangan menyalakan api di area yang dipenuhi daun kering ini.",
+    "P09": "Hamparan rumput terbuka ini menjadi ruang lapang di tengah rimbunnya hutan. Keluarga sering menggelar tikar, anak-anak berlarian, dan pengunjung lain sekadar duduk menikmati angin. Pilih tempat yang teduh di tepi pepohonan saat matahari terik. Area ini cocok untuk makan bekal dan beristirahat lebih lama sebelum melanjutkan perjalanan. Mohon jaga kebersihan dengan membawa pulang sampah dan tidak merusak tanaman di sekitarnya. Jika cuaca mendung, perhatikan langit dan bersiaplah kembali ke jalur, karena tanah berumput bisa cepat becek dan licin setelah turun hujan.",
+    "P10": "Di sepanjang potongan jalur ini, beragam tanaman tumbuh berdampingan dan sebagian diberi label nama. Perhatikan perbedaan bentuk daun, tekstur batang, dan warna bunga dari satu tanaman ke tanaman lain. Titik ini cocok untuk pelajar yang datang dalam rangka kunjungan edukasi, atau siapa pun yang ingin mengenal isi hutan lebih dekat. Berjalanlah perlahan dan baca label yang tersedia. Mohon tidak memetik daun, bunga, atau buah, agar koleksi tetap dapat dinikmati pengunjung berikutnya. Foto dan catatan sudah cukup untuk dibawa pulang sebagai kenang-kenangan dari jalur ini.",
+    "P11": "Titik ini berada di ujung rute Trekking dan membutuhkan tenaga lebih untuk mencapainya. Jalur menuju ke sana lebih panjang, menanjak, dan di beberapa bagian berbatu. Suara gemuruh air akan terdengar sebelum air terjunnya terlihat. Pastikan waktu masih cukup untuk kembali ke gerbang sebelum kawasan tutup, bawa air minum yang cukup, dan kenakan alas kaki yang kuat. Jangan mendekati tepi tebing atau berenang di area arus deras. Nikmati pemandangan dari tempat yang aman, beristirahatlah secukupnya, lalu kembali melalui jalur yang sama dengan hati-hati.",
+}
+SAFETY = {
+    "P05": "Bawa senter. Lorong gelap, lembap, dan lantainya bisa licin.",
+    "P06": "Bawa senter dan tetap bersama rombongan. Sepeda dilarang masuk.",
+    "P11": "Jalur menanjak dan berbatu. Jangan mendekati tepi tebing atau arus deras.",
+}
 JUNCTIONS = [("J01", 0, 200), ("J02", 150, 450), ("J03", 300, 700), ("J04", 400, 900)]
 # undirected edges between node ids (POI node = N_<id>, facility node = N_<id>)
 EDGES = [
@@ -76,6 +110,7 @@ EDGES = [
     ("J02", "N_P08"), ("N_P08", "N_FS05"), ("N_P08", "N_P09"), ("N_P09", "J03"),
     ("J03", "N_P05"), ("N_P05", "J04"), ("J04", "N_P06"), ("N_P06", "N_FS04"), ("N_P06", "N_P07"),
     ("N_P07", "N_P11"), ("N_P10", "N_P08"),
+    ("N_P06", "N_FS06"), ("N_P06", "N_FS07"), ("N_P07", "N_FS08"), ("J04", "N_FS09"), ("J02", "N_FS10"),
 ]
 ROUTES = [
     ("santai", "Santai", 1, ["P01", "P02", "P03", "P04", "P05", "P06", "P01"]),
@@ -162,15 +197,17 @@ for pid, name, cat, x, y, r, trig, visit, diff, routes in POIS:
         "radius_m": r, "trigger": trig, "qr_code": f"jelajahtaman://poi/{pid}" if "qr" in trig else None,
         "visit_minutes": visit, "difficulty": diff, "graph_node": f"N_{pid}", "keywords": KEYWORDS[pid],
         "text": f"[ISI] Teks {name} (80–150 kata) dari sumber resmi/papan informasi.",
-        "key_facts": [], "images": [], "audio": None, "audio_seconds": None,
-        "routes": routes, "safety_note": None, "sources": [],
+        "draft_text": DRAFT_TEXT[pid],
+        "key_facts": [], "images": IMAGES.get(pid, []), "audio": None, "audio_seconds": None,
+        "routes": routes, "safety_note": SAFETY.get(pid), "sources": [],
     })
 
 facilities_out = []
 for fid, ftype, name, x, y, kw in FACILITIES:
     n = nodes[f"N_{fid}"]
     facilities_out.append({"id": fid, "type": ftype, "name": name, "lat": n["lat"], "lng": n["lng"],
-                           "coord_source": "DUMMY", "graph_node": f"N_{fid}", "keywords": kw})
+                           "coord_source": "DUMMY", "graph_node": f"N_{fid}", "keywords": kw,
+                           "images": IMAGES.get(fid, [])})
 
 park_out = {
     "dummy": True,

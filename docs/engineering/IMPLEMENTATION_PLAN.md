@@ -106,6 +106,8 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T30 | Accessibility pass (A07), contrast fix #19 | C | screens | 3 | ☐ |
 | T31 | Settings UI15 (Auto-Play, voice navigation, hydration interval, text size, body weight, version, hidden debug menu) | C | T15, T28 | 3 | ☐ |
 
+**UI layer on mock data (2026-11-12, branch `ui-revamp`).** Every screen UI01–UI15 now exists in the v2 style ([DESIGN.md](../design/DESIGN.md)), in `lib/modules/shell/src/ui/`, driven by a demo state in `lib/modules/shell/src/demo/` (`DemoController`: simulated position walking along `GraphTrailRouter` routes, simplified triggers, mock audio timer, recommendation with the closing-time filter, reminders, search with synonyms + typo tolerance). The map widget moved to the `map` module as `ParkMapView` (R5). This does **not** finish the UI tasks: T06, T09, T10, T17–T21, T24, T27–T29 and T31 still have to replace the demo state with the real engines (location, trigger, session, audio, notify, wellness), and the screens may move to their owner modules then. Statuses above are unchanged on purpose.
+
 **Load per coder (rebalanced 2026-11-06).** A: T01, T02, T08–T10, ½T12, T16, T17, T20, T24, T25. B: T04, T05, T13, T14, T19, T21, T23, T26, T29 + integrator. C: T03, T06, T07, T11, ½T12, T15, T18, T27, T28, T30, T31 (more tasks, mostly smaller UI ones). T01–T02 are built by all three on day 1 (rule 6).
 
 | Wave | Coder A | Coder B | Coder C |

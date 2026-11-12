@@ -10,3 +10,5 @@ export 'src/application/map_scene.dart' show MapScene;
 export 'src/domain/map_geometry.dart' show GeoBounds;
 export 'src/map_providers.dart' show mapSceneProvider;
 export 'src/ui/explore_map.dart' show ExploreMap;
+export 'src/ui/park_map_view.dart'
+    show MapPin, ParkMapController, ParkMapView, PlaceMarker, UserDot;

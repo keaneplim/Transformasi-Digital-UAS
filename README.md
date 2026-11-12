@@ -51,7 +51,10 @@ flutter run                               # on a connected Android phone
 flutter test
 dart run tools/check_architecture.dart    # module boundaries (ARCHITECTURE.md §2)
 python tools/validate_content.py          # content data
+flutter test test_goldens --update-goldens  # after a UI change: refresh screen baselines (not in CI)
 ```
+
+The UI currently runs on mock data (demo state, no GPS needed): tap any place → *Navigasi* → *Mulai jalan* to walk the simulated dot. Settings → *Mode demo* teleports, changes walk speed, fakes the clock and fires reminders. Screen baselines for review: `test_goldens/baselines/`.
 
 ## Definition of done (every PR)
 
