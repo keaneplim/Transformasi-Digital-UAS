@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
@@ -7,11 +11,18 @@ import '../state/guide_controller.dart';
 import '../state/places.dart';
 import '../state/search.dart';
 import 'main_shell.dart';
+import 'search_header.dart';
+import 'search_sections.dart';
 import 'widgets.dart';
 
-/// UI09 Search + facility finder (F05, A04): name/synonym/typo-tolerant matching,
-/// category filter, quick finds (toilet, musala, saung, gua), matches highlighted,
-/// sorted by walking distance.
+/// UI09 Search + facility finder (F05, A04).
+///
+/// A sun band like Home's that folds into a strip as the list scrolls (and as soon as the
+/// field is focused), with the field straddling its edge. Below it: category chips with
+/// live counts, then either the browsing page (recent searches, quick finds, the nearest
+/// place worth a visit, every place) or the results (best match as a feature card, the rest
+/// as rows with the match highlighted). Matching is name/synonym/typo-tolerant
+/// (`state/search.dart`); the order is the visitor's choice (best match, nearest, A–Z).
 class SearchTab extends ConsumerStatefulWidget {
   const SearchTab({super.key});
 
@@ -20,19 +31,7 @@ class SearchTab extends ConsumerStatefulWidget {
 }
 
 class _SearchTabState extends ConsumerState<SearchTab> {
-  final _text = TextEditingController();
-  final _focus = FocusNode();
-  String _query = '';
-  String? _group;
-
-  static const _groups = [
-    (null, 'Semua', Icons.apps_rounded),
-    ('sejarah', 'Sejarah', Icons.account_balance_rounded),
-    ('alam', 'Alam', Icons.forest_rounded),
-    ('rekreasi', 'Rekreasi', Icons.park_rounded),
-    ('fasilitas', 'Fasilitas', Icons.wc_rounded),
-  ];
-
+  static const _range = SearchHeaderDelegate.range;
   static const _suggestions = [
     'gua',
     'toilet',
@@ -42,503 +41,386 @@ class _SearchTabState extends ConsumerState<SearchTab> {
     'pinus'
   ];
 
+  final _text = TextEditingController();
+  final _focus = FocusNode();
+  final _scroll = ScrollController();
+  final _underRail = ValueNotifier<bool>(false);
+  String _query = '';
+  String? _group;
+
+  /// The visitor's explicit choice; null = the default for the situation.
+  SearchSort? _sort;
+  bool _snapping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      if (_focus.hasFocus) _collapse();
+    });
+    _scroll.addListener(() => _underRail.value = _scroll.offset > _range + 2);
+  }
+
   @override
   void dispose() {
     _text.dispose();
     _focus.dispose();
+    _scroll.dispose();
+    _underRail.dispose();
     super.dispose();
+  }
+
+  // ---- header choreography --------------------------------------------------------------
+
+  /// Folds the sun band away so the results get the room (typing, keyboard up).
+  void _collapse() {
+    if (!_scroll.hasClients) return;
+    final target = math.min(_range, _scroll.position.maxScrollExtent);
+    if (_scroll.offset >= target) return;
+    _scroll.animateTo(target,
+        duration: JTMotion.of(context, JTMotion.slow),
+        curve: JTMotion.emphasized);
+  }
+
+  /// A new query or filter starts at the top of its list, band state untouched.
+  void _toListTop() {
+    if (_scroll.hasClients && _scroll.offset > _range) _scroll.jumpTo(_range);
+  }
+
+  /// The band is never left half folded: it settles open or closed.
+  bool _onScrollEnd(ScrollEndNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical || _snapping) {
+      return false;
+    }
+    final px = n.metrics.pixels;
+    if (px <= 0 || px >= _range) return false;
+    final target = px < _range / 2 ? 0.0 : _range;
+    _snapping = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted && _scroll.hasClients) {
+        await _scroll.animateTo(target,
+            duration: JTMotion.of(context, JTMotion.base), curve: JTMotion.out);
+      }
+      _snapping = false;
+    });
+    return false;
+  }
+
+  // ---- query, filter, sort --------------------------------------------------------------
+
+  void _onChanged(String q) {
+    setState(() => _query = q);
+    _toListTop();
   }
 
   void _setQuery(String q) {
     _text.value = TextEditingValue(
         text: q, selection: TextSelection.collapsed(offset: q.length));
-    setState(() => _query = q);
+    _onChanged(q);
+  }
+
+  void _setGroup(String? g) {
+    setState(() => _group = g);
+    _toListTop();
+  }
+
+  void _remember() => ref.read(recentSearchesProvider).add(_query);
+
+  Future<void> _pickSort(SearchSort current, bool searching) async {
+    _focus.unfocus();
+    final picked = await showSearchSortSheet(context,
+        current: current, searching: searching);
+    if (picked != null && mounted) {
+      setState(() => _sort = picked);
+      _toListTop();
+    }
+  }
+
+  // ---- what a place does ----------------------------------------------------------------
+
+  void _open(Place p, {String hero = '-search'}) {
+    _focus.unfocus();
+    _remember();
+    if (p.isPoi) {
+      context.push('/poi/${p.id}?hero=$hero');
+    } else {
+      openOnMap(ref, p.id);
+    }
+  }
+
+  void _navigate(Place p) {
+    _focus.unfocus();
+    _remember();
+    if (ref.read(guideProvider).startNavigation(p)) context.push('/navigate');
+  }
+
+  Future<void> _peek(Place p) async {
+    _focus.unfocus();
+    unawaited(HapticFeedback.mediumImpact());
+    final action = await showPlacePeek(context, p);
+    if (action == null || !mounted) return;
+    switch (action) {
+      case PeekAction.navigate:
+        _navigate(p);
+      case PeekAction.map:
+        _remember();
+        openOnMap(ref, p.id);
+      case PeekAction.detail:
+        _remember();
+        // no shared-element flight from a sheet that has just closed
+        unawaited(context.push('/poi/${p.id}?hero=-peek'));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final demo = ref.watch(guideProvider);
+    final recents = ref.watch(recentSearchesProvider).items;
     final pad = MediaQuery.paddingOf(context);
-    final results = demo
-        .nearest(group: _group)
-        .where((p) => matchesQuery(p, _query))
-        .toList();
-    final browsing = _query.trim().isEmpty && _group == null;
+
+    final q = _query.trim();
+    final searching = q.isNotEmpty;
+    final browsing = !searching && _group == null;
+
+    final metres = <String, double>{};
+    double distanceOf(Place p) => metres[p.id] ??= demo.walkingM(p);
+
+    final all = searchPlaces(demo.places, q);
+    final counts = <String, int>{};
+    for (final h in all) {
+      counts.update(h.place.group, (v) => v + 1, ifAbsent: () => 1);
+    }
+    final hits = [
+      for (final h in all)
+        if (_group == null || h.place.group == _group) h,
+    ];
+    final sort = searching
+        ? (_sort ?? SearchSort.relevance)
+        : (_sort == null || _sort == SearchSort.relevance
+            ? SearchSort.nearest
+            : _sort!);
+    sortHits(hits, sort, distanceOf);
+
+    final corrected = searching ? didYouMean(hits) : null;
+    final highlight = corrected ?? q;
+
+    // Best match up front, only while the list is in best-match order.
+    final top = searching && sort == SearchSort.relevance && hits.isNotEmpty
+        ? hits.first
+        : null;
+    final tied = hits.length > 1 && hits[0].score == hits[1].score;
+    final rows = top == null ? hits : hits.sublist(1);
+
+    // Browsing: the nearest sight not seen yet (and not the one underfoot).
+    final spotlight = browsing
+        ? demo
+            .nearest(poisOnly: true)
+            .where((p) =>
+                !p.isGate &&
+                !demo.visited.contains(p.id) &&
+                distanceOf(p) >= 30)
+            .firstOrNull
+        : null;
+
+    String? noteFor(SearchHit h) =>
+        h.via == null ? null : 'Cocok dengan “${h.via}”';
 
     return GestureDetector(
-      onTap: () => _focus.unfocus(),
-      child: CustomScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(JT.gutter, pad.top + 16, 10, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Cari & temukan',
-                            style: JTText.title.copyWith(color: JT.muted)),
-                        const SizedBox(height: 4),
-                        HighlightHeadline(
-                          before: 'Mau ke ',
-                          highlight: 'mana',
-                          after: '\nhari ini?',
-                          style: JTText.display,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Pako peeks down at the field, and thinks when nothing matches.
-                  Pako(
-                    pose:
-                        results.isEmpty ? PakoPose.thinking : PakoPose.curious,
-                    size: 92,
-                    shadow: false,
-                    look: const Offset(-0.5, 0.7),
-                  ),
-                ],
+      onTap: _focus.unfocus,
+      child: NotificationListener<ScrollEndNotification>(
+        onNotification: _onScrollEnd,
+        child: CustomScrollView(
+          controller: _scroll,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: SearchHeaderDelegate(
+                topPadding: pad.top,
+                hidePako: hits.isEmpty,
+                // Pako's eyes follow the text as it grows
+                look:
+                    Offset(-0.75 + math.min(_query.length, 14) / 14 * 0.6, 0.8),
+                field: SearchField(
+                  controller: _text,
+                  focus: _focus,
+                  onChanged: _onChanged,
+                  onClear: () => _setQuery(''),
+                  onSubmitted: (_) => _remember(),
+                ),
               ),
             ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _PinnedSearch(
-              child: Column(
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(JT.gutter, 12, JT.gutter, 12),
-                    child: _Field(
-                      controller: _text,
-                      focus: _focus,
-                      onChanged: (q) => setState(() => _query = q),
-                      onClear: () => _setQuery(''),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: SearchRailDelegate(
+                scrolled: _underRail,
+                child: SearchCategoryRail(
+                  selected: _group,
+                  counts: counts,
+                  total: all.length,
+                  onSelect: _setGroup,
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            if (browsing && recents.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'Terakhir dicari',
+                  action: 'Hapus semua',
+                  onAction: ref.read(recentSearchesProvider).clear,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SearchRecents(
+                  items: recents,
+                  onPick: _setQuery,
+                  onRemove: ref.read(recentSearchesProvider).remove,
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 18)),
+            ],
+            if (browsing) ...[
+              const SliverToBoxAdapter(
+                  child: SectionHeader(title: 'Cepat temukan')),
+              SliverToBoxAdapter(child: SearchQuickFinds(onPick: _setQuery)),
+              const SliverToBoxAdapter(child: SizedBox(height: 18)),
+            ],
+            if (spotlight != null) ...[
+              SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: 'Terdekat dari Anda',
+                  action: 'Lihat peta',
+                  onAction: () => openOnMap(ref, spotlight.id),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
+                sliver: SliverToBoxAdapter(
+                  child: Entrance(
+                    delay: const Duration(milliseconds: 120),
+                    child: SearchFeatureCard(
+                      place: spotlight,
+                      badge: 'Belum dikunjungi',
+                      badgeIcon: Icons.near_me_rounded,
+                      onTap: () => _open(spotlight, hero: '-spot'),
+                      onNavigate: () => _navigate(spotlight),
+                      onLongPress: () => _peek(spotlight),
                     ),
                   ),
-                  SizedBox(
-                    height: 44,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: JT.gutter),
-                      itemCount: _groups.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (context, i) {
-                        final (id, label, icon) = _groups[i];
-                        return ChipToggle(
-                          label: label,
-                          icon: icon,
-                          dense: true,
-                          tint: id == null ? JT.forest : JT.category(id),
-                          selected: _group == id,
-                          onTap: () => setState(() => _group = id),
-                        );
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 26)),
+            ],
+            if (!browsing) const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            if (corrected != null)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(JT.gutter, 0, JT.gutter, 16),
+                sliver: SliverToBoxAdapter(
+                  child: Entrance(
+                    key: ValueKey('fix-$corrected'),
+                    child: SearchCorrection(corrected: corrected),
+                  ),
+                ),
+              ),
+            if (hits.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
+                sliver: SliverToBoxAdapter(
+                  child: Entrance(
+                    key: const ValueKey('empty'),
+                    scaleFrom: 0.96,
+                    child: SearchEmpty(
+                      query: q,
+                      group: _group,
+                      elsewhere: all.length,
+                      onAllCategories: () => _setGroup(null),
+                      suggestions: _suggestions,
+                      onSuggestion: (s) {
+                        setState(() => _group = null);
+                        _setQuery(s);
                       },
                     ),
                   ),
-                ],
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: SearchResultsHeader(
+                  count: hits.length,
+                  query: corrected ?? q,
+                  group: _group,
+                  sort: sort,
+                  onSort: () => _pickSort(sort, searching),
+                ),
               ),
-            ),
-          ),
-          if (browsing)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(JT.gutter, 18, JT.gutter, 4),
-                child: _Shortcuts(onPick: _setQuery),
+            if (top != null)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(JT.gutter, 0, JT.gutter, 10),
+                sliver: SliverToBoxAdapter(
+                  child: Entrance(
+                    key: ValueKey('top-${top.place.id}'),
+                    child: SearchFeatureCard(
+                      place: top.place,
+                      badge: tied ? 'Terdekat' : 'Paling cocok',
+                      badgeIcon: tied
+                          ? Icons.near_me_rounded
+                          : Icons.auto_awesome_rounded,
+                      highlight: highlight,
+                      note: noteFor(top),
+                      heroSuffix: '-top',
+                      onTap: () => _open(top.place, hero: '-top'),
+                      onNavigate: () => _navigate(top.place),
+                      onLongPress: () => _peek(top.place),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(JT.gutter, 20, JT.gutter, 10),
-              child: AnimatedSwitcher(
-                duration: JTMotion.base,
-                child: results.isEmpty
-                    ? const SizedBox.shrink()
-                    : _ResultsHeader(
-                        key: ValueKey('${results.length}$_query$_group'),
-                        count: results.length,
-                        query: _query.trim(),
-                        browsing: browsing,
-                      ),
-              ),
-            ),
-          ),
-          if (results.isEmpty)
-            SliverToBoxAdapter(
-              child: _Empty(
-                  query: _query,
-                  onSuggestion: (s) {
-                    setState(() => _group = null);
-                    _setQuery(s);
-                  },
-                  suggestions: _suggestions),
-            )
-          else
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
               sliver: SliverList.separated(
-                itemCount: results.length,
+                itemCount: rows.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
-                  final p = results[i];
+                  final h = rows[i];
+                  final p = h.place;
                   return Entrance(
-                    key: ValueKey('${p.id}$_query$_group'),
+                    // keyed by place: rows that stay while typing don't flash again
+                    key: ValueKey('row-${p.id}'),
                     delay: JTMotion.stagger * i.clamp(0, 8),
                     child: PlaceTile(
                       place: p,
                       heroSuffix: '-search',
-                      highlight: _query,
-                      eyebrow: i == 0 && browsing ? 'Terdekat' : null,
-                      onTap: () => p.isPoi
-                          ? context.push('/poi/${p.id}?hero=-search')
-                          : openOnMap(ref, p.id),
-                      trailing: _NavButton(place: p),
+                      highlight: highlight,
+                      note: noteFor(h),
+                      eyebrow: i == 0 && browsing && sort == SearchSort.nearest
+                          ? 'Terdekat'
+                          : null,
+                      onTap: () => _open(p),
+                      onLongPress: () => _peek(p),
+                      trailing:
+                          SearchNavButton(place: p, onTap: () => _navigate(p)),
                     ),
                   );
                 },
               ),
             ),
-          SliverToBoxAdapter(child: SizedBox(height: 120 + pad.bottom)),
-        ],
-      ),
-    );
-  }
-}
-
-/// "12 tempat · terdekat dulu" or "3 hasil untuk “gua”".
-class _ResultsHeader extends StatelessWidget {
-  const _ResultsHeader(
-      {super.key,
-      required this.count,
-      required this.query,
-      required this.browsing});
-
-  final int count;
-  final String query;
-  final bool browsing;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: Text.rich(
-              TextSpan(children: [
-                TextSpan(
-                    text: browsing ? 'Semua tempat ' : '$count hasil ',
-                    style: JTText.h3),
-                if (!browsing && query.isNotEmpty)
-                  TextSpan(
-                      text: 'untuk “$query”',
-                      style: JTText.h3.copyWith(color: JT.forestBright)),
-                if (browsing)
-                  TextSpan(
-                      text: '$count',
-                      style: JTText.number(15, color: JT.muted)),
-              ]),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(Icons.swap_vert_rounded, size: 16, color: JT.muted),
-          const SizedBox(width: 3),
-          Text('Terdekat dulu', style: JTText.caption),
-        ],
-      );
-}
-
-/// Quick finds (A04): toilet, musala, saung, gua, each with the nearest walking distance.
-class _Shortcuts extends ConsumerWidget {
-  const _Shortcuts({required this.onPick});
-
-  final ValueChanged<String> onPick;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(guideProvider);
-    double? nearestM(bool Function(Place) test) {
-      final list = demo.places.where(test).map(demo.walkingM).toList()..sort();
-      return list.isEmpty ? null : list.first;
-    }
-
-    final items = [
-      (
-        'Toilet',
-        'toilet',
-        Doodle.drop,
-        JT.sky,
-        nearestM((p) => !p.isPoi && p.kind == 'toilet')
-      ),
-      (
-        'Musala',
-        'musala',
-        Doodle.sparkle,
-        JT.forestBright,
-        nearestM((p) => !p.isPoi && p.kind == 'musala')
-      ),
-      (
-        'Saung',
-        'saung',
-        Doodle.bench,
-        JT.doodle,
-        nearestM((p) => !p.isPoi && p.kind == 'istirahat')
-      ),
-      (
-        'Gua',
-        'gua',
-        Doodle.cave,
-        JT.sejarah,
-        nearestM((p) => p.id == 'P05' || p.id == 'P06')
-      ),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Cepat temukan', style: JTText.h3),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            for (final (i, (label, query, doodle, color, m))
-                in items.indexed) ...[
-              if (i > 0) const SizedBox(width: 8),
-              Expanded(
-                child: Entrance(
-                  delay: JTMotion.stagger * i,
-                  scaleFrom: 0.9,
-                  child: Pressable(
-                    onTap: () => onPick(query),
-                    scale: 0.94,
-                    semanticLabel: 'Cari $label',
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 10),
-                      decoration: BoxDecoration(
-                        color: JT.surface,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: Color.lerp(color, JT.cream, 0.8),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: DoodleIcon(doodle,
-                                size: 26, color: color, stroke: 2),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: JTText.label),
-                          const SizedBox(height: 2),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(m == null ? '–' : distanceLabel(m),
-                                style: JTText.number(12.5, color: JT.muted)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+            // Room for the floating nav, and always enough to fold the band away, however
+            // short the list is.
+            SliverLayoutBuilder(
+              builder: (context, c) => SliverToBoxAdapter(
+                child: SizedBox(
+                  height: math.max(
+                      120 + pad.bottom,
+                      c.viewportMainAxisExtent +
+                          _range -
+                          c.precedingScrollExtent),
                 ),
               ),
-            ],
+            ),
           ],
         ),
-      ],
-    );
-  }
-}
-
-class _NavButton extends ConsumerWidget {
-  const _NavButton({required this.place});
-
-  final Place place;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final demo = ref.watch(guideProvider);
-    return CircleIconButton(
-      icon: Icons.navigation_rounded,
-      tooltip: 'Navigasi ke ${place.name}',
-      size: 44,
-      iconSize: 20,
-      background: JT.forest,
-      foreground: Colors.white,
-      onTap: () {
-        if (demo.startNavigation(place)) context.push('/navigate');
-      },
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
-  const _Field({
-    required this.controller,
-    required this.focus,
-    required this.onChanged,
-    required this.onClear,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focus;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-        listenable: Listenable.merge([controller, focus]),
-        builder: (context, _) {
-          final on = focus.hasFocus;
-          return AnimatedContainer(
-            duration: JTMotion.base,
-            curve: JTMotion.emphasized,
-            height: 58,
-            padding: const EdgeInsets.only(left: 8, right: 6),
-            decoration: BoxDecoration(
-              color: JT.surface,
-              borderRadius: BorderRadius.circular(29),
-              border: Border.all(
-                  color: on ? JT.forest : JT.line, width: on ? 2 : 1.2),
-            ),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: JTMotion.base,
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: on ? JT.forest : JT.mint,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.search_rounded,
-                      size: 21, color: on ? Colors.white : JT.forest),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focus,
-                    onChanged: onChanged,
-                    textInputAction: TextInputAction.search,
-                    style: JTText.body,
-                    cursorColor: JT.forest,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      isCollapsed: true,
-                      hintText: 'Cari gua, toilet, saung…',
-                      hintStyle: JTText.body.copyWith(color: JT.faint),
-                    ),
-                  ),
-                ),
-                AnimatedScale(
-                  scale: controller.text.isEmpty ? 0 : 1,
-                  duration: JTMotion.base,
-                  curve: JTMotion.pop,
-                  child: CircleIconButton(
-                    icon: Icons.close_rounded,
-                    tooltip: 'Hapus',
-                    size: 40,
-                    iconSize: 18,
-                    background: JT.cream,
-                    foreground: JT.muted,
-                    onTap: onClear,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-}
-
-class _Empty extends StatelessWidget {
-  const _Empty(
-      {required this.query,
-      required this.onSuggestion,
-      required this.suggestions});
-
-  final String query;
-  final ValueChanged<String> onSuggestion;
-  final List<String> suggestions;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.fromLTRB(JT.gutter, 4, JT.gutter, 0),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-          decoration: BoxDecoration(
-            color: JT.surface,
-            borderRadius: BorderRadius.circular(JT.rCard),
-          ),
-          child: Column(
-            children: [
-              Text(
-                  query.trim().isEmpty
-                      ? 'Belum ada tempat di sini'
-                      : '“${query.trim()}” belum ketemu',
-                  style: JTText.h2,
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 6),
-              Text('Coba kata lain, atau salah satu ini:',
-                  textAlign: TextAlign.center,
-                  style: JTText.body.copyWith(color: JT.muted)),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  for (final s in suggestions)
-                    ChipToggle(
-                        label: s,
-                        icon: Icons.search_rounded,
-                        selected: false,
-                        dense: true,
-                        onTap: () => onSuggestion(s)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-/// Pinned field + chips; gains a hairline once the list scrolls under it.
-class _PinnedSearch extends SliverPersistentHeaderDelegate {
-  _PinnedSearch({required this.child});
-
-  final Widget child;
-
-  @override
-  double get minExtent => 138;
-  @override
-  double get maxExtent => 138;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final under = overlapsContent || shrinkOffset > 0;
-    return AnimatedContainer(
-      duration: JTMotion.base,
-      decoration: BoxDecoration(
-        color: JT.cream,
-        border: Border(
-            bottom: BorderSide(color: under ? JT.line : JT.cream, width: 1)),
       ),
-      alignment: Alignment.topCenter,
-      child: child,
     );
   }
-
-  @override
-  bool shouldRebuild(_PinnedSearch old) => true;
 }

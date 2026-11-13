@@ -50,20 +50,24 @@ class PlacePhoto extends StatelessWidget {
 
 /// List row: thumbnail (with a visited tick), category label in its colour, the name (the
 /// search match highlighted) and walking distance/time. [trailing] replaces the default
-/// arrow (e.g. a navigate button in search).
+/// arrow (e.g. a navigate button in search); [note] adds a quiet line under the walking
+/// distance (why a search matched); [onLongPress] opens a preview.
 class PlaceTile extends ConsumerWidget {
   const PlaceTile({
     super.key,
     required this.place,
     required this.onTap,
+    this.onLongPress,
     this.trailing,
     this.heroSuffix = '-tile',
     this.highlight = '',
     this.eyebrow,
+    this.note,
   });
 
   final Place place;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final Widget? trailing;
   final String heroSuffix;
 
@@ -73,12 +77,16 @@ class PlaceTile extends ConsumerWidget {
   /// Replaces the category label (e.g. "Terdekat").
   final String? eyebrow;
 
+  /// Small muted line under the walking distance (e.g. 'Cocok dengan "wc"').
+  final String? note;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demo = ref.watch(guideProvider);
     final visited = demo.visited.contains(place.id);
     return Pressable(
       onTap: onTap,
+      onLongPress: onLongPress,
       scale: 0.98,
       semanticLabel: place.name,
       child: Container(
@@ -118,6 +126,10 @@ class PlaceTile extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   WalkMeta(place: place),
+                  if (note != null) ...[
+                    const SizedBox(height: 5),
+                    MatchNote(note!),
+                  ],
                 ],
               ),
             ),
@@ -136,6 +148,28 @@ class PlaceTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Quiet line saying why a search matched ('Cocok dengan "wc"').
+class MatchNote extends StatelessWidget {
+  const MatchNote(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          const Icon(Icons.subdirectory_arrow_right_rounded,
+              size: 14, color: JT.faint),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: JTText.caption),
+          ),
+        ],
+      );
 }
 
 /// Small coloured eyebrow: category icon + label (or [text]) in the category tint.
@@ -190,15 +224,20 @@ class WalkMeta extends ConsumerWidget {
         const SizedBox(width: 3),
         Text(distanceLabel(demo.walkingM(place)),
             style: JTText.number(13.5, color: fg)),
-        Text(' · ${minutesLabel(demo.walkingTime(place))}',
-            style: JTText.caption
-                .copyWith(color: color?.withValues(alpha: 0.85) ?? JT.muted)),
+        Flexible(
+          child: Text(' · ${minutesLabel(demo.walkingTime(place))}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: JTText.caption
+                  .copyWith(color: color?.withValues(alpha: 0.85) ?? JT.muted)),
+        ),
       ],
     );
   }
 }
 
-/// Text with the first case-insensitive occurrence of [highlight] marked in sun yellow.
+/// Text with every case-insensitive occurrence of the words in [highlight] marked in sun
+/// yellow. The whole phrase is tried first, then each word of two letters or more.
 class MatchText extends StatelessWidget {
   const MatchText(this.text,
       {super.key, this.highlight = '', this.style, this.maxLines});
@@ -208,23 +247,51 @@ class MatchText extends StatelessWidget {
   final TextStyle? style;
   final int? maxLines;
 
+  /// Sorted, non-overlapping [start, end) ranges of [text] to mark.
+  static List<(int, int)> ranges(String text, String highlight) {
+    final lower = text.toLowerCase();
+    final q = highlight.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    final whole = lower.indexOf(q);
+    final needles = whole >= 0
+        ? [q]
+        : q.split(RegExp(r'\s+')).where((w) => w.length >= 2).toList();
+    final found = <(int, int)>[];
+    for (final n in needles) {
+      for (var i = lower.indexOf(n); i >= 0; i = lower.indexOf(n, i + 1)) {
+        found.add((i, i + n.length));
+      }
+    }
+    found.sort((a, b) => a.$1.compareTo(b.$1));
+    final merged = <(int, int)>[];
+    for (final r in found) {
+      if (merged.isNotEmpty && r.$1 <= merged.last.$2) {
+        final last = merged.removeLast();
+        merged.add((last.$1, r.$2 > last.$2 ? r.$2 : last.$2));
+      } else {
+        merged.add(r);
+      }
+    }
+    return merged;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final q = highlight.trim().toLowerCase();
-    final i = q.isEmpty ? -1 : text.toLowerCase().indexOf(q);
-    if (i < 0) {
+    final marks = ranges(text, highlight);
+    if (marks.isEmpty) {
       return Text(text,
           maxLines: maxLines, overflow: TextOverflow.ellipsis, style: style);
     }
+    const mark =
+        TextStyle(backgroundColor: JT.sunSoft, fontWeight: FontWeight.w800);
+    var at = 0;
     return Text.rich(
       TextSpan(children: [
-        TextSpan(text: text.substring(0, i)),
-        TextSpan(
-          text: text.substring(i, i + q.length),
-          style: TextStyle(
-              backgroundColor: JT.sunSoft, fontWeight: FontWeight.w800),
-        ),
-        TextSpan(text: text.substring(i + q.length)),
+        for (final (start, end) in marks) ...[
+          if (start > at) TextSpan(text: text.substring(at, start)),
+          TextSpan(text: text.substring(start, at = end), style: mark),
+        ],
+        if (at < text.length) TextSpan(text: text.substring(at)),
       ]),
       maxLines: maxLines,
       overflow: TextOverflow.ellipsis,
