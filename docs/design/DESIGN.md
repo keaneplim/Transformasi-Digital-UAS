@@ -48,8 +48,9 @@ Category tints (always paired with an icon): sejarah #B0683A, alam #3E8A4F, rekr
 - `SkipChip`, `ChipToggle` (category/interest chips with pop + haptic), `Pill` (meta labels), `JTCard` (22 dp radius surface), `PageDots`, `AnimatedCount`, `SectionHeader`, `Grabber`, `showJTSheet`.
 - Visuals (`visuals.dart`): `SceneImage` (photo, or an illustrated duotone landscape in the category tint: sky, haloed sun, cloud, three hills with pines, and the place's doodle as a white stamp; same ratio, so a real photo simply replaces it), `Waveform`, `Sparkline` (route elevation), `LeafConfetti`, `PulseRings`.
 - Motion (`motion.dart`): `Pressable` (spring scale 0.96 + selection haptic), `Entrance` (delayed fade/slide/scale).
-- Place widgets (`shell/src/ui/widgets.dart`): `PlaceCard` (polaroid: inset photo + category pill, white footer with name, walk meta, mint arrow), `PlaceTile` (thumbnail with `VisitedTick`, `CategoryLabel` eyebrow in the category tint, `MatchText` name with the search match on sun yellow, `WalkMeta`, chevron or custom trailing), `StatStrip` (icons under each value).
+- Place widgets (`shell/src/ui/widgets.dart`): `PlaceCard` (polaroid: inset photo + category pill, white footer with name, walk meta, mint arrow), `PlaceTile` (thumbnail with `VisitedTick`, `CategoryLabel` eyebrow in the category tint, `MatchText` name with every matched word on sun yellow, `WalkMeta`, optional `MatchNote` line "Cocok dengan “wc”", chevron or custom trailing, optional long-press), `StatStrip` (icons under each value).
 - Home: start card as a **trail ticket** (sun-tinted stub, perforated tear line with side notches, one doodle layer across both halves fading left, honest "Selesai ±12.54, sebelum tutup" check, stats with icons); closing time as a **sun arc** (dashed day path, sun at now, Buka/Tutup times); "Cari tempat lain" as a mint doodle card with Pako peeking from the corner.
+- Search (`shell/src/ui/search_header.dart`, `search_sections.dart`): `SearchHeaderDelegate` (**collapsing sun band**: 232 → 84 dp below the status bar; headline fades, Pako ducks behind the canopy, the canopy shrinks, the field keeps straddling the edge; it never rests half folded), `SearchField` (mint disc that turns forest on focus, hint that rolls through "Cari “gua”…", clear button that pops in), `SearchCategoryRail` (chips with a **live count** per category for the current query; empty categories fade), `SearchQuickFinds` (carousel of doodle cards with the walk to the nearest one), `SearchRecents` (history chips with a small cross), `SearchFeatureCard` (wide polaroid with a badge and the page's only forest-green navigate disc), `SearchNavButton` (quiet mint disc on rows), `SearchResultsHeader` (count + sort pill), `SearchCorrection` (mint note "Menampilkan hasil untuk “pinus”"), `SearchEmpty` (Pako thinking on a mint doodle band), `showSearchSortSheet`, `showPlacePeek` (floating sheets, 28 dp radius, 12 dp margin). One loud action per page: the feature card owns the forest disc, rows use mint.
 - Map (`lib/modules/map`, R5): `ParkMapView`, `MapPin`, `ParkMapController` (fit, move, eased glide), `PlaceMarker`, `UserDot`. Facilities appear from zoom 16.9 so they never cover POI labels.
 - Radii: 22 cards, 30 sheets, full pills. Touch targets ≥ 48 dp. Gutter 20 dp.
 
@@ -58,11 +59,11 @@ CustomPainter vector with random blinking, breathing loop, elastic pop on pose c
 | Pose | Used on |
 |---|---|
 | `wave` | welcome intro (large, then glides into the onboarding header), returning-visitor splash, home header |
-| `curious` | trigger card, search header |
+| `curious` | trigger card, search header (peeks over the canopy at the field, eyes follow the text being typed, ducks away when nothing matches) |
 | `navigate` (holds a map) | onboarding permissions, recommendation sheet |
 | `listen` (headphones, music notes) | Mode dengar while playing |
 | `cheer` | arrived, session summary |
-| `thinking` | empty search, settings |
+| `thinking` | empty search card, settings |
 | `sleepy` (Zs) | closing reminder, "Kembali ke gerbang" |
 | `drink` (bottle) | hydration reminder |
 | `idle` | elsewhere |
@@ -81,7 +82,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 | overlay | Approaching banner, trigger card, closing + hydration reminders, recommendation sheet | UI04, UI05, UI08, UI13 |
 | `/poi/:id` | Parallax gallery (Hero), meta, audio card, safety note, short observational text, facts | UI06 |
 | `/play/:id` | Mode dengar: dusk screen, big controls, waveform | UI07 |
-| `/home` tab Cari | "Mau ke mana hari ini?" with Pako peeking at the field (thinking when nothing matches); pinned field (mint search disc that turns forest on focus) + category chips, hairline once scrolled; "Cepat temukan" quick finds (toilet, musala, saung, gua with nearest distance); results header ("Semua tempat 21" / "5 hasil untuk “gua”", terdekat dulu); rows with highlighted match and a navigate button; empty state card with suggestion chips | UI09 |
+| `/home` tab Cari | **Sun band like Home's** with "Mau ke mana hari ini?" and Pako peeking over the canopy; the band folds to a strip on scroll and as soon as the field is focused, the field pinned on its edge, category chips with live counts pinned below (hairline once scrolled). **Browsing:** "Terakhir dicari" (on-device history chips, shown once there is any), "Cepat temukan" carousel (toilet, musala, saung, gua, warung, petugas with the nearest walking distance), "Terdekat dari Anda" feature card (nearest sight not visited yet), "Semua tempat 21" with the sort pill. **Searching:** "5 hasil untuk “gua”" + sort pill (Paling cocok / Terdekat / Nama A–Z in a sheet); best match as the feature card (badge "Paling cocok", or "Terdekat" when several match equally), the rest as rows with matched words highlighted, a quiet navigate disc, and "Cocok dengan “wc”" when a synonym matched; a mint note when a typo was corrected. Long-press any place for a preview sheet (photo, walk, short text, Navigasi / Lihat di peta / Detail). **Empty:** Pako thinking, then either "Lihat di semua kategori" (when the other categories have matches) or suggestion chips | UI09 |
 | `/navigate` | Instruction card, route drawn on, remaining distance/time/arrival, "Mulai jalan" | UI10 |
 | `/arrived` | Large photo straddling the sun edge, short description, steps/km/closing pills, listen or next | UI11 |
 | `/scan` | QR viewfinder (animated corners, scan line), weak-signal note, codes for the caves | UI12 |
@@ -102,7 +103,7 @@ Durations 120 / 220 / 360 / 600 ms (`JTMotion.fast/base/slow/lazy`), list stagge
 - Out-of-scope UI: accounts, social, tickets, AR, SOS (NG01–NG07).
 
 ## 10. Visual baselines
-`test_goldens/screens_golden_test.dart` renders 31 screens/states at 390×844 (incl. two welcome frames, lower Home, search results, map without GPS in real mode) and 11 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
+`test_goldens/screens_golden_test.dart` renders 39 screens/states at 390×844 (incl. two welcome frames, lower Home, nine search states: browsing, scrolled, history, results, synonym, typo, sort sheet, preview sheet, category, two empty states; map without GPS in real mode) and 11 at 360×780 with mock data and a fixed clock. Not run in CI (pixels differ per OS).
 ```bash
 flutter test test_goldens --update-goldens   # regenerate after a UI change
 flutter test test_goldens                    # diff against the saved baselines

@@ -678,6 +678,8 @@ Graph covers all POIs/facilities, connected; UI10/UI11 work on replay and on one
 3. Item matches if every query token matches something. Rank by match quality, then walking distance.
 - Dataset is ~16 items → linear scan in memory, ≪1 s (AC4).
 
+**As built (2026-11-13, `shell/src/state/search.dart`).** `matchPlace` returns a `SearchHit` with a score: whole name 100 · name prefix 90 · word-of-name prefix 80 · inside the name 70 · keyword exact/prefix/inside 60/55/50 · category label 45 · word-by-word 40 · typo-tolerant 30 (name) / 20 (keyword). The edit distance counts a swapped neighbouring pair as one slip (optimal string alignment), so "pinsu" finds "pinus" within the D12 budget. Typo-tolerant hits are a fallback: `searchPlaces` drops them when anything matched literally and otherwise keeps only the closest tier; `didYouMean` gives the reading that is shown to the visitor. `SearchHit.via` is the synonym that matched when the name did not. `sortHits`: best match (score, then walking distance; default with a query), nearest (default without), A–Z. `RecentSearches` keeps the last six queries in the `KeyValueStore` (on the device only, NG05). The empty state offers the other categories or suggestion chips instead of the UC-F05-5 wording. UC-F05-6 (alphabetical without GPS) is not built: without a position, distances are measured from the gate, as on the other screens.
+
 #### Acceptance criteria ↔ tests
 TC-07 (offline: "gua", "toilet", random word, category filter). Unit tests: normalization, each typo case, filter, sort order with a stub `TrailRouter` returning fixed distances.
 

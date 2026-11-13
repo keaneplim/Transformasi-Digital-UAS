@@ -17,8 +17,10 @@ import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/providers.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
 import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
+import 'package:jelajah_taman/modules/shell/src/state/search.dart';
 import 'package:jelajah_taman/modules/shell/src/ui/main_shell.dart';
 import 'package:jelajah_taman/modules/shell/src/ui/overlays.dart';
+import 'package:jelajah_taman/modules/shell/src/ui/search_tab.dart';
 
 import '../test/helpers/test_content.dart';
 
@@ -231,6 +233,25 @@ void main() {
     h.container.read(tabProvider.notifier).state = 2;
     await h.frames();
   });
+  _shot('10h_cari_riwayat', (h) async {
+    await h.onboarded();
+    h.container.read(recentSearchesProvider)
+      ..add('air terjun')
+      ..add('musala')
+      ..add('gua belanda');
+    h.demo.markVisited(h.demo.place('P10')!);
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames();
+  });
+  _shot('10a_cari_gulir', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.drag(find.byType(SearchTab), const Offset(0, -560));
+    await h.frames();
+  });
   _shot('10b_cari_hasil', (h) async {
     await h.onboarded();
     await h.go('/home');
@@ -239,12 +260,67 @@ void main() {
     await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames();
   });
+  _shot('10c_cari_sinonim', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.enterText(find.byType(TextField), 'wc');
+    await h.frames();
+  });
+  _shot('10d_cari_koreksi', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.enterText(find.byType(TextField), 'pinsu');
+    await h.frames();
+  });
+  _shot('10e_cari_urutkan', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.enterText(find.byType(TextField), 'gua');
+    await h.frames(800);
+    await h.tester.tap(find.text('Paling cocok').last);
+    await h.frames();
+  });
+  _shot('10f_cari_intip', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.enterText(find.byType(TextField), 'gua');
+    await h.frames(800);
+    await h.tester
+        .longPress(find.textContaining('Belanda', findRichText: true).first);
+    await h.frames();
+  });
+  _shot('10g_cari_kategori', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.tap(find.text('Sejarah').first);
+    await h.frames();
+  });
   _shot('11_cari_kosong', (h) async {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
     await h.frames(600);
     await h.tester.enterText(find.byType(TextField), 'kolam renang');
+    await h.frames();
+  });
+  _shot('11b_cari_kosong_kategori', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 2;
+    await h.frames(600);
+    await h.tester.tap(find.text('Alam').first);
+    await h.frames(400);
+    await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames();
   });
   _shot('12_detail_foto', (h) async {
