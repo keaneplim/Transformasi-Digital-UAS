@@ -15,6 +15,9 @@ enum PakoPose {
   listen,
   navigate,
   curious,
+
+  /// Leaning in from the side to watch something (the search field).
+  peek,
   sleepy,
   thinking,
   drink,
@@ -28,6 +31,7 @@ class Pako extends StatefulWidget {
     this.look = Offset.zero,
     this.animate = true,
     this.shadow = true,
+    this.reaction = 0,
   });
 
   final PakoPose pose;
@@ -37,6 +41,10 @@ class Pako extends StatefulWidget {
   final Offset look;
   final bool animate;
   final bool shadow;
+
+  /// Change this number to make Pako react once (a quick lean, wide eyes, a flick of the
+  /// sprout), e.g. on every keystroke.
+  final int reaction;
 
   @override
   State<Pako> createState() => _PakoState();
@@ -49,6 +57,8 @@ class _PakoState extends State<Pako> with TickerProviderStateMixin {
       vsync: this, duration: const Duration(milliseconds: 150));
   late final AnimationController _enter = AnimationController(
       vsync: this, duration: const Duration(milliseconds: 520));
+  late final AnimationController _react = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 320));
   Timer? _blinkTimer;
   final _rnd = math.Random();
   PakoPose? _previous;
@@ -71,6 +81,11 @@ class _PakoState extends State<Pako> with TickerProviderStateMixin {
     if (old.pose != widget.pose) {
       _previous = old.pose;
       _enter.forward(from: 0); // squash-pop into the new pose
+    }
+    if (old.reaction != widget.reaction &&
+        widget.animate &&
+        !JTMotion.reduced(context)) {
+      _react.forward(from: 0);
     }
     _sync();
   }
@@ -108,6 +123,7 @@ class _PakoState extends State<Pako> with TickerProviderStateMixin {
     _loop.dispose();
     _blink.dispose();
     _enter.dispose();
+    _react.dispose();
     super.dispose();
   }
 
@@ -119,7 +135,7 @@ class _PakoState extends State<Pako> with TickerProviderStateMixin {
           child: SizedBox.square(
             dimension: widget.size,
             child: AnimatedBuilder(
-              animation: Listenable.merge([_loop, _blink, _enter]),
+              animation: Listenable.merge([_loop, _blink, _enter, _react]),
               builder: (context, _) => CustomPaint(
                 painter: _PakoPainter(
                   pose: widget.pose,
@@ -128,6 +144,7 @@ class _PakoState extends State<Pako> with TickerProviderStateMixin {
                   enter: _enter.isAnimating || _previous != null
                       ? _enter.value
                       : 1,
+                  react: _react.isAnimating ? _react.value : 0,
                   look: widget.look,
                   shadow: widget.shadow,
                 ),
@@ -144,6 +161,7 @@ class _PakoPainter extends CustomPainter {
     required this.t,
     required this.blink,
     required this.enter,
+    required this.react,
     required this.look,
     required this.shadow,
   });
@@ -152,6 +170,7 @@ class _PakoPainter extends CustomPainter {
   final double t; // 0..1 loop
   final double blink; // 0 open … 1 closed
   final double enter; // 0..1 pose change pop
+  final double react; // 0..1 one-off reaction (0 = none)
   final Offset look;
   final bool shadow;
 
@@ -166,6 +185,9 @@ class _PakoPainter extends CustomPainter {
   static const eyeInk = Color(0xFF2A1A10);
 
   double get _w => t * math.pi * 2;
+
+  /// The reaction as a bump: up fast, back down.
+  double get _bump => math.sin(react.clamp(0.0, 1.0) * math.pi);
 
   Path _body() => Path()
     ..moveTo(100, 44)
@@ -200,6 +222,10 @@ class _PakoPainter extends CustomPainter {
         tilt = 0.06;
       case PakoPose.curious:
         tilt = -0.12 + 0.03 * math.sin(_w);
+      case PakoPose.peek:
+        // leans in, and a little further with every reaction
+        tilt = -0.26 + 0.025 * math.sin(_w) - 0.07 * _bump;
+        hop = 3 * _bump;
       case PakoPose.thinking:
         tilt = 0.07;
       case PakoPose.idle:
@@ -332,12 +358,14 @@ class _PakoPainter extends CustomPainter {
         continue;
       }
       final open = 1 - closed;
+      final wide = 1 + 0.14 * _bump;
       final white = Rect.fromCenter(
-          center: Offset(cx, cy), width: 17, height: 20 * open + 1.5);
+          center: Offset(cx, cy), width: 17, height: 20 * open * wide + 1.5);
       canvas.drawOval(white, Paint()..color = Colors.white);
       var lx = look.dx;
       var ly = look.dy;
       if (pose == PakoPose.curious) lx += 0.5 * math.sin(_w);
+      if (pose == PakoPose.peek) lx += 0.1 * math.sin(_w);
       if (pose == PakoPose.thinking) {
         lx = 0.6;
         ly = -0.7;
@@ -391,6 +419,22 @@ class _PakoPainter extends CustomPainter {
             Rect.fromCenter(
                 center: const Offset(100, 141), width: 7, height: 8),
             Paint()..color = eyeInk);
+      case PakoPose.peek:
+        if (_bump > 0.25) {
+          // a small "oh" while reacting
+          canvas.drawOval(
+              Rect.fromCenter(
+                  center: const Offset(100, 141),
+                  width: 6 + 2 * _bump,
+                  height: 6 + 3 * _bump),
+              Paint()..color = eyeInk);
+        } else {
+          canvas.drawPath(
+              Path()
+                ..moveTo(93, 138)
+                ..quadraticBezierTo(100, 145, 107, 138),
+              ink);
+        }
       case PakoPose.sleepy:
         canvas.drawPath(
             Path()
@@ -445,6 +489,10 @@ class _PakoPainter extends CustomPainter {
       case PakoPose.listen:
         left = 1.9;
         right = -1.9;
+      case PakoPose.peek:
+        // the arm on the screen side reaches out, and lifts with every reaction
+        left = 0.7 + 0.06 * math.sin(_w) + 0.55 * _bump;
+        right = -0.3;
       case PakoPose.idle:
       case PakoPose.curious:
       case PakoPose.sleepy:
@@ -475,7 +523,8 @@ class _PakoPainter extends CustomPainter {
   }
 
   void _sprout(Canvas canvas) {
-    final sway = 0.16 * math.sin(_w + 0.6);
+    final sway = 0.16 * math.sin(_w + 0.6) +
+        0.38 * _bump * math.sin(react * math.pi * 3);
     canvas.save();
     canvas.translate(100, 47);
     canvas.rotate(sway);
@@ -585,6 +634,7 @@ class _PakoPainter extends CustomPainter {
       case PakoPose.wave:
       case PakoPose.cheer:
       case PakoPose.curious:
+      case PakoPose.peek:
       case PakoPose.sleepy:
       case PakoPose.thinking:
         break;
@@ -637,6 +687,7 @@ class _PakoPainter extends CustomPainter {
       case PakoPose.wave:
       case PakoPose.navigate:
       case PakoPose.curious:
+      case PakoPose.peek:
       case PakoPose.drink:
         break;
     }
@@ -666,6 +717,7 @@ class _PakoPainter extends CustomPainter {
       old.t != t ||
       old.blink != blink ||
       old.enter != enter ||
+      old.react != react ||
       old.pose != pose ||
       old.look != look;
 }

@@ -31,7 +31,7 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 | `README.md` | Repo layout, first-time setup, daily commands, definition of done. |
 | `lib/`, `test/`, `assets/content/`, `tools/` | Flutter app (modular monolith, see ARCHITECTURE.md), tests, JSON content (**DUMMY until survey**), checker/validator scripts. |
 | `lib/core/theme/`, `lib/core/ui/` | Design tokens (`JT`, `JTText`) and the generic UI kit: components, `Pako` mascot, doodles, motion, `SceneImage`. |
-| `lib/modules/shell/src/ui/`, `lib/modules/shell/src/state/` | All screens UI01–UI15, driven by `GuideController` (ADR-009): real mode (default, GPS via `location`) or demo mode (simulated walk, switch in Settings → Mode demo); both feed the real `GeofenceEngine` (`trigger`). |
+| `lib/modules/shell/src/ui/`, `lib/modules/shell/src/state/` | All screens UI01–UI15, driven by `GuideController` (ADR-009): real mode (default, GPS via `location`) or demo mode (simulated walk, switch in Settings → Mode demo); both feed the real `GeofenceEngine` (`trigger`). Tab changes (Beranda · Peta · Cari) are choreographed by `TabStage` (`tab_stage.dart`, DESIGN.md §6): wrap new pieces on those pages in `Staged`. |
 | `assets/map/`, `tools/osm_to_basemap.py`, `tools/osm_to_graph.py`, `tools/resolve_coords.py`, `tools/photos.py` | Offline vector basemap + hillshade (ADR-008), trail graph from OSM, coordinate resolver, photo fetch/retouch/credits. Raw caches in `survey/raw/geo/`, `survey/raw/osm/`. |
 | `assets/images/`, `assets/fonts/`, `survey/raw/` | Survey photos (7 Nov, metadata stripped), bundled fonts, raw survey data (`photos/` is gitignored, on Drive). |
 | `test_goldens/` | Screen baselines (`baselines/*.png`, 390×844 + 360×780). Not in CI; regenerate after UI changes and look at them. |

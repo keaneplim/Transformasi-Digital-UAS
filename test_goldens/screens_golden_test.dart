@@ -223,7 +223,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 1;
-    await h.frames(600);
+    await h.frames(900);
     h.container.read(mapFocusProvider.notifier).state = 'P05';
     await h.frames(2200);
   });
@@ -248,7 +248,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.drag(find.byType(SearchTab), const Offset(0, -560));
     await h.frames();
   });
@@ -256,7 +256,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames();
   });
@@ -264,7 +264,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'wc');
     await h.frames();
   });
@@ -272,7 +272,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'pinsu');
     await h.frames();
   });
@@ -280,7 +280,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames(800);
     await h.tester.tap(find.text('Paling cocok').last);
@@ -290,7 +290,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'gua');
     await h.frames(800);
     await h.tester
@@ -301,7 +301,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.tap(find.text('Sejarah').first);
     await h.frames();
   });
@@ -309,7 +309,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.enterText(find.byType(TextField), 'kolam renang');
     await h.frames();
   });
@@ -317,7 +317,7 @@ void main() {
     await h.onboarded();
     await h.go('/home');
     h.container.read(tabProvider.notifier).state = 2;
-    await h.frames(600);
+    await h.frames(900);
     await h.tester.tap(find.text('Alam').first);
     await h.frames(400);
     await h.tester.enterText(find.byType(TextField), 'gua');

@@ -4,15 +4,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 
+import 'tab_stage.dart';
+
 /// The search tab's sun band, the same motif as Home, that folds away as the list scrolls:
-/// the headline fades, Pako ducks behind the canopy, and the band shrinks to a strip with
-/// the field still straddling its scalloped edge.
+/// the headline fades, the band shrinks to a strip and the field keeps straddling its
+/// scalloped edge.
+///
+/// Pako watches the field from the right edge of the screen, never fully in view. Open
+/// band: large, leaning in over the canopy. Folded band: he ducks behind the canopy and a
+/// small Pako leans in beside the field, which makes room for him. Either way his eyes
+/// follow the text and he reacts to every keystroke.
 class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   SearchHeaderDelegate({
     required this.topPadding,
     required this.field,
-    this.look = const Offset(-0.5, 0.8),
+    this.typed = 0,
+    this.reaction = 0,
     this.hidePako = false,
+    this.bare = false,
   });
 
   /// Heights below the status bar.
@@ -25,14 +34,40 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   static const _fieldHeight = 58.0;
   static const _fieldBottom = 10.0;
 
+  // Sized so the sprout stays clear of the status bar, even while he reacts.
+  static const _bigPako = 176.0;
+  static const _smallPako = 84.0;
+
+  /// How far the folded field pulls back from the right edge for the small Pako.
+  static const _fieldInset = 38.0;
+
+  /// Bottom of the sun band for a scroll offset: the field only dips its top into the
+  /// band, so the canopy shows above it.
+  static double bandBottom(double topPadding, double shrink) =>
+      topPadding +
+      expanded -
+      shrink.clamp(0.0, range) -
+      _fieldBottom -
+      _fieldHeight +
+      20;
+
+  /// Height of the canopy edge, open (0) to folded (1).
+  static double edgeAt(double t) => lerpDouble(56, 30, t.clamp(0.0, 1.0))!;
+
   final double topPadding;
   final Widget field;
 
-  /// Where Pako's eyes point (they follow the text being typed).
-  final Offset look;
+  /// How far the text has grown, 0…1: Pako's eyes follow it.
+  final double typed;
 
-  /// Pako ducks out of sight (the empty state has its own).
+  /// Changes with every keystroke (see [Pako.reaction]).
+  final int reaction;
+
+  /// Pako leaves (the empty state has its own).
   final bool hidePako;
+
+  /// The tab transition is drawing the band: only the content is built.
+  final bool bare;
 
   @override
   double get maxExtent => topPadding + expanded;
@@ -43,64 +78,66 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final t = (shrinkOffset / range).clamp(0.0, 1.0);
-    final extent = maxExtent - shrinkOffset.clamp(0.0, range);
-    // the field only dips its top into the band, so the canopy shows above it
-    final band = extent - _fieldBottom - _fieldHeight + 20;
-    final edge = lerpDouble(56, 30, t)!;
-    const pako = 108.0;
-    return ColoredBox(
-      color: JT.cream,
-      child: Stack(
-        children: [
+    final band = bandBottom(topPadding, shrinkOffset);
+    final slow = JTMotion.of(context, JTMotion.slow);
+    // 0 → 1 over the last stretch of the fold: the small Pako leans in
+    final folded = ((t - 0.55) / 0.45).clamp(0.0, 1.0);
+
+    // Large Pako, behind the canopy: his feet stay hidden, his right side is off screen.
+    final big = Positioned(
+      right: -_bigPako * 0.36,
+      top: band - _bigPako * 0.9 - 24 + 70 * t,
+      child: Opacity(
+        opacity: (1 - t * 2.2).clamp(0.0, 1.0),
+        child: AnimatedSlide(
+          offset: hidePako ? const Offset(0.5, 0.7) : Offset.zero,
+          duration: slow,
+          curve: JTMotion.emphasized,
+          child: Staged(
+            // he belongs behind the page's own canopy, so he waits for it to land
+            at: TabStage.settled,
+            span: 0.6,
+            from: const Offset(84, 36),
+            curve: JTMotion.pop,
+            exit: 1,
+            child: ExcludeSemantics(
+              child: Pako(
+                pose: PakoPose.peek,
+                size: _bigPako,
+                shadow: false,
+                look: Offset(-0.95 + 0.5 * typed, 0.85),
+                reaction: reaction,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Stack(
+      children: [
+        if (!bare) const Positioned.fill(child: ColoredBox(color: JT.cream)),
+        if (!bare)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: band,
-            child: ClipRect(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  const ColoredBox(color: JT.sun),
-                  const DoodlePattern(seed: 5),
-                  // Pako peeks over the canopy at the field.
-                  Positioned(
-                    right: 14,
-                    top: band - pako - 22 + 60 * t,
-                    child: Opacity(
-                      opacity: (1 - t * 2.2).clamp(0.0, 1.0),
-                      child: AnimatedSlide(
-                        offset: hidePako ? const Offset(0, 0.9) : Offset.zero,
-                        duration: JTMotion.of(context, JTMotion.slow),
-                        curve: JTMotion.emphasized,
-                        child: ExcludeSemantics(
-                          child: Pako(
-                            pose: PakoPose.curious,
-                            size: pako,
-                            shadow: false,
-                            look: look,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: -1,
-                    child: CanopyEdge(height: edge, seed: 5),
-                  ),
-                ],
-              ),
+            child: SunBand(
+              seed: TabStage.seed,
+              edgeHeight: edgeAt(t),
+              behindEdge: big,
             ),
           ),
-          Positioned(
-            left: JT.gutter,
-            right: pako + 22,
-            top: topPadding + 14 - 18 * t,
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: (1 - t * 1.9).clamp(0.0, 1.0),
+        Positioned(
+          left: JT.gutter,
+          right: 126,
+          top: topPadding + 14 - 18 * t,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: (1 - t * 1.9).clamp(0.0, 1.0),
+              child: Staged(
+                from: const Offset(0, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -130,15 +167,53 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
           ),
-          Positioned(
-            left: JT.gutter,
-            right: JT.gutter,
-            bottom: _fieldBottom,
-            height: _fieldHeight,
+        ),
+        // Small Pako, beside the folded field.
+        Positioned(
+          right: -28,
+          bottom: 2,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: folded,
+              child: Transform.translate(
+                offset: Offset(40 * (1 - folded), 0),
+                child: AnimatedSlide(
+                  offset: hidePako ? const Offset(1, 0) : Offset.zero,
+                  duration: slow,
+                  curve: JTMotion.emphasized,
+                  child: Staged(
+                    at: 0.2,
+                    span: 0.6,
+                    from: const Offset(64, 0),
+                    curve: JTMotion.pop,
+                    exit: 1,
+                    child: ExcludeSemantics(
+                      child: Pako(
+                        pose: PakoPose.peek,
+                        size: _smallPako,
+                        look: Offset(-1 + 0.55 * typed, 0.2),
+                        reaction: reaction,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: JT.gutter,
+          right: JT.gutter + _fieldInset * t,
+          bottom: _fieldBottom,
+          height: _fieldHeight,
+          child: Staged(
+            at: 0.08,
+            from: const Offset(0, 14),
+            scaleFrom: 0.96,
             child: field,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -146,8 +221,10 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(SearchHeaderDelegate old) =>
       old.topPadding != topPadding ||
       old.field != field ||
-      old.look != look ||
-      old.hidePako != hidePako;
+      old.typed != typed ||
+      old.reaction != reaction ||
+      old.hidePako != hidePako ||
+      old.bare != bare;
 }
 
 /// The search field: a mint search disc that turns forest on focus, a hint that cycles
@@ -346,12 +423,19 @@ class _CyclingHint extends StatelessWidget {
 /// Pinned strip under the header (the category rail); gains a hairline once the list
 /// scrolls under it.
 class SearchRailDelegate extends SliverPersistentHeaderDelegate {
-  SearchRailDelegate({required this.child, required this.scrolled});
+  SearchRailDelegate({
+    required this.child,
+    required this.scrolled,
+    this.bare = false,
+  });
 
   static const height = 56.0;
 
   final Widget child;
   final ValueListenable<bool> scrolled;
+
+  /// The tab transition is drawing the page behind: no background of its own.
+  final bool bare;
 
   @override
   double get minExtent => height;
@@ -361,23 +445,25 @@ class SearchRailDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(
           BuildContext context, double shrinkOffset, bool overlapsContent) =>
-      ValueListenableBuilder<bool>(
-        valueListenable: scrolled,
-        builder: (context, under, child) => AnimatedContainer(
-          duration: JTMotion.base,
-          decoration: BoxDecoration(
-            color: JT.cream,
-            border: Border(
-                bottom:
-                    BorderSide(color: under ? JT.line : JT.cream, width: 1)),
-          ),
-          alignment: Alignment.center,
-          child: child,
-        ),
-        child: child,
-      );
+      bare
+          ? Center(child: child)
+          : ValueListenableBuilder<bool>(
+              valueListenable: scrolled,
+              builder: (context, under, child) => AnimatedContainer(
+                duration: JTMotion.base,
+                decoration: BoxDecoration(
+                  color: JT.cream,
+                  border: Border(
+                      bottom: BorderSide(
+                          color: under ? JT.line : JT.cream, width: 1)),
+                ),
+                alignment: Alignment.center,
+                child: child,
+              ),
+              child: child,
+            );
 
   @override
   bool shouldRebuild(SearchRailDelegate old) =>
-      old.child != child || old.scrolled != scrolled;
+      old.child != child || old.scrolled != scrolled || old.bare != bare;
 }
