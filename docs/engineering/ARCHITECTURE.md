@@ -153,7 +153,7 @@ class EventBus {
 }
 ```
 - **Async delivery** (default broadcast): a subscriber can't block or crash the publisher. Subscribers must catch their own errors and log them.
-- **Single isolate.** The whole app (including screen-off tracking via geolocator's foreground notification) runs in the main isolate, so one bus is enough. The exception is notification action callbacks that run in a background isolate (F04 spike, R8). They must forward into the main isolate (e.g., via `IsolateNameServer`/`SendPort`) and publish there, never touch the bus directly.
+- **Single isolate.** The whole app (including screen-off tracking via geolocator's foreground notification) runs in the main isolate, so one bus is enough. The exception is notification action callbacks that run in a background isolate (F04 spike, R8). They must forward into the main isolate (e.g., via `IsolateNameServer`/`SendPort`) and publish there, never touch the bus directly. **As built (PB07, 2026-11-14):** flutter_local_notifications starts a *separate Flutter engine* for every button without UI (Dengarkan, Nanti), also while the app runs. `forwardNotificationTapToMainIsolate` (notify `src/data/`) only sends `{poi, action}` strings to the port `jelajah_taman.notify.taps`; `LocalAlertNotifier` turns them into `AlertTap`s on the main isolate, where `TriggerAlerts` (shell) acts on the guide. If the main isolate is gone (app killed) the tap is dropped; trigger notifications expire after 10 min for that reason.
 
 ---
 

@@ -84,12 +84,12 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests. Start right after day 1 (A is free once T01–T02 are done). | A | T01 | 0–1 | ☑ |
 | T09 | Trigger controller: fixes → engine → events; approaching banner UI04 | A | T08 | 1 | ◐ |
 | T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ☐ |
-| T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ☐ |
-| T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ☐ |
+| T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ◐ built 14 Nov (PB07); phone check pending |
+| T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ◐ decided: option (b), see F04; phone check pending |
 | T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX (script + tests done; run on the survey GPX pending) | B | survey | 0–1 | ◐ |
 | T14 | Real `TrailRouter`: snapping, Dijkstra on time cost, ETA with slope (D09) + tests | B | T13 (dummy graph is fine to start) | 1 | ☑ |
 | T15 | Lock-screen/earphone media controls, Auto-Play, voice prompt on trigger, `VoiceArbiter` | C | T07, T11 | 1–2 | ☐ |
-| T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table. **A's first task in wave 2:** C's T18 needs `SessionController.start()`. | A | T08 | 2 | ☐ |
+| T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table. **A's first task in wave 2:** C's T18 needs `SessionController.start()`. | A | T08 | 2 | ◐ 14 Nov (PB06): `SessionRecord`/`SessionStore` in `session` (key-value store, not SQLite), visit log, restore after the app is killed; lifecycle still lives in `GuideController` (shell) |
 | T17 | GPS-weak banner (60 s) + manual POI pick (builds the POI list widget that T20 reuses) | A | T09 | 2 | ☐ |
 | T18 | Onboarding UI01 (permission flow, battery exemption, TTS check) + Home UI02 (interests, route chooser, *Mulai Jelajah*). Until T16 lands, wire the button to a stub `SessionController`. | C | T03; T16 (stub until then) | 2 | ☐ |
 | T19 | Navigation UI10/UI11: route line, remaining distance/ETA, arrival (never triggers, D06), reroute | B | T14, T04 | 2 | ☐ |
@@ -753,6 +753,7 @@ Only one voice at a time. Priority: **safety (closing reminder) > navigation > t
 - `audio_service` provides the media session → lock-screen controls, earphone buttons, Bluetooth controls, and the foreground media notification. `just_audio` plays files.
 - `flutter_tts` with `id-ID`. At startup check the Indonesian voice is installed **offline**; if not, onboarding prompts to install it, and critical prompts fall back to pre-recorded clips in `assets/audio/prompts/` (Risk R3).
 - **Technical spike (S2, A + C, half a day):** making the *Dengarkan* notification action start playback **without opening the app**. Non-UI notification actions may run in a background isolate that can't reach the main-isolate audio service. Options: (a) action with UI that immediately backgrounds, (b) message the main isolate via `IsolateNameServer`/`SendPort`, (c) make the trigger notification itself a media-style notification owned by `audio_service`. Choose by end of S2 and record the decision.
+  **Decision (2026-11-14, PB07): option (b).** Reading the plugin's `ActionBroadcastReceiver` showed that a button without UI *always* runs in a separate engine, so (a) would open the app and (c) waits for `audio_service` (T15). The background entry point forwards the tap through `IsolateNameServer`; the main isolate plays the narration. Limits: works while the app process is alive (the location foreground service keeps it alive during a session); pausing from the lock screen still needs T15. Confirm on a phone (PB07 phone check).
 - Vibration patterns: approaching = 1 × 300 ms; trigger = 2 × 200 ms.
 
 #### Acceptance criteria ↔ tests
@@ -945,7 +946,8 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 | Channel | Importance | Used by |
 |---|---|---|
 | `session` | low, ongoing | foreground service "sedang memandu" |
-| `trigger` | high, sound | F02 trigger with actions |
+| `trigger` | high, sound, 2 × 200 ms vibration | F02 trigger with actions; only while the app is not visible (in-app card + vibration otherwise) |
+| `approach` | default (no pop-up), sound, 1 × 300 ms vibration | F02/F04 approaching, during a session, also while the app is visible (added in PB07: the `vibration` plugin alone is not reliable from the background, notifications are) |
 | `reminder` | high, sound | A03 closing, F08 hydration |
 | `recommendation` | default, silent | F07 when screen off |
 | media | (audio_service) | narration controls |

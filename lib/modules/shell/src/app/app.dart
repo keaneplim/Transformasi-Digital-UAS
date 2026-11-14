@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jelajah_taman/core/providers.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+import 'package:jelajah_taman/modules/notify/notify.dart';
 
 import '../state/guide_controller.dart';
+import '../state/trigger_alerts.dart';
 import '../ui/overlays.dart';
 import 'app_router.dart';
 
@@ -17,9 +22,56 @@ class JelajahTamanApp extends ConsumerStatefulWidget {
 
 class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
   late final GoRouter _router = buildAppRouter();
+  TriggerAlerts? _alerts;
+  AppLifecycleListener? _lifecycle;
+
+  /// A route asked for by a notification tap while the splash was still showing.
+  String? _deferredPath;
+
+  @override
+  void initState() {
+    super.initState();
+    // PB07: only where the notification plugin is bound (the app; not tests or web preview).
+    final notifier = ref.read(alertNotifierProvider);
+    if (notifier != null) {
+      _alerts = TriggerAlerts(
+        guide: ref.read(guideProvider),
+        notifier: notifier,
+        bus: ref.read(eventBusProvider),
+        navigate: _navigate,
+      );
+      _lifecycle = AppLifecycleListener(
+        onStateChange: (s) => _alerts?.setVisible(
+            s == AppLifecycleState.resumed || s == AppLifecycleState.inactive),
+      );
+      _router.routerDelegate.addListener(_flushDeferred);
+    }
+  }
+
+  String get _location => _router.routerDelegate.currentConfiguration.uri.path;
+
+  /// The splash replaces itself with Home/onboarding, which would drop a route pushed now.
+  void _navigate(String path) {
+    if (_location == '/') {
+      _deferredPath = path;
+    } else {
+      unawaited(_router.push(path));
+    }
+  }
+
+  void _flushDeferred() {
+    final path = _deferredPath;
+    if (path == null || _location == '/') return;
+    _deferredPath = null;
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => unawaited(_router.push(path)));
+  }
 
   @override
   void dispose() {
+    _router.routerDelegate.removeListener(_flushDeferred);
+    _lifecycle?.dispose();
+    _alerts?.dispose();
     _router.dispose();
     super.dispose();
   }

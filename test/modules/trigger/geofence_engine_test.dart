@@ -233,6 +233,75 @@ void main() {
         isA<PoiVisited>());
   });
 
+  test('arrival visit (UI11): Visited(nav) without a trigger event (D06)', () {
+    final e = engine();
+    final out = e.visitOnArrival('A', DateTime(2026, 11, 14, 10));
+    expect(out.single,
+        isA<PoiVisited>().having((x) => x.how, 'how', EngagementKind.nav));
+    expect(e.isVisited('A'), isTrue);
+    expect(e.visitOnArrival('A', DateTime(2026, 11, 14, 10, 1)), isEmpty,
+        reason: 'already visited: nothing new to log');
+  });
+
+  test('reset: a POI visited in one session can trigger in the next', () {
+    final w = Walk(engine(
+        targets: [GeofenceTarget(id: 'A', position: _origin, radiusM: 20)]));
+    w
+      ..fix(0)
+      ..fix(0);
+    w.e.onEngaged('A', EngagementKind.opened, w.t);
+    expect(w.e.isVisited('A'), isTrue);
+    w.e.reset();
+    w.events.clear();
+    w
+      ..fix(0)
+      ..fix(0);
+    expect(w.of<PoiTriggered>(), hasLength(1));
+  });
+
+  test(
+      'snapshot → restore keeps visited, and a triggered POI keeps its cooldown',
+      () {
+    final w = Walk(engine());
+    // A: triggered + engaged → visited. B: triggered, "Nanti" → stays triggered.
+    w
+      ..fix(0)
+      ..fix(0);
+    w.e.onEngaged('A', EngagementKind.opened, w.t);
+    w
+      ..fix(50, dt: const Duration(seconds: 31))
+      ..fix(50);
+    expect(w.e.stateOf('B'), PoiState.triggered);
+
+    final restored = engine()..restore(w.e.toJson());
+    expect(restored.stateOf('A'), PoiState.visited);
+    expect(restored.stateOf('B'), PoiState.triggered);
+    final again = Walk(restored)..t = w.t;
+    // Walk away and back within the 10 min cooldown: B must not trigger again.
+    again
+      ..fix(150)
+      ..fix(50, dt: const Duration(minutes: 2))
+      ..fix(50);
+    expect(again.of<PoiTriggered>(), isEmpty);
+    // A stays quiet too (visited for the session).
+    again
+      ..fix(0)
+      ..fix(0);
+    expect(again.of<PoiTriggered>(), isEmpty);
+  });
+
+  test('restore ignores unknown states and junk instead of throwing', () {
+    final e = engine()
+      ..restore({
+        'pois': {
+          'A': {'state': 'exploded'},
+          'B': 'not a map',
+        },
+      });
+    expect(e.stateOf('A'), PoiState.outside);
+    expect(e.stateOf('B'), PoiState.outside);
+  });
+
   test('targets from real content: gate disabled, Curug Omas only on Trekking',
       () {
     final content = loadTestContent();

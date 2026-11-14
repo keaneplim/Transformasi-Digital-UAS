@@ -5,5 +5,7 @@
 /// Publishes E1 SessionStarted, E2 SessionEnded.
 library;
 
+export 'src/data/session_store.dart';
 export 'src/domain/session_contracts.dart';
+export 'src/domain/session_record.dart';
 export 'src/session_providers.dart';

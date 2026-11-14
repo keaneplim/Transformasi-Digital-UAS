@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+import 'package:jelajah_taman/modules/notify/notify.dart';
 
 import '../state/guide_controller.dart';
 
@@ -150,12 +151,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     if (_page.round() < 2) {
       _pages.nextPage(duration: JTMotion.lazy, curve: JTMotion.emphasized);
     } else {
-      // "Izinkan & berangkat": the real OS location prompt (real mode); notifications,
-      // pedometer and camera are asked when their engines land.
+      // "Izinkan & berangkat": the real OS prompts, one after the other (Android shows one
+      // permission dialog at a time). Location only in real mode; notifications (PB07) in
+      // both, the lock-screen card is part of the demo too. Pedometer and camera are asked
+      // when their engines land.
       final guide = ref.read(guideProvider);
-      if (_perms['lokasi'] == true && !guide.isDemo) {
-        unawaited(guide.requestLocation());
-      }
+      final notifier = ref.read(alertNotifierProvider);
+      final askLocation = _perms['lokasi'] == true && !guide.isDemo;
+      final askNotify = _perms['notifikasi'] == true && notifier != null;
+      unawaited(() async {
+        if (askLocation) await guide.requestLocation();
+        if (askNotify) await notifier.requestPermission();
+      }());
       context.go('/setup');
     }
   }

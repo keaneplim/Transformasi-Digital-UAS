@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/providers.dart';
 import 'package:jelajah_taman/modules/location/location.dart';
+import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
 import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
@@ -166,6 +167,133 @@ void main() {
     expect(g.sessionActive, isFalse);
     expect(g.showUser, isTrue);
     expect(g.origin, g.content.gate.position);
+  });
+
+  /// The app is killed and opened again: a fresh controller on the same device storage.
+  GuideController relaunch() {
+    c.dispose(); // the killed app stops listening to the GPS
+    c = ProviderContainer(overrides: [
+      ...buildOverrides(
+          content: loadTestContent(), clock: clock, basemap: loadTestBasemap()),
+      locationServiceProvider.overrideWithValue(gps),
+      keyValueStoreProvider.overrideWithValue(store),
+    ]);
+    return c.read(guideProvider);
+  }
+
+  /// Two good fixes on [p]: enough for a trigger (debounce 2). The first one comes [s]
+  /// seconds later; ≥ 30 s keeps clear of the D01 spacing after a previous trigger.
+  void standAt(GeoPoint p, {int s = 31}) {
+    walk(p, s: s);
+    walk(p);
+  }
+
+  test('PB06: a POI visited in one session triggers again in the next session',
+      () async {
+    final g = guide()..startSession();
+    final p05 = g.place('P05')!;
+    standAt(p05.position);
+    expect(g.pendingTrigger?.id, 'P05');
+    g.resolveTrigger(engaged: true);
+    g.endSession();
+    await pumpEventQueue();
+
+    g.startSession();
+    expect(g.stateOf(p05), PoiState.outside);
+    standAt(p05.position);
+    expect(g.pendingTrigger?.id, 'P05',
+        reason: 'the engine must start each session fresh');
+  });
+
+  test(
+      'PB06: the visit log records triggers and visits apart, with their source',
+      () {
+    final g = guide()..startSession();
+    standAt(g.place('P05')!.position);
+    g.resolveTrigger(engaged: false); // "Nanti"
+    standAt(g.place('P06')!.position);
+    g.resolveTrigger(engaged: true); // "Lihat"
+    g.triggerNow(g.place('P07')!, viaQr: true);
+    expect(g.visitLog.map((e) => (e.poiId, e.kind, e.how)), [
+      ('P05', VisitKind.triggered, 'gps'),
+      ('P06', VisitKind.triggered, 'gps'),
+      ('P06', VisitKind.visited, 'opened'),
+      ('P07', VisitKind.triggered, 'qr'),
+      ('P07', VisitKind.visited, 'qr'),
+    ]);
+    expect(SessionStore(store).loadCurrent()?.events, hasLength(5),
+        reason: 'every log entry is saved at once');
+  });
+
+  test('PB06: after the app is killed, the session continues where it was',
+      () async {
+    final g = guide();
+    final gate = g.content.gate.position;
+    final p05 = g.place('P05')!;
+    walk(gate);
+    g.startSession();
+    // walk to Gua Jepang in ten steps, slow enough to count as walking (< 3.5 m/s)
+    for (var i = 1; i <= 10; i++) {
+      walk(lerp(gate, p05.position, i / 10), s: 120);
+    }
+    walk(p05.position);
+    expect(g.pendingTrigger?.id, 'P05');
+    g.resolveTrigger(engaged: true);
+    final walked = g.walkedM;
+    expect(walked, greaterThan(0));
+    await pumpEventQueue();
+
+    final again = relaunch();
+    expect(again.sessionActive, isTrue);
+    expect(again.onboarded, isTrue, reason: 'opens on Home, not onboarding');
+    expect(again.sessionStart, g.sessionStart);
+    expect(again.visited, {'P05'});
+    expect(again.walkedM, closeTo(walked, 0.1));
+    expect(again.visitLog, hasLength(2));
+    await pumpEventQueue();
+    expect(gps.sessions, greaterThanOrEqualTo(2),
+        reason: 'background tracking restarts for the restored session');
+
+    standAt(p05.position);
+    expect(again.pendingTrigger, isNull,
+        reason: 'still visited in this session: no second trigger');
+  });
+
+  test('PB06: an ended session is not resumed but kept as the last session',
+      () async {
+    final g = guide()..startSession();
+    standAt(g.place('P05')!.position);
+    g
+      ..resolveTrigger(engaged: true)
+      ..endSession();
+    await pumpEventQueue();
+
+    final again = relaunch();
+    expect(again.sessionActive, isFalse);
+    expect(SessionStore(store).loadLast()?.visitedIds, {'P05'});
+  });
+
+  test('PB06: a session from yesterday is archived instead of resumed',
+      () async {
+    guide().startSession();
+    await pumpEventQueue();
+    clock.advance(const Duration(days: 1));
+
+    final again = relaunch();
+    expect(again.sessionActive, isFalse);
+    await pumpEventQueue();
+    expect(SessionStore(store).loadCurrent(), isNull);
+    expect(SessionStore(store).loadLast()?.isEnded, isTrue);
+  });
+
+  test('D06: arrival marks the POI visited (nav) without logging a trigger',
+      () {
+    final g = guide()..startSession();
+    g.markVisited(g.place('P06')!);
+    expect(g.visited, contains('P06'));
+    expect(g.visitLog.map((e) => (e.poiId, e.kind, e.how)), [
+      ('P06', VisitKind.visited, 'nav'),
+    ]);
   });
 
   test(

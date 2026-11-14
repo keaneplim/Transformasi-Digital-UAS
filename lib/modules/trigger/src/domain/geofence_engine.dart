@@ -261,6 +261,60 @@ class GeofenceEngine implements TriggerEngine {
     return [_trigger(id, TriggerSource.manual, now)];
   }
 
+  /// Arrival via navigation (UI11) followed by an engagement there: Visited, source `nav`.
+  /// Arrival never creates a trigger (D06), so no [PoiTriggered] is returned.
+  List<DomainEvent> visitOnArrival(String id, DateTime now) {
+    final tr = _tracks.putIfAbsent(id, _Track.new);
+    if (tr.state == PoiState.visited) return const [];
+    tr
+      ..state = PoiState.visited
+      ..debounce = 0
+      ..leftZone = false
+      ..episode = true;
+    return [PoiVisited(at: now, poiId: id, how: EngagementKind.nav)];
+  }
+
+  /// The state worth keeping across an app restart (session restore, PB06): POIs that are
+  /// triggered, cooling down or visited. Outside/approaching are transient and start over.
+  Map<String, Object?> toJson() => {
+        if (_lastTriggerAt != null)
+          'last_trigger_at': _lastTriggerAt!.toIso8601String(),
+        'pois': {
+          for (final e in _tracks.entries)
+            if (e.value.state
+                case PoiState.triggered ||
+                    PoiState.cooldown ||
+                    PoiState.visited)
+              e.key: {
+                'state': e.value.state.name,
+                if (e.value.triggeredAt != null)
+                  'triggered_at': e.value.triggeredAt!.toIso8601String(),
+                'left_zone': e.value.leftZone,
+              },
+        },
+      };
+
+  /// Restores what [toJson] wrote. Unknown states or malformed entries are skipped, so a
+  /// stored session from an older build can't crash the app.
+  void restore(Map<String, Object?> json) {
+    reset();
+    final last = json['last_trigger_at'];
+    if (last is String) _lastTriggerAt = DateTime.tryParse(last);
+    final pois = json['pois'];
+    if (pois is! Map) return;
+    for (final MapEntry(:key, :value) in pois.entries) {
+      if (key is! String || value is! Map) continue;
+      final state = PoiState.values.asNameMap()[value['state']];
+      if (state == null) continue;
+      final at = value['triggered_at'];
+      _tracks.putIfAbsent(key, _Track.new)
+        ..state = state
+        ..triggeredAt = at is String ? DateTime.tryParse(at) : null
+        ..leftZone = value['left_zone'] == true
+        ..episode = true;
+    }
+  }
+
   /// "Nanti" on the approaching banner: end this episode quietly.
   void dismissApproach(String id) {
     final tr = _tracks[id];

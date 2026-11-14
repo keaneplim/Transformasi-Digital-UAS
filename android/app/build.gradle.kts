@@ -12,6 +12,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications (PB07, module notify).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -46,4 +48,13 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // flutter_local_notifications needs desugaring (scheduled-notification time APIs).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Workaround the plugin README gives for crashes with desugaring on Android 12L+
+    // (flutter/flutter#110658). Check on a 12L+ phone before removing.
+    implementation("androidx.window:window:1.0.0")
+    implementation("androidx.window:window-java:1.0.0")
 }

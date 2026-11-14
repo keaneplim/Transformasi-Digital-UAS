@@ -12,6 +12,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_compass: ^0.8.1 # module location only (R5)
+  # module notify only (R5). Not 23.x: it needs compileSdk 37, Flutter 3.47.9 builds with 36.
+  flutter_local_notifications: ^22.0.0
   flutter_map: ^8.3.2
   flutter_riverpod: ^2.6.1
   geolocator: ^14.1.2 # module location only (R5)
@@ -19,6 +21,7 @@ dependencies:
   just_audio: ^0.10.6 # module audio only (R5)
   latlong2: ^0.10.1
   shared_preferences: ^2.5.6 # core only (R5)
+  vibration: ^3.2.1 # module notify only (R5)
 
 dev_dependencies:
   flutter_test:

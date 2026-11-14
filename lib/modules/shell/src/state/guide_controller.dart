@@ -11,6 +11,7 @@ import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
+import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
 
 import 'places.dart';
@@ -53,6 +54,7 @@ class GuideController extends ChangeNotifier {
     );
     mode =
         AppMode.values.asNameMap()[_store.getString(_modeKey)] ?? AppMode.real;
+    _sessions = SessionStore(_store);
     final loc = location;
     if (loc != null) {
       _subs
@@ -60,6 +62,7 @@ class GuideController extends ChangeNotifier {
         ..add(loc.headings.listen(_onHeading))
         ..add(loc.quality.listen(_onQuality));
     }
+    _restoreSession();
     if (mode == AppMode.real) unawaited(_initLocation());
   }
 
@@ -74,6 +77,7 @@ class GuideController extends ChangeNotifier {
   final KeyValueStore _store;
   final bool Function(GeoPoint) _insideZone;
   late final GeofenceEngine _engine;
+  late final SessionStore _sessions;
   final List<StreamSubscription<Object?>> _subs = [];
   static const _modeKey = 'app_mode';
   late final List<Place> places;
@@ -117,6 +121,7 @@ class GuideController extends ChangeNotifier {
   void chooseRoute(String id) {
     routeId = id;
     _engine.setTargets(buildGeofenceTargets(content, activeRouteId: id));
+    _persist(force: true);
     notifyListeners();
   }
 
@@ -200,7 +205,12 @@ class GuideController extends ChangeNotifier {
     if (loc == null) return;
     try {
       access = await loc.access();
-      if (access == LocationAccess.granted) await loc.start();
+      if (access == LocationAccess.granted) {
+        await loc.start();
+        // A session restored at launch needs the foreground service again. Started here,
+        // after start(), so the two calls can't race each other.
+        if (sessionActive) await loc.startSession();
+      }
     } on Object catch (e) {
       AppLog.info('Location unavailable: $e');
     }
@@ -237,6 +247,7 @@ class GuideController extends ChangeNotifier {
     }
     _apply(_engine.onFix(f, now()));
     _checkReminders();
+    _persist();
     notifyListeners();
   }
 
@@ -324,11 +335,18 @@ class GuideController extends ChangeNotifier {
       ];
 
   void startSession() {
+    if (_record != null && !_record!.isEnded) _finishRecord();
     sessionActive = true;
     sessionStart = now();
     sessionEnd = null;
     visited.clear();
     triggered.clear();
+    // Every session starts with fresh geofences: a POI visited in the previous session must
+    // be able to trigger again (D02 is "visited for the session", not forever).
+    _engine.reset();
+    _queue.clear();
+    pendingTrigger = null;
+    approaching = null;
     walkedM = 0;
     trail
       ..clear()
@@ -338,6 +356,19 @@ class GuideController extends ChangeNotifier {
         : null; // walking starts from here
     _hydrationAnchor = now();
     _closingShown = false;
+    _record = SessionRecord(
+      id: 's${sessionStart!.millisecondsSinceEpoch}',
+      startedAt: sessionStart!,
+      mode: mode.name,
+      routeId: routeId,
+      interests: interests.toList(),
+    );
+    _persist(force: true);
+    bus?.publish(SessionStarted(
+        at: sessionStart!,
+        sessionId: _record!.id,
+        routeId: routeId,
+        interests: interests.toList()));
     if (!isDemo) {
       unawaited(location?.startSession());
       _startHeartbeat();
@@ -346,13 +377,124 @@ class GuideController extends ChangeNotifier {
   }
 
   void endSession() {
+    final wasActive = sessionActive;
     sessionEnd = now();
     sessionActive = false;
     stopWalking();
     navigation = null;
     _heartbeat?.cancel();
     if (!isDemo) unawaited(location?.stopSession());
+    if (wasActive && _record != null) {
+      final id = _record!.id;
+      _finishRecord();
+      bus?.publish(SessionEnded(at: sessionEnd!, sessionId: id));
+    }
     notifyListeners();
+  }
+
+  // ---- session log + restore (PB06) ---------------------------------------------------------
+  /// The running session as stored on the device; null when no session runs.
+  SessionRecord? _record;
+  DateTime? _lastSave;
+
+  /// What triggered and was visited this session, in order (field-test evidence).
+  List<VisitEvent> get visitLog => List.unmodifiable(_record?.events ?? []);
+
+  /// Writes the running session. Events and lifecycle changes save at once ([force]);
+  /// walking progress at most every 15 s so a moving visitor doesn't write on every fix.
+  void _persist({bool force = false}) {
+    final r = _record;
+    if (r == null || r.isEnded || !sessionActive) return;
+    final stamp = _baseClock.now();
+    if (!force &&
+        _lastSave != null &&
+        stamp.difference(_lastSave!) < const Duration(seconds: 15)) {
+      return;
+    }
+    _lastSave = stamp;
+    r
+      ..routeId = routeId
+      ..interests = interests.toList()
+      ..walkedM = walkedM
+      ..trail.replaceRange(0, r.trail.length, trail)
+      ..triggerState = _engine.toJson();
+    unawaited(_sessions.save(r));
+  }
+
+  void _finishRecord() {
+    final r = _record;
+    if (r == null) return;
+    r
+      ..endedAt = sessionEnd ?? now()
+      ..walkedM = walkedM
+      ..trail.replaceRange(0, r.trail.length, trail)
+      ..triggerState = _engine.toJson();
+    unawaited(_sessions.finish(r));
+    _record = null;
+  }
+
+  /// At launch: continue a session the OS killed (same day, same mode), or archive a stale one.
+  void _restoreSession() {
+    final r = _sessions.loadCurrent();
+    if (r == null) return;
+    if (!r.canResume(now: now(), mode: mode.name)) {
+      r.endedAt ??= r.startedAt.isAfter(now()) ? r.startedAt : now();
+      unawaited(_sessions.finish(r));
+      return;
+    }
+    final known = {for (final p in pois) p.id};
+    _record = r;
+    sessionActive = true;
+    sessionStart = r.startedAt;
+    sessionEnd = null;
+    onboarded = true; // a session can only have been started after onboarding
+    if (content.routes.any((x) => x.id == r.routeId)) routeId = r.routeId;
+    interests
+      ..clear()
+      ..addAll(r.interests);
+    _engine.setTargets(buildGeofenceTargets(content, activeRouteId: routeId));
+    final state = r.triggerState;
+    if (state != null) _engine.restore(state);
+    triggered
+      ..clear()
+      ..addAll(r.triggeredIds.where(known.contains));
+    visited
+      ..clear()
+      ..addAll(r.visitedIds.where(known.contains));
+    walkedM = r.walkedM;
+    trail
+      ..clear()
+      ..addAll(r.trail);
+    if (isDemo && trail.isNotEmpty) position = trail.last;
+    _hydrationAnchor = now();
+    // Real mode: tracking restarts in _initLocation once the GPS is running.
+    if (!isDemo) _startHeartbeat();
+    AppLog.info('Session ${r.id} restored: ${visited.length} visited, '
+        '${walkedM.round()} m walked');
+  }
+
+  void _logEvents(List<DomainEvent> events) {
+    final r = _record;
+    if (r == null || !sessionActive) return;
+    var changed = false;
+    for (final e in events) {
+      switch (e) {
+        case PoiTriggered(:final at, :final poiId, :final source):
+          r.events.add(VisitEvent(
+              at: at,
+              poiId: poiId,
+              kind: VisitKind.triggered,
+              how: source.name));
+          changed = true;
+        case PoiVisited(:final at, :final poiId, :final how):
+          r.events.add(VisitEvent(
+              at: at, poiId: poiId, kind: VisitKind.visited, how: how.name));
+          changed = true;
+        default:
+          break;
+      }
+    }
+    if (changed) _persist(force: true);
   }
 
   void resetAll() {
@@ -419,10 +561,7 @@ class GuideController extends ChangeNotifier {
     for (final e in events) {
       bus?.publish(e);
       switch (e) {
-        case PoiApproached():
-          if (vibration && pendingTrigger == null) {
-            HapticFeedback.mediumImpact();
-          }
+        // PoiApproached: sound + vibration come from TriggerAlerts (PB07), via the bus.
         case PoiTriggered(:final poiId):
           triggered.add(poiId);
           final p = place(poiId);
@@ -442,12 +581,13 @@ class GuideController extends ChangeNotifier {
     approaching = a == null || pendingTrigger != null
         ? null
         : (place: place(a.id)!, distanceM: a.distanceM);
+    _logEvents(events);
   }
 
   void _showTrigger(Place p) {
     approaching = null;
     pendingTrigger = p;
-    if (vibration) HapticFeedback.heavyImpact();
+    // Vibration (app visible) or the lock-screen notification (app hidden): TriggerAlerts.
     if (navigation != null) _pauseWalk = true;
     if (autoPlay) playAudio(p);
   }
@@ -475,12 +615,13 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Dengarkan / Lihat → visited (D05). Nanti → triggered only.
-  void resolveTrigger({required bool engaged}) {
+  /// Dengarkan (`listened`) / Lihat (`opened`) → visited (D05). Nanti → triggered only.
+  void resolveTrigger(
+      {required bool engaged, EngagementKind how = EngagementKind.opened}) {
     final p = pendingTrigger;
     pendingTrigger = null;
     if (p != null && engaged) {
-      _apply(_engine.onEngaged(p.id, EngagementKind.opened, now()));
+      _apply(_engine.onEngaged(p.id, how, now()));
     }
     _pauseWalk = false;
     while (_queue.isNotEmpty) {
@@ -502,17 +643,12 @@ class GuideController extends ChangeNotifier {
     if (visited.length != before) notifyListeners();
   }
 
-  /// The visitor is at [p] for sure (arrival screen): triggered + visited without a card.
+  /// The visitor is at [p] for sure (arrival screen, UI11): visited, source `nav`. Arrival
+  /// never creates a trigger (D06), so this doesn't count as one in the session log.
   void markVisited(Place p) {
     if (!p.isPoi) return;
-    if (!_engine.isVisited(p.id)) {
-      for (final e in _engine.manual(p.id, now())) {
-        bus?.publish(e);
-      }
-      _apply(_engine.onEngaged(p.id, EngagementKind.nav, now()));
-    }
+    _apply(_engine.visitOnArrival(p.id, now()));
     visited.add(p.id);
-    triggered.add(p.id);
     notifyListeners();
   }
 
@@ -610,6 +746,7 @@ class GuideController extends ChangeNotifier {
       if (vibration) HapticFeedback.heavyImpact();
     }
     _checkReminders();
+    _persist();
     notifyListeners();
   }
 
