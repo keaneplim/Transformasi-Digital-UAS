@@ -23,6 +23,7 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 | `docs/design/` | `DESIGN.md` = design system v2 (source of truth); Stitch prompts and `screens/` = v1, history only |
 | `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, `DEVICE_CHECK.md`, `SURVEY_CHECKLIST.md` |
 | `PROGRESS.md` | Living status, open issues, decisions, log |
+| `LLM_History.md` | AI-assisted work log for the AI & Tools Disclosure + session handoff |
 
 ## Setup
 

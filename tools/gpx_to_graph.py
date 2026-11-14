@@ -757,6 +757,8 @@ def run(gpx_paths: list[Path], content_dir: Path, prm: Params, update_routes: bo
     # waypoints named J.. snap onto the nearest trail as extra cut points
     wp_cuts = []
     for name, lat, lng in data.waypoints:
+        if not name.upper().startswith("J"):
+            continue  # other pins (e.g. POI readings P05_1) are notes, not trail cuts
         p = (*proj.xy(lat, lng), None)
         hit = trails.nearest(p, prm.merge_m * 2)
         if hit:
@@ -1004,6 +1006,10 @@ def _geojson(proj, g, names, attach, waypoints, edges_json, prm) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Windows consoles default to cp1252, which can't print "→" in the report lines.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("gpx", nargs="+", type=Path, help="GPX files or folders containing *.gpx")
     ap.add_argument("--content", type=Path, default=ROOT / "assets" / "content")

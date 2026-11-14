@@ -29,6 +29,7 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 | `docs/engineering/IMPLEMENTATION_PLAN.md` | Per-feature build spec for the coders (use cases, contracts, data schema, owners, decisions D01–D14). PRD wins on conflict. |
 | `docs/engineering/DEVICE_CHECK.md`, `SURVEY_CHECKLIST.md` | Test-phone checklist (incl. iPhone 14 = can't run the APK) and survey trip checklist. |
 | `README.md` | Repo layout, first-time setup, daily commands, definition of done. |
+| `LLM_History.md` | AI-assisted work log (AI & Tools Disclosure source) + **session handoff (§1: where the work stands)**. Read §1 at the start of a session; append a session entry and update §1 at the end. |
 | `lib/`, `test/`, `assets/content/`, `tools/` | Flutter app (modular monolith, see ARCHITECTURE.md), tests, JSON content (**DUMMY until survey**), checker/validator scripts. |
 | `lib/core/theme/`, `lib/core/ui/` | Design tokens (`JT`, `JTText`) and the generic UI kit: components, `Pako` mascot, doodles, motion, `SceneImage`. |
 | `lib/modules/shell/src/ui/`, `lib/modules/shell/src/state/` | All screens UI01–UI15, driven by `GuideController` (ADR-009): real mode (default, GPS via `location`) or demo mode (simulated walk, switch in Settings → Mode demo); both feed the real `GeofenceEngine` (`trigger`). |
@@ -64,5 +65,5 @@ Docs moved into `docs/` on 2026-11-06. Removed 2026-11-03 (still in git history,
 - Visitor-facing UI copy: Bahasa Indonesia, "Anda", no operational detail (radius, GPS accuracy, coordinates, DUMMY labels, debug text). See DESIGN.md §8. The collapsed *Mode demo* panel in Settings is the only exception.
 - Markers in docs: `[VERIFIKASI]` = needs field/manager confirmation; `[ISI]` = admin data missing. Don't invent values to fill them.
 - Historical/location facts must come from the manager, on-site signboards, or survey data — never from AI alone (PRD §8.2). Flag unsourced facts.
-- Any AI-assisted work should be loggable for QA's AI & Tools Disclosure (date, tool, purpose, decision).
+- Any AI-assisted work should be loggable for QA's AI & Tools Disclosure (date, tool, purpose, decision): log it in `LLM_History.md`, including AI mistakes and human corrections.
 - Git: team members commit and push themselves. AI tools must NOT add `Co-Authored-By` trailers or "Generated with …" footers to commits/PRs (AI use is disclosed in the AI & Tools Disclosure log instead). Don't commit unless explicitly asked.
