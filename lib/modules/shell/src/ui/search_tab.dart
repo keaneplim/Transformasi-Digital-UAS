@@ -13,6 +13,7 @@ import '../state/search.dart';
 import 'main_shell.dart';
 import 'search_header.dart';
 import 'search_sections.dart';
+import 'tab_stage.dart';
 import 'widgets.dart';
 
 /// UI09 Search + facility finder (F05, A04).
@@ -23,6 +24,9 @@ import 'widgets.dart';
 /// place worth a visit, every place) or the results (best match as a feature card, the rest
 /// as rows with the match highlighted). Matching is name/synonym/typo-tolerant
 /// (`state/search.dart`); the order is the visitor's choice (best match, nearest, A–Z).
+///
+/// Every piece is [Staged], so the page can clear out and come back in order when the tab
+/// changes (see [TabStage]).
 class SearchTab extends ConsumerStatefulWidget {
   const SearchTab({super.key});
 
@@ -52,6 +56,10 @@ class _SearchTabState extends ConsumerState<SearchTab> {
   SearchSort? _sort;
   bool _snapping = false;
 
+  /// Counts keystrokes: Pako reacts to each one.
+  int _beat = 0;
+  TabStage? _stage;
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +70,50 @@ class _SearchTabState extends ConsumerState<SearchTab> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = TabStageScope.maybeOf(context);
+    if (stage != _stage) {
+      _stage?.detach(TabStage.search, _geometry);
+      _stage?.bare.removeListener(_onBare);
+      _stage = stage
+        ?..attach(TabStage.search, _geometry)
+        ..bare.addListener(_onBare);
+    }
+  }
+
+  void _onBare() => setState(() {});
+
+  /// Where the band is right now: open, folded, or in between.
+  BandGeometry _geometry() {
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    return BandGeometry(
+      shift: 0,
+      bottom: SearchHeaderDelegate.bandBottom(
+          MediaQuery.paddingOf(context).top, offset),
+      edge: SearchHeaderDelegate.edgeAt(offset / _range),
+    );
+  }
+
+  /// Opened to type (the map's search bar): the band is already folded when the page
+  /// arrives, and the field takes focus as soon as it has.
+  void _openTyping() {
+    if (_scroll.hasClients) {
+      final folded = math.min(_range, _scroll.position.maxScrollExtent);
+      if (_scroll.offset < folded) _scroll.jumpTo(folded);
+    }
+    void focus() {
+      if (mounted) _focus.requestFocus();
+    }
+
+    final stage = _stage;
+    stage == null ? focus() : stage.afterArrival(focus);
+  }
+
+  @override
   void dispose() {
+    _stage?.detach(TabStage.search, _geometry);
+    _stage?.bare.removeListener(_onBare);
     _text.dispose();
     _focus.dispose();
     _scroll.dispose();
@@ -109,7 +160,10 @@ class _SearchTabState extends ConsumerState<SearchTab> {
   // ---- query, filter, sort --------------------------------------------------------------
 
   void _onChanged(String q) {
-    setState(() => _query = q);
+    setState(() {
+      _query = q;
+      _beat++;
+    });
     _toListTop();
   }
 
@@ -175,6 +229,11 @@ class _SearchTabState extends ConsumerState<SearchTab> {
   @override
   Widget build(BuildContext context) {
     final demo = ref.watch(guideProvider);
+    ref.listen(searchFocusProvider, (_, __) => _openTyping());
+    final bare = _stage?.bare.value ?? false;
+    // Arrival order: header and field ride in while the canopy settles, the rest follows
+    // once it has landed.
+    const body = TabStage.settled;
     final recents = ref.watch(recentSearchesProvider).items;
     final pad = MediaQuery.paddingOf(context);
 
@@ -238,9 +297,10 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               delegate: SearchHeaderDelegate(
                 topPadding: pad.top,
                 hidePako: hits.isEmpty,
-                // Pako's eyes follow the text as it grows
-                look:
-                    Offset(-0.75 + math.min(_query.length, 14) / 14 * 0.6, 0.8),
+                bare: bare,
+                // Pako's eyes follow the text as it grows, and he reacts to each letter
+                typed: math.min(_query.length, 14) / 14,
+                reaction: _beat,
                 field: SearchField(
                   controller: _text,
                   focus: _focus,
@@ -254,58 +314,82 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               pinned: true,
               delegate: SearchRailDelegate(
                 scrolled: _underRail,
-                child: SearchCategoryRail(
-                  selected: _group,
-                  counts: counts,
-                  total: all.length,
-                  onSelect: _setGroup,
+                bare: bare,
+                child: Staged(
+                  at: body,
+                  from: const Offset(28, 0),
+                  child: SearchCategoryRail(
+                    selected: _group,
+                    counts: counts,
+                    total: all.length,
+                    onSelect: _setGroup,
+                  ),
                 ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 10)),
             if (browsing && recents.isNotEmpty) ...[
               SliverToBoxAdapter(
-                child: SectionHeader(
-                  title: 'Terakhir dicari',
-                  action: 'Hapus semua',
-                  onAction: ref.read(recentSearchesProvider).clear,
+                child: Staged(
+                  at: body + 0.04,
+                  child: SectionHeader(
+                    title: 'Terakhir dicari',
+                    action: 'Hapus semua',
+                    onAction: ref.read(recentSearchesProvider).clear,
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
-                child: SearchRecents(
-                  items: recents,
-                  onPick: _setQuery,
-                  onRemove: ref.read(recentSearchesProvider).remove,
+                child: Staged(
+                  at: body + 0.06,
+                  child: SearchRecents(
+                    items: recents,
+                    onPick: _setQuery,
+                    onRemove: ref.read(recentSearchesProvider).remove,
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 18)),
             ],
             if (browsing) ...[
               const SliverToBoxAdapter(
-                  child: SectionHeader(title: 'Cepat temukan')),
-              SliverToBoxAdapter(child: SearchQuickFinds(onPick: _setQuery)),
+                  child: Staged(
+                      at: body + 0.06,
+                      child: SectionHeader(title: 'Cepat temukan'))),
+              SliverToBoxAdapter(
+                  child: Staged(
+                      at: body + 0.09,
+                      from: const Offset(28, 0),
+                      child: SearchQuickFinds(onPick: _setQuery))),
               const SliverToBoxAdapter(child: SizedBox(height: 18)),
             ],
             if (spotlight != null) ...[
               SliverToBoxAdapter(
-                child: SectionHeader(
-                  title: 'Terdekat dari Anda',
-                  action: 'Lihat peta',
-                  onAction: () => openOnMap(ref, spotlight.id),
+                child: Staged(
+                  at: body + 0.12,
+                  child: SectionHeader(
+                    title: 'Terdekat dari Anda',
+                    action: 'Lihat peta',
+                    onAction: () => openOnMap(ref, spotlight.id),
+                  ),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
                 sliver: SliverToBoxAdapter(
-                  child: Entrance(
-                    delay: const Duration(milliseconds: 120),
-                    child: SearchFeatureCard(
-                      place: spotlight,
-                      badge: 'Belum dikunjungi',
-                      badgeIcon: Icons.near_me_rounded,
-                      onTap: () => _open(spotlight, hero: '-spot'),
-                      onNavigate: () => _navigate(spotlight),
-                      onLongPress: () => _peek(spotlight),
+                  child: Staged(
+                    at: body + 0.14,
+                    from: const Offset(0, 22),
+                    child: Entrance(
+                      delay: const Duration(milliseconds: 120),
+                      child: SearchFeatureCard(
+                        place: spotlight,
+                        badge: 'Belum dikunjungi',
+                        badgeIcon: Icons.near_me_rounded,
+                        onTap: () => _open(spotlight, hero: '-spot'),
+                        onNavigate: () => _navigate(spotlight),
+                        onLongPress: () => _peek(spotlight),
+                      ),
                     ),
                   ),
                 ),
@@ -317,9 +401,12 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(JT.gutter, 0, JT.gutter, 16),
                 sliver: SliverToBoxAdapter(
-                  child: Entrance(
-                    key: ValueKey('fix-$corrected'),
-                    child: SearchCorrection(corrected: corrected),
+                  child: Staged(
+                    at: body + 0.04,
+                    child: Entrance(
+                      key: ValueKey('fix-$corrected'),
+                      child: SearchCorrection(corrected: corrected),
+                    ),
                   ),
                 ),
               ),
@@ -327,51 +414,62 @@ class _SearchTabState extends ConsumerState<SearchTab> {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
                 sliver: SliverToBoxAdapter(
-                  child: Entrance(
-                    key: const ValueKey('empty'),
+                  child: Staged(
+                    at: body + 0.06,
                     scaleFrom: 0.96,
-                    child: SearchEmpty(
-                      query: q,
-                      group: _group,
-                      elsewhere: all.length,
-                      onAllCategories: () => _setGroup(null),
-                      suggestions: _suggestions,
-                      onSuggestion: (s) {
-                        setState(() => _group = null);
-                        _setQuery(s);
-                      },
+                    child: Entrance(
+                      key: const ValueKey('empty'),
+                      scaleFrom: 0.96,
+                      child: SearchEmpty(
+                        query: q,
+                        group: _group,
+                        elsewhere: all.length,
+                        onAllCategories: () => _setGroup(null),
+                        suggestions: _suggestions,
+                        onSuggestion: (s) {
+                          setState(() => _group = null);
+                          _setQuery(s);
+                        },
+                      ),
                     ),
                   ),
                 ),
               )
             else
               SliverToBoxAdapter(
-                child: SearchResultsHeader(
-                  count: hits.length,
-                  query: corrected ?? q,
-                  group: _group,
-                  sort: sort,
-                  onSort: () => _pickSort(sort, searching),
+                child: Staged(
+                  at: body + 0.06,
+                  child: SearchResultsHeader(
+                    count: hits.length,
+                    query: corrected ?? q,
+                    group: _group,
+                    sort: sort,
+                    onSort: () => _pickSort(sort, searching),
+                  ),
                 ),
               ),
             if (top != null)
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(JT.gutter, 0, JT.gutter, 10),
                 sliver: SliverToBoxAdapter(
-                  child: Entrance(
-                    key: ValueKey('top-${top.place.id}'),
-                    child: SearchFeatureCard(
-                      place: top.place,
-                      badge: tied ? 'Terdekat' : 'Paling cocok',
-                      badgeIcon: tied
-                          ? Icons.near_me_rounded
-                          : Icons.auto_awesome_rounded,
-                      highlight: highlight,
-                      note: noteFor(top),
-                      heroSuffix: '-top',
-                      onTap: () => _open(top.place, hero: '-top'),
-                      onNavigate: () => _navigate(top.place),
-                      onLongPress: () => _peek(top.place),
+                  child: Staged(
+                    at: body + 0.09,
+                    from: const Offset(0, 22),
+                    child: Entrance(
+                      key: ValueKey('top-${top.place.id}'),
+                      child: SearchFeatureCard(
+                        place: top.place,
+                        badge: tied ? 'Terdekat' : 'Paling cocok',
+                        badgeIcon: tied
+                            ? Icons.near_me_rounded
+                            : Icons.auto_awesome_rounded,
+                        highlight: highlight,
+                        note: noteFor(top),
+                        heroSuffix: '-top',
+                        onTap: () => _open(top.place, hero: '-top'),
+                        onNavigate: () => _navigate(top.place),
+                        onLongPress: () => _peek(top.place),
+                      ),
                     ),
                   ),
                 ),
@@ -384,22 +482,27 @@ class _SearchTabState extends ConsumerState<SearchTab> {
                 itemBuilder: (context, i) {
                   final h = rows[i];
                   final p = h.place;
-                  return Entrance(
+                  return Staged(
                     // keyed by place: rows that stay while typing don't flash again
                     key: ValueKey('row-${p.id}'),
-                    delay: JTMotion.stagger * i.clamp(0, 8),
-                    child: PlaceTile(
-                      place: p,
-                      heroSuffix: '-search',
-                      highlight: highlight,
-                      note: noteFor(h),
-                      eyebrow: i == 0 && browsing && sort == SearchSort.nearest
-                          ? 'Terdekat'
-                          : null,
-                      onTap: () => _open(p),
-                      onLongPress: () => _peek(p),
-                      trailing:
-                          SearchNavButton(place: p, onTap: () => _navigate(p)),
+                    at: body + 0.1 + 0.02 * i.clamp(0, 4),
+                    from: const Offset(0, 22),
+                    child: Entrance(
+                      delay: JTMotion.stagger * i.clamp(0, 8),
+                      child: PlaceTile(
+                        place: p,
+                        heroSuffix: '-search',
+                        highlight: highlight,
+                        note: noteFor(h),
+                        eyebrow:
+                            i == 0 && browsing && sort == SearchSort.nearest
+                                ? 'Terdekat'
+                                : null,
+                        onTap: () => _open(p),
+                        onLongPress: () => _peek(p),
+                        trailing: SearchNavButton(
+                            place: p, onTap: () => _navigate(p)),
+                      ),
                     ),
                   );
                 },
