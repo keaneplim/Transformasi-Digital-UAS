@@ -10,10 +10,15 @@ import '../state/guide_controller.dart';
 import '../state/places.dart';
 import 'main_shell.dart';
 import 'park_map.dart';
+import 'tab_stage.dart';
 import 'widgets.dart';
 
 /// UI03 Explore map. Tap any marker → preview → Navigasi / Detail / "Saya di sini".
 /// The dot is the live GPS position (real mode) or the simulated one (demo mode).
+///
+/// On a tab change the controls clear out before the canopy comes down over the map, and
+/// drop back in once it has lifted (see [TabStage]): the bar from the top, the buttons from
+/// the side, the strip from below, while the map itself settles from a slight zoom.
 class MapTab extends ConsumerStatefulWidget {
   const MapTab({super.key});
 
@@ -123,36 +128,48 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
     final selected = _selected == null ? null : demo.place(_selected!);
     final pad = MediaQuery.paddingOf(context);
     final bottomNav = 96 + pad.bottom;
+    final stage = TabStageScope.maybeOf(context);
+
+    final map = ParkMap(
+      controller: mapController,
+      selectedId: _selected,
+      highlightId: demo.approaching?.place.id,
+      showFacilities: _facilities,
+      satellite: _satellite,
+      followUser: _follow,
+      // the preview card covers the lower map; the chip returns when it closes
+      showChrome: selected == null,
+      onUserGesture: () {
+        if (_centered || _follow) {
+          setState(() {
+            _centered = false;
+            _follow = false;
+          });
+        }
+      },
+      onSatelliteError: () {
+        setState(() => _satellite = false);
+        _toast('Peta satelit butuh internet. Kembali ke peta biasa.');
+      },
+      chromeInsets: EdgeInsets.fromLTRB(
+          16, pad.top + 120, 16, bottomNav + (selected != null ? 250 : 200)),
+      onPlaceTap: _select,
+      onMapTap: () => setState(() => _selected = null),
+    );
 
     return Stack(
       children: [
         Positioned.fill(
-          child: ParkMap(
-            controller: mapController,
-            selectedId: _selected,
-            highlightId: demo.approaching?.place.id,
-            showFacilities: _facilities,
-            satellite: _satellite,
-            followUser: _follow,
-            // the preview card covers the lower map; the chip returns when it closes
-            showChrome: selected == null,
-            onUserGesture: () {
-              if (_centered || _follow) {
-                setState(() {
-                  _centered = false;
-                  _follow = false;
-                });
-              }
-            },
-            onSatelliteError: () {
-              setState(() => _satellite = false);
-              _toast('Peta satelit butuh internet. Kembali ke peta biasa.');
-            },
-            chromeInsets: EdgeInsets.fromLTRB(16, pad.top + 120, 16,
-                bottomNav + (selected != null ? 250 : 200)),
-            onPlaceTap: _select,
-            onMapTap: () => setState(() => _selected = null),
-          ),
+          child: stage == null
+              ? map
+              // the map eases back a touch as the page body covers it, and settles as
+              // the body clears
+              : ListenableBuilder(
+                  listenable: stage,
+                  child: map,
+                  builder: (context, map) => Transform.scale(
+                      scale: 1 + 0.04 * stage.cover, child: map),
+                ),
         ),
         // soft fade under the top controls so they stay readable over the map
         Positioned(
@@ -161,15 +178,18 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
           top: 0,
           height: pad.top + 120,
           child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    JT.cream.withValues(alpha: 0.9),
-                    JT.cream.withValues(alpha: 0)
-                  ],
+            child: Staged(
+              from: Offset.zero,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      JT.cream.withValues(alpha: 0.9),
+                      JT.cream.withValues(alpha: 0)
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -182,34 +202,48 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SearchBar(onTap: () => ref.read(tabProvider.notifier).state = 2),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                children: [
-                  Pill(
-                    label: 'Rute ${demo.route.name}',
-                    icon: Icons.route_rounded,
-                    color: JT.forest,
-                    background: Colors.white,
-                  ),
-                  if (demo.sessionActive)
-                    Pill(
-                      label: '${demo.visited.length} dikunjungi',
-                      icon: Icons.check_circle_rounded,
-                      color: JT.leaf,
-                      background: Colors.white,
-                    ),
-                  if (demo.isDemo)
-                    const Pill(
-                      label: 'Mode demo',
-                      icon: Icons.science_rounded,
-                      color: JT.doodle,
-                      background: Colors.white,
-                    ),
-                ],
+              Staged(
+                at: 0.1,
+                from: const Offset(0, -20),
+                // the bar leads into the search field: the page opens ready to type
+                child: _SearchBar(onTap: () => openSearch(ref, typing: true)),
               ),
-              _StatusChip(demo: demo, onAskLocation: () => _askLocation(demo)),
+              const SizedBox(height: 10),
+              Staged(
+                at: 0.2,
+                from: const Offset(0, -14),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    Pill(
+                      label: 'Rute ${demo.route.name}',
+                      icon: Icons.route_rounded,
+                      color: JT.forest,
+                      background: Colors.white,
+                    ),
+                    if (demo.sessionActive)
+                      Pill(
+                        label: '${demo.visited.length} dikunjungi',
+                        icon: Icons.check_circle_rounded,
+                        color: JT.leaf,
+                        background: Colors.white,
+                      ),
+                    if (demo.isDemo)
+                      const Pill(
+                        label: 'Mode demo',
+                        icon: Icons.science_rounded,
+                        color: JT.doodle,
+                        background: Colors.white,
+                      ),
+                  ],
+                ),
+              ),
+              Staged(
+                at: 0.26,
+                from: const Offset(0, -14),
+                child: _StatusChip(
+                    demo: demo, onAskLocation: () => _askLocation(demo)),
+              ),
             ],
           ),
         ),
@@ -219,59 +253,68 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
           curve: JTMotion.emphasized,
           right: 16,
           bottom: bottomNav + (selected != null ? 250 : 200),
-          child: Column(
-            children: [
-              CircleIconButton(
-                icon: _satellite
-                    ? Icons.satellite_alt_rounded
-                    : Icons.layers_rounded,
-                tooltip: 'Lapisan peta',
-                onTap: _openLayers,
-              ),
-              const SizedBox(height: 10),
-              CircleIconButton(
-                icon: _follow
-                    ? Icons.navigation_rounded
-                    : demo.noPosition
-                        ? Icons.location_disabled_rounded
-                        : _centered
-                            ? Icons.my_location_rounded
-                            : Icons.location_searching_rounded,
-                tooltip: _follow
-                    ? 'Mengikuti posisi Anda'
-                    : demo.noPosition
-                        ? 'Aktifkan lokasi'
-                        : 'Posisi saya',
-                foreground: demo.noPosition ? JT.muted : JT.sky,
-                background: _follow ? const Color(0xFFE3F0FA) : JT.surface,
-                onTap: () => _locate(demo),
-              ),
-            ],
+          child: Staged(
+            at: 0.3,
+            from: const Offset(24, 0),
+            child: Column(
+              children: [
+                CircleIconButton(
+                  icon: _satellite
+                      ? Icons.satellite_alt_rounded
+                      : Icons.layers_rounded,
+                  tooltip: 'Lapisan peta',
+                  onTap: _openLayers,
+                ),
+                const SizedBox(height: 10),
+                CircleIconButton(
+                  icon: _follow
+                      ? Icons.navigation_rounded
+                      : demo.noPosition
+                          ? Icons.location_disabled_rounded
+                          : _centered
+                              ? Icons.my_location_rounded
+                              : Icons.location_searching_rounded,
+                  tooltip: _follow
+                      ? 'Mengikuti posisi Anda'
+                      : demo.noPosition
+                          ? 'Aktifkan lokasi'
+                          : 'Posisi saya',
+                  foreground: demo.noPosition ? JT.muted : JT.sky,
+                  background: _follow ? const Color(0xFFE3F0FA) : JT.surface,
+                  onTap: () => _locate(demo),
+                ),
+              ],
+            ),
           ),
         ),
         Positioned(
           left: 0,
           right: 0,
           bottom: bottomNav,
-          child: AnimatedSwitcher(
-            duration: JTMotion.slow,
-            switchInCurve: JTMotion.emphasized,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, a) => FadeTransition(
-              opacity: a,
-              child: SlideTransition(
-                position: Tween(begin: const Offset(0, 0.25), end: Offset.zero)
-                    .animate(a),
-                child: child,
+          child: Staged(
+            at: 0.36,
+            from: const Offset(0, 30),
+            child: AnimatedSwitcher(
+              duration: JTMotion.slow,
+              switchInCurve: JTMotion.emphasized,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, a) => FadeTransition(
+                opacity: a,
+                child: SlideTransition(
+                  position:
+                      Tween(begin: const Offset(0, 0.25), end: Offset.zero)
+                          .animate(a),
+                  child: child,
+                ),
               ),
+              child: selected != null
+                  ? _Preview(
+                      key: ValueKey(selected.id),
+                      place: selected,
+                      onClose: () => setState(() => _selected = null),
+                    )
+                  : _NearbyStrip(key: const ValueKey('nearby'), onTap: _select),
             ),
-            child: selected != null
-                ? _Preview(
-                    key: ValueKey(selected.id),
-                    place: selected,
-                    onClose: () => setState(() => _selected = null),
-                  )
-                : _NearbyStrip(key: const ValueKey('nearby'), onTap: _select),
           ),
         ),
       ],
