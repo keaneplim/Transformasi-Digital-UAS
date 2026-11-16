@@ -1,0 +1,80 @@
+# 01 — Lokasi dan Pemicu (F01, F02, A02)
+
+Konvensi ID, kode metode, dan cara pencatatan hasil dijelaskan di [README.md](README.md). Notasi `r` berarti radius pemicu POI yang bersangkutan (lihat tabel radius di bawah).
+
+## Data acuan
+
+Radius berasal dari PRD §4.1 dan `assets/content/pois.json`. Kolom "Sumber koordinat" menentukan apakah titik tersebut layak dijadikan titik referensi pada uji deviasi (SK-F01-03): hanya `SURVEY_EXIF` yang berasal dari pengukuran tim; `ESTIMATE` belum boleh dipakai sebagai referensi (PROGRESS #28).
+
+| POI | Nama | Radius (m) | Pemicu | Sumber koordinat |
+|---|---|---|---|---|
+| P01 | Gerbang Dago Pakar | 30 | GPS (aturan khusus, lihat SK-F02-17) | SURVEY_EXIF |
+| P02 | Monumen Ir. H. Djuanda | 25 | GPS | ESTIMATE |
+| P03 | Museum Ir. H. Djuanda | 25 | GPS | OSM |
+| P04 | Kolam Pakar | 30 | GPS | OSM |
+| P05 | Gua Jepang | 20 | GPS + QR | OSM |
+| P06 | Gua Belanda | 20 | GPS + QR | SURVEY_EXIF |
+| P07 | Penangkaran Rusa | 30 | GPS | SURVEY_EXIF |
+| P08 | Kawasan Hutan Pinus | 40 | GPS | ESTIMATE |
+| P09 | Area Rumput / Piknik | 40 | GPS | OSM |
+| P10 | Titik Koleksi Flora | 25 | GPS | ESTIMATE |
+| P11 | Curug Omas (opsional) | 40 | GPS, hanya rute Trekking | OSM |
+
+## F01 — Location Awareness
+
+| ID | Skenario | Prasyarat | Langkah | Hasil yang diharapkan | Acuan | Metode |
+|---|---|---|---|---|---|---|
+| SK-F01-01 | Posisi tampil setelah izin diberikan | Pemasangan baru; GPS perangkat aktif; penguji di area terbuka dekat gerbang | 1. Buka aplikasi dan jalani onboarding.<br>2. Saat izin lokasi diminta, ketuk Izinkan dan mulai stopwatch.<br>3. Buka tab Peta.<br>4. Hentikan stopwatch saat titik biru muncul. | Titik biru beserta lingkaran akurasi tampil pada peta dalam ≤10 detik. | F01 AC1, TC-01 | L |
+| SK-F01-02 | Posisi diperbarui saat berjalan | SK-F01-01 lulus | 1. Tandai posisi awal di tanah.<br>2. Berjalan lurus 20 m (ukur dengan meteran atau 26–28 langkah terhitung).<br>3. Amati titik biru selama berjalan. | Titik biru berpindah searah gerak penguji; pembaruan terlihat kira-kira setiap 3 detik, tanpa lompatan besar. | F01 AC2, TC-01 | L |
+| SK-F01-03 | Deviasi posisi terhadap titik referensi | Area terbuka; daftar titik referensi berkoordinat `SURVEY_EXIF` | 1. Berdiri tepat di titik referensi, tunggu 30 detik.<br>2. Catat koordinat yang dibaca aplikasi (atau jarak titik biru ke marker).<br>3. Hitung selisih terhadap koordinat referensi.<br>4. Ulangi hingga ≥10 pengukuran di beberapa titik. | Selisih ≤15 m pada ≥80% pengukuran. Catat setiap pengukuran, termasuk yang gagal. | F01 AC3, TC-01 | L |
+| SK-F01-04 | Izin lokasi ditolak | Pemasangan baru | 1. Jalani onboarding, tolak izin lokasi.<br>2. Baca penjelasan yang ditampilkan.<br>3. Buka tab Peta.<br>4. Pilih sebuah POI secara manual dari daftar/pencarian.<br>5. Pindai QR P05 (lihat SK-A02-01). | Aplikasi menjelaskan alasan izin lokasi diperlukan; aplikasi tidak macet; peta tampil tanpa titik biru; POI tetap dapat dibuka melalui pemilihan manual dan QR; tersedia ajakan untuk mengaktifkan lokasi. | F01 AC4 | P |
+| SK-F01-05 | Indikator "GPS lemah" | Sesi aktif; lokasi dengan langit tertutup (kanopi pinus rapat, lembah, mulut gua) | 1. Berjalan dari area terbuka ke bawah kanopi atau ke mulut gua.<br>2. Amati indikator kualitas GPS.<br>3. Kembali ke area terbuka. | Saat akurasi >30 m, indikator "GPS lemah" muncul dan titik posisi berubah tampilan; saat akurasi kembali baik, indikator hilang dengan sendirinya. | F01 AC5 | L |
+| SK-F01-06 | Pembacaan GPS lemah tidak dipakai untuk pemicu | Sesi aktif; indikator "GPS lemah" sedang tampil | 1. Dalam kondisi GPS lemah, berada di dekat sebuah POI yang belum terpicu.<br>2. Amati selama 30 detik. | Tidak ada pemicu yang muncul dari pembacaan berakurasi >30 m. | F01 (deskripsi), F02 | L, O |
+| SK-F01-07 | Lokasi tetap dibaca saat layar mati | Sesi aktif; pengaturan baterai perangkat sudah disesuaikan (DEVICE_CHECK §1.5) | 1. Mulai sesi, kunci layar, masukkan ponsel ke saku.<br>2. Berjalan 15 menit melewati minimal satu POI yang belum terpicu.<br>3. Buka kunci dan periksa jejak perjalanan serta notifikasi. | Notifikasi layanan pemandu tetap tampil selama sesi; POI yang dilewati terpicu; jejak perjalanan tidak memiliki celah panjang. Ulangi pada kedua perangkat uji. | F01 (deskripsi) | L |
+| SK-F01-08 | Pengguna diam tetap menghasilkan pembacaan | Sesi aktif; POI belum terpicu | 1. Berjalan masuk ke dalam radius POI lalu langsung berhenti dan diam.<br>2. Mulai stopwatch saat berhenti. | Pemicu tetap terkonfirmasi dalam ≤10 detik walaupun penguji tidak bergerak (pembacaan tanpa filter jarak). | F01 (deskripsi) | L |
+| SK-F01-09 | Layanan lokasi perangkat dimatikan | Izin lokasi sudah diberikan | 1. Matikan Lokasi dari pengaturan cepat Android.<br>2. Buka tab Peta.<br>3. Nyalakan kembali Lokasi. | Aplikasi tidak macet dan menampilkan ajakan mengaktifkan lokasi; setelah dinyalakan, titik biru muncul kembali tanpa perlu memulai ulang aplikasi. | F01 AC4 (perluasan) | P |
+| SK-F01-10 | Penguji di luar kawasan | Izin lokasi diberikan; penguji berada jauh dari Tahura | 1. Buka tab Peta.<br>2. Mulai sesi dan tunggu 2 menit. | Aplikasi menyatakan pengguna berada di luar kawasan; tidak ada pemicu POI; aplikasi tetap dapat dijelajahi. | F01, NG02 | P |
+| SK-F01-11 | Pelacakan berhenti setelah sesi diakhiri | Sesi aktif | 1. Ketuk "Akhiri Jelajah".<br>2. Kunci layar dan tunggu 2 menit.<br>3. Periksa bilah notifikasi. | Notifikasi layanan pemandu hilang; lokasi tidak lagi dibaca di latar belakang setelah sesi berakhir. | F01 (deskripsi), NG06 | P |
+
+## F02 — Location-Based Trigger
+
+| ID | Skenario | Prasyarat | Langkah | Hasil yang diharapkan | Acuan | Metode |
+|---|---|---|---|---|---|---|
+| SK-F02-01 | Getaran saat mendekati POI | Sesi aktif; POI belum terpicu; mulai dari jarak >r + 60 m | 1. Berjalan lurus menuju POI.<br>2. Catat jarak saat ponsel bergetar dan berbunyi.<br>3. Amati banner jarak. | Getaran dan bunyi singkat muncul saat jarak ≤r + 30 m; banner menampilkan nama POI dan jarak yang terus diperbarui. | F02 AC4, UI04 | L, M |
+| SK-F02-02 | Pemicu pada 10 POI inti | Sesi aktif; rute yang melewati P01–P10 | 1. Masuki radius setiap POI satu per satu.<br>2. Mulai stopwatch saat melewati batas radius, hentikan saat notifikasi muncul.<br>3. Catat POI yang disebut notifikasi. | Notifikasi POI yang benar muncul dalam ≤10 detik pada ≥8 dari 10 POI. Catat waktu tiap POI dan POI yang gagal. | F02 AC1, TC-02 | L |
+| SK-F02-03 | Tidak ada pemicu palsu | Dijalankan bersamaan dengan SK-F02-02 | 1. Catat seluruh notifikasi yang muncul selama rute.<br>2. Bandingkan dengan daftar POI yang radiusnya benar-benar dimasuki. | Tidak ada notifikasi untuk POI yang radiusnya tidak dimasuki penguji (jumlah pemicu palsu = 0). | F02 AC6, TC-02 | L |
+| SK-F02-04 | Tidak berulang selama berada di dalam radius | POI baru saja terpicu | 1. Tetap berada di dalam radius selama 3 menit: diam 1 menit, lalu berjalan berputar 2 menit.<br>2. Hitung notifikasi untuk POI tersebut. | Tidak ada notifikasi ulang selama 3 menit. | F02 AC2, TC-03 | L, O |
+| SK-F02-05 | Keluar lalu masuk kembali sebelum 10 menit | POI terpicu; catat waktu pemicu | 1. Berjalan keluar hingga >r + 15 m.<br>2. Masuk kembali ke dalam radius sebelum 10 menit sejak waktu pemicu.<br>3. Tunggu 30 detik. | Tidak ada pemicu ulang. | F02 AC3, TC-03 | L, O |
+| SK-F02-06 | Pemicu ulang setelah keluar dan lewat 10 menit | POI terpicu dan penguji memilih "Nanti" | 1. Berjalan keluar hingga >r + 15 m.<br>2. Tunggu hingga ≥10 menit sejak waktu pemicu.<br>3. Masuk kembali ke dalam radius. | POI terpicu kembali satu kali. | F02 (deskripsi) | L, O |
+| SK-F02-07 | Getaran tidak berulang di tepi zona mendekati | Sesi aktif; POI belum terpicu | 1. Berdiri di sekitar jarak r + 30 m.<br>2. Bergerak maju-mundur beberapa meter melewati batas tersebut selama 1 menit tanpa menjauh melebihi r + 40 m. | Hanya satu getaran untuk satu pendekatan. | F02 (deskripsi), PRD §4.2 butir 2 | L, O |
+| SK-F02-08 | Pendekatan baru setelah menjauh | Lanjutan SK-F02-07; POI belum terpicu | 1. Menjauh hingga >r + 40 m.<br>2. Mendekat kembali hingga ≤r + 30 m. | Getaran muncul kembali satu kali untuk pendekatan yang baru. | F02 (deskripsi) | L, O |
+| SK-F02-09 | Melewati POI yang sudah dikunjungi | POI berstatus dikunjungi | 1. Menjauh dari POI lalu berjalan melewatinya lagi di dalam radius. | Tidak ada getaran mendekati dan tidak ada notifikasi pemicu. | F02 (deskripsi) | L, M |
+| SK-F02-10 | Pilihan "Nanti" tidak menandai dikunjungi | POI terpicu | 1. Pada notifikasi/kartu pemicu, pilih "Nanti".<br>2. Akhiri sesi dan buka ringkasan.<br>3. Periksa pula rekomendasi berikutnya sebelum sesi diakhiri. | POI tidak dihitung sebagai dikunjungi pada ringkasan dan tetap dapat muncul sebagai rekomendasi. | F02 (deskripsi), F07 | M, L |
+| SK-F02-11 | Pilihan "Dengarkan" menandai dikunjungi | POI terpicu | 1. Pilih "Dengarkan".<br>2. Periksa status POI di peta/daftar dan ringkasan. | Narasi diputar; POI berstatus dikunjungi. | F02 (deskripsi) | M, L |
+| SK-F02-12 | Pilihan "Lihat" menandai dikunjungi | POI terpicu | 1. Pilih "Lihat". | POI Detail terbuka; POI berstatus dikunjungi. | F02 (deskripsi) | M, L |
+| SK-F02-13 | Dua POI berdekatan | Sesi aktif pada rute Sedang; P07 dan P09 belum terpicu (keduanya berjarak ±45 m, PROGRESS #29) | 1. Berjalan ke area di antara P07 dan P09.<br>2. Catat urutan notifikasi dan nama POI.<br>3. Lanjutkan ke POI kedua. | POI yang lebih dekat dipicu lebih dulu; nama POI pada notifikasi sesuai lokasi; POI kedua tetap terpicu saat penguji berada di radiusnya; tidak ada dua notifikasi yang menumpuk bersamaan. | F02 (deskripsi) | L, O |
+| SK-F02-14 | Lompatan GPS sesaat tidak memicu | — | 1. Periksa hasil uji otomatis mesin geofence (kasus satu pembacaan di dalam radius lalu keluar). | Tidak ada pemicu dari satu pembacaan tunggal; pemicu memerlukan dua pembacaan berturut-turut di dalam radius. | F02 (deskripsi), PRD §4.2 butir 2 | O |
+| SK-F02-15 | Banner saat GPS lemah 60 detik | Sesi aktif; lokasi dengan GPS lemah (mulut atau dalam gua) | 1. Masuk beberapa meter ke dalam gua dan mulai stopwatch saat indikator GPS lemah muncul.<br>2. Tunggu hingga banner muncul.<br>3. Keluar ke area terbuka. | Setelah akurasi >30 m berlangsung 60 detik, banner menawarkan "Pindai QR" dan "Pilih manual"; banner hilang setelah GPS kembali baik. | F02 (deskripsi), UI12 | L |
+| SK-F02-16 | Pemilihan POI secara manual | GPS lemah atau izin lokasi ditolak | 1. Dari banner, pilih "Pilih manual" (atau buka daftar "Di sekitar saya"/pencarian).<br>2. Pilih sebuah POI. | POI yang dipilih terbuka dan tercatat sebagai terpicu dengan sumber manual. | PRD §4.2 butir 4 | P, M |
+| SK-F02-17 | Aturan khusus P01 Gerbang | Penguji berada dalam radius 30 m gerbang | 1. Sebelum memulai sesi, buka Beranda.<br>2. Mulai sesi di gerbang.<br>3. Tetap di sekitar gerbang 3 menit, lalu tinggalkan dan kembali ke gerbang pada akhir rute. | Sebelum sesi: Beranda menampilkan tawaran "Anda di Gerbang Dago Pakar — Mulai Jelajah?" beserta pilihan rute. Selama sesi: kartu sambutan tampil paling banyak sekali dan tidak ada notifikasi berulang. | PRD §4.1 (P01) | L |
+| SK-F02-18 | P11 hanya aktif pada rute Trekking | Mode demo aktif | 1. Pilih rute Santai, pindahkan posisi ke P11.<br>2. Ulangi dengan rute Trekking. | Pada rute Santai/Sedang tidak ada pemicu P11; pada rute Trekking P11 terpicu. | PRD §4.1 (P11) | M |
+| SK-F02-19 | Tanpa sesi tidak ada pemicu | Tidak ada sesi aktif; penguji di dalam radius POI selain P01 | 1. Buka aplikasi tanpa memulai sesi.<br>2. Tunggu 1 menit di dalam radius. | Tidak ada notifikasi pemicu POI. | F02, PRD §4.1 (P01) | L |
+| SK-F02-20 | Notifikasi pemicu pada layar terkunci | Sesi aktif; izin notifikasi diberikan; layar terkunci | 1. Masuki radius POI dengan layar terkunci.<br>2. Nyalakan layar tanpa membuka kunci.<br>3. Coba setiap aksi pada tiga POI berbeda. | Notifikasi tampil di layar kunci dengan aksi Dengarkan, Lihat, dan Nanti; setiap aksi berfungsi sesuai SK-F02-10 s.d. SK-F02-12. | PB07, UI05 | L |
+| SK-F02-21 | Pencatatan pemicu dan kunjungan | Sesi uji dengan minimal satu pemicu GPS, satu QR, dan satu pilihan manual | 1. Selesaikan sesi.<br>2. Ekspor atau buka log sesi.<br>3. Cocokkan dengan catatan penguji. | Setiap pemicu dan kunjungan tercatat terpisah dengan ID POI, waktu, sumber (GPS/QR/manual), akurasi, dan status (terpicu/dikunjungi). | PRD §4.2 butir 5 | P |
+| SK-F02-22 | Izin notifikasi ditolak | Pemasangan baru; izin notifikasi ditolak | 1. Mulai sesi dan masuki radius sebuah POI dengan aplikasi terbuka. | Pemicu tetap disampaikan di dalam aplikasi (kartu/banner dan suara); aplikasi tidak macet. | F02 (kasus tepi, rencana implementasi) | L, M |
+
+## A02 — QR Fallback Trigger
+
+Siapkan papan QR tercetak untuk P05 (`jelajahtaman://poi/P05`) dan P06 (`jelajahtaman://poi/P06`), satu QR dengan skema benar tetapi ID tidak ada (`jelajahtaman://poi/P99`), dan satu QR asing (mis. tautan situs web).
+
+| ID | Skenario | Prasyarat | Langkah | Hasil yang diharapkan | Acuan | Metode |
+|---|---|---|---|---|---|---|
+| SK-A02-01 | QR Gua Jepang, luring | Mode pesawat aktif; izin kamera diberikan | 1. Buka pemindai QR di aplikasi.<br>2. Arahkan ke papan QR P05 dan mulai stopwatch saat kode terbaca kamera. | POI Gua Jepang terbuka dalam ≤3 detik tanpa internet. | F02 AC5, A02, TC-04 | L, P |
+| SK-A02-02 | QR Gua Belanda, luring | Sama dengan SK-A02-01 | 1. Pindai papan QR P06. | POI Gua Belanda terbuka dalam ≤3 detik tanpa internet. | F02 AC5, A02, TC-04 | L, P |
+| SK-A02-03 | QR asing | Pemindai terbuka | 1. Pindai QR yang bukan milik Jelajah Taman. | Pesan galat yang jelas ditampilkan; tidak ada POI yang terbuka; aplikasi tidak macet dan pemindai dapat dipakai lagi. | A02, TC-04 | P |
+| SK-A02-04 | QR berskema benar dengan ID tidak dikenal | Pemindai terbuka | 1. Pindai `jelajahtaman://poi/P99`. | Pesan galat ditampilkan; tidak ada POI yang terbuka. | A02, TC-04 | P |
+| SK-A02-05 | Pemindaian QR menandai dikunjungi | Sesi aktif; P05 belum dikunjungi | 1. Pindai QR P05.<br>2. Periksa status P05 dan ringkasan sesi. | P05 berstatus terpicu sekaligus dikunjungi, dengan sumber QR pada log. | F02 (deskripsi) | P, M |
+| SK-A02-06 | QR di kondisi gelap | Di mulut/dalam gua | 1. Pindai papan QR dengan pencahayaan gua, gunakan senter aplikasi bila tersedia. | Kode terbaca dan POI terbuka; catat jarak baca dan kebutuhan senter. | A02 | L |
+| SK-A02-07 | Izin kamera ditolak | Izin kamera belum diberikan | 1. Buka pemindai dan tolak izin kamera. | Aplikasi menjelaskan bahwa kamera diperlukan dan menawarkan pemilihan POI manual; aplikasi tidak macet. | A02, F01 AC4 | P |
+| SK-A02-08 | QR untuk POI yang sudah dikunjungi | P05 sudah dikunjungi pada sesi ini | 1. Pindai QR P05 sekali lagi. | POI yang benar tetap terbuka; jumlah POI dikunjungi pada ringkasan tidak bertambah ganda. | A02 | P |
+| SK-A02-09 | QR dipindai tanpa sesi aktif | Tidak ada sesi aktif | 1. Buka pemindai dari Beranda/Peta dan pindai QR P05. | POI Gua Jepang terbuka; aplikasi tidak macet. | A02, F01 AC4 | P |
