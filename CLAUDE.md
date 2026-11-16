@@ -35,7 +35,8 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 | `assets/map/`, `tools/osm_to_basemap.py`, `tools/osm_to_graph.py`, `tools/resolve_coords.py`, `tools/photos.py` | Offline vector basemap + hillshade (ADR-008), trail graph from OSM, coordinate resolver, photo fetch/retouch/credits. Raw caches in `survey/raw/geo/`, `survey/raw/osm/`. |
 | `assets/images/`, `assets/fonts/`, `survey/raw/` | Survey photos (7 Nov, metadata stripped), bundled fonts, raw survey data (`photos/` is gitignored, on Drive). |
 | `test_goldens/` | Screen baselines (`baselines/*.png`, 390×844 + 360×780). Not in CI; regenerate after UI changes and look at them. |
-| `.github/workflows/ci.yml` | CI: content validation, format, analyze, architecture check, tests; debug APK on push to main. |
+| `.github/workflows/ci.yml` | CI: content validation, format, analyze, architecture check, tests; release APK (arm64) build on every PR and push. On push to main it commits the APK to the root and updates the `apk-latest` GitHub Release. |
+| `jelajah-taman.apk` | **Generated** by CI (bot commit `apk: … [skip ci]` after each push to main). Never edit, commit or merge it by hand; signed with a per-run CI debug key. |
 
 Docs moved into `docs/` on 2026-11-06. Removed 2026-11-03 (still in git history, commit 414c626): PRD md mirror, Naskah md, course template docx, `figures/` (the figures are embedded in the docx/pptx).
 
