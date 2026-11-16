@@ -321,10 +321,17 @@ class _DoodlePatternState extends State<DoodlePattern>
             (_PatternPainter.period * widget.cell / _speed * 1000).round()),
   );
 
+  /// The shared clock, when there is one above: patterns with the same seed then drift
+  /// in step.
+  AmbientClock? _clock;
+
+  double get _loopSeconds => _PatternPainter.period * widget.cell / _speed;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.drift && !JTMotion.reduced(context)) {
+    _clock = AmbientScope.maybeOf(context);
+    if (_clock == null && widget.drift && !JTMotion.reduced(context)) {
       if (!_c.isAnimating) _c.repeat();
     } else {
       _c.stop();
@@ -340,11 +347,13 @@ class _DoodlePatternState extends State<DoodlePattern>
   @override
   Widget build(BuildContext context) => RepaintBoundary(
         child: AnimatedBuilder(
-          animation: _c,
+          animation: _clock ?? _c,
           builder: (context, _) => CustomPaint(
             size: Size.infinite,
             painter: _PatternPainter(
-              t: _c.value,
+              t: _clock != null && widget.drift
+                  ? (_clock!.seconds / _loopSeconds) % 1
+                  : _c.value,
               color: widget.color.withValues(alpha: widget.opacity),
               cell: widget.cell,
               iconSize: widget.iconSize,
@@ -444,10 +453,14 @@ class _CanopyEdgeState extends State<CanopyEdge>
   late final AnimationController _c =
       AnimationController(vsync: this, duration: const Duration(seconds: 6));
 
+  /// The shared clock, when there is one above (see [DoodlePattern]).
+  AmbientClock? _clock;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (widget.animate && !JTMotion.reduced(context)) {
+    _clock = AmbientScope.maybeOf(context);
+    if (_clock == null && widget.animate && !JTMotion.reduced(context)) {
       if (!_c.isAnimating) _c.repeat();
     } else {
       _c.stop();
@@ -465,10 +478,12 @@ class _CanopyEdgeState extends State<CanopyEdge>
         height: widget.height,
         width: double.infinity,
         child: AnimatedBuilder(
-          animation: _c,
+          animation: _clock ?? _c,
           builder: (context, _) => CustomPaint(
             painter: _CanopyPainter(
-              t: _c.value,
+              t: _clock != null && widget.animate
+                  ? (_clock!.seconds / 6) % 1
+                  : _c.value,
               body: widget.body,
               rim: widget.rim,
               seed: widget.seed,
@@ -527,8 +542,54 @@ class _CanopyPainter extends CustomPainter {
   bool shouldRepaint(_CanopyPainter old) => old.t != t || old.body != body;
 }
 
-/// The Sliq-style sun band: yellow, drifting doodles, puffy canopy edge at the bottom.
-/// [child] sits on top of the band (Skip chip, mascot, title).
+/// The sun band itself: yellow, drifting doodles and the puffy canopy edge along the
+/// bottom, clipped to its box. Home, Search and the tab transition all draw this one
+/// widget, so with the same [seed] and [edgeHeight] they look exactly alike.
+class SunBand extends StatelessWidget {
+  const SunBand({
+    super.key,
+    this.color = JT.sun,
+    this.doodleColor = JT.doodle,
+    this.body = JT.cream,
+    this.edge = true,
+    this.edgeHeight = 64,
+    this.seed = 7,
+    this.behindEdge,
+  });
+
+  final Color color;
+  final Color doodleColor;
+  final Color body;
+  final bool edge;
+  final double edgeHeight;
+  final int seed;
+
+  /// Drawn over the doodles but behind the canopy (a mascot peeking over it).
+  final Widget? behindEdge;
+
+  @override
+  Widget build(BuildContext context) => ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: color),
+            DoodlePattern(color: doodleColor, seed: seed),
+            if (behindEdge != null) behindEdge!,
+            if (edge)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: -1,
+                child: CanopyEdge(height: edgeHeight, body: body, seed: seed),
+              ),
+          ],
+        ),
+      );
+}
+
+/// The Sliq-style sun band with content on it: [child] sits on top of the band (Skip chip,
+/// mascot, title). With [backdrop] off only the content is drawn (something else is
+/// drawing the band, e.g. a transition).
 class SunHeader extends StatelessWidget {
   const SunHeader({
     super.key,
@@ -539,6 +600,7 @@ class SunHeader extends StatelessWidget {
     this.body = JT.cream,
     this.edge = true,
     this.seed = 7,
+    this.backdrop = true,
   });
 
   final double height;
@@ -548,6 +610,7 @@ class SunHeader extends StatelessWidget {
   final Color body;
   final bool edge;
   final int seed;
+  final bool backdrop;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -556,14 +619,13 @@ class SunHeader extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ColoredBox(color: color),
-            DoodlePattern(color: doodleColor, seed: seed),
-            if (edge)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: -1,
-                child: CanopyEdge(body: body, seed: seed),
+            if (backdrop)
+              SunBand(
+                color: color,
+                doodleColor: doodleColor,
+                body: body,
+                edge: edge,
+                seed: seed,
               ),
             if (child != null) child!,
           ],

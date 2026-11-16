@@ -1,2 +1,4 @@
 # Generated file: keep LF everywhere so the CI sync check (tools/prd_to_md.py) is stable.
 docs/prd/PRD.md text eol=lf
+# CI-built APK in the repo root (see build-apk in .github/workflows/ci.yml): binary, never diff or merge.
+*.apk binary
