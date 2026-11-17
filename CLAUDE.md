@@ -32,11 +32,12 @@ Deliverable language: **Bahasa Indonesia**, formal-academic.
 | `LLM_History.md` | AI-assisted work log (AI & Tools Disclosure source) + **session handoff (§1: where the work stands)**. Read §1 at the start of a session; append a session entry and update §1 at the end. |
 | `lib/`, `test/`, `assets/content/`, `tools/` | Flutter app (modular monolith, see ARCHITECTURE.md), tests, JSON content (**DUMMY until survey**), checker/validator scripts. |
 | `lib/core/theme/`, `lib/core/ui/` | Design tokens (`JT`, `JTText`) and the generic UI kit: components, `Pako` mascot, doodles, motion, `SceneImage`. |
-| `lib/modules/shell/src/ui/`, `lib/modules/shell/src/state/` | All screens UI01–UI15, driven by `GuideController` (ADR-009): real mode (default, GPS via `location`) or demo mode (simulated walk, switch in Settings → Mode demo); both feed the real `GeofenceEngine` (`trigger`). |
+| `lib/modules/shell/src/ui/`, `lib/modules/shell/src/state/` | All screens UI01–UI15, driven by `GuideController` (ADR-009): real mode (default, GPS via `location`) or demo mode (simulated walk, switch in Settings → Mode demo); both feed the real `GeofenceEngine` (`trigger`). Tab changes (Beranda · Peta · Cari) are choreographed by `TabStage` (`tab_stage.dart`, DESIGN.md §6): wrap new pieces on those pages in `Staged`. |
 | `assets/map/`, `tools/osm_to_basemap.py`, `tools/osm_to_graph.py`, `tools/resolve_coords.py`, `tools/photos.py` | Offline vector basemap + hillshade (ADR-008), trail graph from OSM, coordinate resolver, photo fetch/retouch/credits. Raw caches in `survey/raw/geo/`, `survey/raw/osm/`. |
 | `assets/images/`, `assets/fonts/`, `survey/raw/` | Survey photos (7 Nov, metadata stripped), bundled fonts, raw survey data (`photos/` is gitignored, on Drive). |
 | `test_goldens/` | Screen baselines (`baselines/*.png`, 390×844 + 360×780). Not in CI; regenerate after UI changes and look at them. |
-| `.github/workflows/ci.yml` | CI: content validation, format, analyze, architecture check, tests; debug APK on push to main. |
+| `.github/workflows/ci.yml` | CI: content validation, format, analyze, architecture check, tests; release APK (arm64) build on every PR and push. On push to main it commits the APK to the root and updates the `apk-latest` GitHub Release. |
+| `jelajah-taman.apk` | **Generated** by CI (bot commit `apk: … [skip ci]` after each push to main). Never edit, commit or merge it by hand; signed with a per-run CI debug key. |
 
 Docs moved into `docs/` on 2026-11-06. Removed 2026-11-03 (still in git history, commit 414c626): PRD md mirror, Naskah md, course template docx, `figures/` (the figures are embedded in the docx/pptx).
 

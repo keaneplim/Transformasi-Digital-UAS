@@ -8,128 +8,218 @@ import 'package:jelajah_taman/core/ui/ui.dart';
 import '../state/guide_controller.dart';
 import '../state/places.dart';
 import 'main_shell.dart';
+import 'tab_stage.dart';
 import 'widgets.dart';
 
 /// UI02 Home: greeting on the sun band, the session card, highlights on the chosen route,
 /// nearest facilities (toilet, musala, saung).
-class HomeTab extends ConsumerWidget {
+///
+/// Every piece is [Staged], so the page can clear out and come back in order when the tab
+/// changes (see [TabStage]).
+class HomeTab extends ConsumerStatefulWidget {
   const HomeTab({super.key});
 
+  /// Height of the sun band below the status bar.
+  static const band = 318.0;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends ConsumerState<HomeTab> {
+  final _scroll = ScrollController();
+  TabStage? _stage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = TabStageScope.maybeOf(context);
+    if (stage != _stage) {
+      _stage?.detach(TabStage.home, _geometry);
+      _stage = stage?..attach(TabStage.home, _geometry);
+    }
+  }
+
+  @override
+  void dispose() {
+    _stage?.detach(TabStage.home, _geometry);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Where the band is right now: it scrolls away with the page.
+  BandGeometry _geometry() {
+    final offset = _scroll.hasClients ? _scroll.offset : 0.0;
+    final top = MediaQuery.paddingOf(context).top;
+    return BandGeometry(
+        shift: -offset, bottom: HomeTab.band + top - offset, edge: 64);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final demo = ref.watch(guideProvider);
     final top = MediaQuery.paddingOf(context).top;
     final highlights = demo.routePois;
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: SunHeader(
-            height: 318 + top,
-            seed: 11,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(JT.gutter, top + 10, 12, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.forest_rounded, size: 20, color: JT.ink),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text('Tahura Djuanda · Dago Pakar',
-                            style: JTText.label),
-                      ),
-                      CircleIconButton(
-                        icon: Icons.tune_rounded,
-                        tooltip: 'Pengaturan',
-                        onTap: () => context.push('/settings'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Entrance(
-                          child: HighlightHeadline(
-                            before: '${greeting(demo.now())},\nsiap ',
-                            highlight: 'menjelajah?',
-                            style: JTText.display,
-                            color: JT.forest,
-                          ),
-                        ),
-                      ),
-                      const Entrance(
-                        delay: Duration(milliseconds: 180),
-                        scaleFrom: 0.6,
-                        child: Pako(pose: PakoPose.wave, size: 112),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      Pill(
-                        label: demo.isOpen
-                            ? 'Buka · tutup ${clockLabel(demo.closingTime)}'
-                            : 'Tutup · buka ${clockLabel(demo.openingTime)}',
-                        dot: true,
-                        color: demo.isOpen ? JT.forest : JT.terracotta,
-                        background: Colors.white.withValues(alpha: 0.9),
-                      ),
-                      Pill(
-                        label: 'Peta siap tanpa sinyal',
-                        icon: Icons.cloud_done_rounded,
-                        color: JT.forest,
-                        background: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    // Arrival order: the header rides in while the canopy settles, the cards follow once
+    // it has landed.
+    const body = TabStage.settled;
+    final header = Padding(
+      padding: EdgeInsets.fromLTRB(JT.gutter, top + 10, 12, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Staged(
+            from: const Offset(0, -10),
+            child: Row(
+              children: [
+                const Icon(Icons.forest_rounded, size: 20, color: JT.ink),
+                const SizedBox(width: 6),
+                Expanded(
+                  child:
+                      Text('Tahura Djuanda · Dago Pakar', style: JTText.label),
+                ),
+                CircleIconButton(
+                  icon: Icons.tune_rounded,
+                  tooltip: 'Pengaturan',
+                  onTap: () => context.push('/settings'),
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Staged(
+                  at: 0.06,
+                  child: Entrance(
+                    child: HighlightHeadline(
+                      before: '${greeting(demo.now())},\nsiap ',
+                      highlight: 'menjelajah?',
+                      style: JTText.display,
+                      color: JT.forest,
+                    ),
+                  ),
+                ),
+              ),
+              // Pako pops up last, and drops out of sight first.
+              const Staged(
+                at: 0.16,
+                span: 0.6,
+                from: Offset(0, 46),
+                scaleFrom: 0.6,
+                curve: JTMotion.pop,
+                exit: 1,
+                alignment: Alignment.bottomCenter,
+                child: Entrance(
+                  delay: Duration(milliseconds: 180),
+                  scaleFrom: 0.6,
+                  child: Pako(pose: PakoPose.wave, size: 112),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Staged(
+            at: 0.12,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Pill(
+                  label: demo.isOpen
+                      ? 'Buka · tutup ${clockLabel(demo.closingTime)}'
+                      : 'Tutup · buka ${clockLabel(demo.openingTime)}',
+                  dot: true,
+                  color: demo.isOpen ? JT.forest : JT.terracotta,
+                  background: Colors.white.withValues(alpha: 0.9),
+                ),
+                Pill(
+                  label: 'Peta siap tanpa sinyal',
+                  icon: Icons.cloud_done_rounded,
+                  color: JT.forest,
+                  background: Colors.white.withValues(alpha: 0.9),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    final bare = _stage?.bare;
+    return CustomScrollView(
+      controller: _scroll,
+      slivers: [
+        SliverToBoxAdapter(
+          child: bare == null
+              ? SunHeader(
+                  height: HomeTab.band + top,
+                  seed: TabStage.seed,
+                  child: header)
+              : ValueListenableBuilder<bool>(
+                  valueListenable: bare,
+                  child: header,
+                  // while the canopy travels, the stage draws the band
+                  builder: (context, bare, header) => SunHeader(
+                    height: HomeTab.band + top,
+                    seed: TabStage.seed,
+                    backdrop: !bare,
+                    child: header,
+                  ),
+                ),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(JT.gutter, 0, JT.gutter, 0),
           sliver: SliverToBoxAdapter(
-            child: Entrance(
-              delay: const Duration(milliseconds: 120),
-              child: demo.sessionActive
-                  ? const _ActiveSession()
-                  : const _StartCard(),
+            child: Staged(
+              at: body,
+              from: const Offset(0, 22),
+              child: Entrance(
+                delay: const Duration(milliseconds: 120),
+                child: demo.sessionActive
+                    ? const _ActiveSession()
+                    : const _StartCard(),
+              ),
             ),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 12)),
-        const SliverToBoxAdapter(child: _TimeLeft()),
+        const SliverToBoxAdapter(
+            child: Staged(
+                at: body + 0.05, from: Offset(0, 22), child: _TimeLeft())),
         const SliverToBoxAdapter(child: SizedBox(height: 26)),
         SliverToBoxAdapter(
-          child: SectionHeader(
-            title: 'Di rute ${demo.route.name}',
-            action: 'Lihat peta',
-            onAction: () => ref.read(tabProvider.notifier).state = 1,
+          child: Staged(
+            at: body + 0.1,
+            child: SectionHeader(
+              title: 'Di rute ${demo.route.name}',
+              action: 'Lihat peta',
+              onAction: () =>
+                  ref.read(tabProvider.notifier).state = TabStage.map,
+            ),
           ),
         ),
         SliverToBoxAdapter(
-          child: SizedBox(
-            height: 272,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
-              itemCount: highlights.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: (context, i) => Entrance(
-                delay: JTMotion.stagger * (i + 3),
-                offset: const Offset(30, 0),
-                child: PlaceCard(
-                  place: highlights[i],
-                  heroSuffix: '-home',
-                  onTap: () =>
-                      context.push('/poi/${highlights[i].id}?hero=-home'),
+          child: Staged(
+            at: body + 0.14,
+            from: const Offset(28, 0),
+            child: SizedBox(
+              height: 272,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
+                itemCount: highlights.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                itemBuilder: (context, i) => Entrance(
+                  delay: JTMotion.stagger * (i + 3),
+                  offset: const Offset(30, 0),
+                  child: PlaceCard(
+                    place: highlights[i],
+                    heroSuffix: '-home',
+                    onTap: () =>
+                        context.push('/poi/${highlights[i].id}?hero=-home'),
+                  ),
                 ),
               ),
             ),
@@ -137,14 +227,19 @@ class HomeTab extends ConsumerWidget {
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 26)),
         const SliverToBoxAdapter(
-            child: SectionHeader(title: 'Fasilitas terdekat')),
-        const SliverToBoxAdapter(child: _Facilities()),
+            child: Staged(
+                at: body + 0.1,
+                child: SectionHeader(title: 'Fasilitas terdekat'))),
+        const SliverToBoxAdapter(
+            child: Staged(at: body + 0.14, child: _Facilities())),
         const SliverToBoxAdapter(child: SizedBox(height: 26)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: JT.gutter),
-            child: _ExploreAll(
-                onTap: () => ref.read(tabProvider.notifier).state = 2),
+            child: Staged(
+              at: body + 0.14,
+              child: _ExploreAll(onTap: () => openSearch(ref)),
+            ),
           ),
         ),
         SliverToBoxAdapter(
@@ -372,7 +467,7 @@ class _StartCard extends ConsumerWidget {
                           icon: Icons.explore_rounded,
                           onTap: () {
                             demo.startSession();
-                            ref.read(tabProvider.notifier).state = 1;
+                            ref.read(tabProvider.notifier).state = TabStage.map;
                           },
                         ),
                       ],
@@ -483,7 +578,8 @@ class _ActiveSession extends ConsumerWidget {
                           label: 'Buka peta',
                           icon: Icons.map_rounded,
                           color: JT.sun,
-                          onTap: () => ref.read(tabProvider.notifier).state = 1,
+                          onTap: () => ref.read(tabProvider.notifier).state =
+                              TabStage.map,
                         ),
                       ),
                       const SizedBox(width: 10),

@@ -25,6 +25,15 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 | `PROGRESS.md` | Living status, open issues, decisions, log |
 | `LLM_History.md` | AI-assisted work log for the AI & Tools Disclosure + session handoff |
 
+## Download the APK
+
+CI builds a **release APK for arm64 Android phones** on every commit to `main` and commits it to the repo root as [`jelajah-taman.apk`](jelajah-taman.apk) (a bot commit `apk: release build of <sha> … [skip ci]` right after each merge). The same file is on the [`apk-latest` release](https://github.com/keaneplim/Transformasi-Digital-UAS/releases/tag/apk-latest), the easiest link to open on a phone. Copy it to the phone, allow *Install unknown apps* for the file manager or browser, and install.
+
+- **arm64 only:** fits every phone from the last ~8 years; not old 32-bit phones or x86 emulators (`flutter run` works there).
+- **Signed with a throwaway CI debug key** (no upload keystore yet), and every CI run has a different one. If Android says the app conflicts with an installed version, uninstall the old one first (local data such as visited places is lost).
+- A debug APK (~110 MB) is over GitHub's 100 MB file limit, so only the release build goes into the repo. Each build adds ~30–40 MB to git history; clone with `--filter=blob:none` if that gets slow.
+- Because the bot commits to `main` after every merge, run `git pull` on `main` before branching.
+
 ## Setup
 
 `android/` is already generated (Flutter **3.47.9**, applicationId `id.ac.itb.kel5.jelajah_taman`). Everyone installs the same Flutter version as CI (`.github/workflows/ci.yml`). After a fresh clone:
@@ -71,12 +80,12 @@ The UI currently runs on mock data (demo state, no GPS needed): tap any place �
 
 ## Definition of done (every PR)
 
-1. CI is green: content validation, format, analyze, architecture check, tests.
+1. CI is green: content validation, format, analyze, architecture check, tests, release APK build.
 2. Domain logic has unit tests (no test, no merge).
 3. One other coder reviewed it and can explain the code (A↔B, B↔C, C↔A).
 4. Tested on a real Android phone, not only the emulator, for anything touching GPS, audio, notifications or sensors.
 5. AI assistance logged for the AI & Tools Disclosure (date, tool, purpose, decision).
 6. If behaviour differs from the PRD, the decision is in PROGRESS.md and queued for the PRD Change Log.
 
-Branches: `feat/<module>-<short>` → PR → `main`. Never push directly to `main`.
+Branches: `feat/<module>-<short>` → PR → `main`. Never push directly to `main` (the only exception is CI's own `jelajah-taman.apk` commit).
 Commit messages: no `Co-Authored-By` AI trailers or "Generated with" footers; AI use goes in the disclosure log.
