@@ -259,6 +259,69 @@ void main() {
         reason: 'still visited in this session: no second trigger');
   });
 
+  group('T23 closing time', () {
+    DateTime today(int h, int m) => DateTime(2026, 11, 14, h, m);
+
+    test(
+        'TC-10 at P06: reminder at 16.00 − walk to gate − 15 min, back to gate at 15.30',
+        () {
+      final g = guide();
+      final p06 = g.place('P06')!.position;
+      walk(p06);
+      g
+        ..hydrationMin = 0 // only the closing reminder in this test
+        ..startSession();
+      final walkToGate = g.router.walkingTime(p06, g.content.gate.graphNode);
+      final threshold = today(16, 0)
+          .subtract(walkToGate)
+          .subtract(const Duration(minutes: 15));
+      expect(g.closingReminderAt, threshold);
+
+      clock.setNow(threshold.subtract(const Duration(minutes: 1)));
+      gps.push(p06, clock.now());
+      expect(g.reminder, isNull, reason: 'a minute early');
+      clock.setNow(threshold);
+      gps.push(p06, clock.now());
+      expect(g.reminder, GuideReminder.closing);
+
+      clock.setNow(today(15, 30));
+      expect(g.recommend().backToGate, isTrue,
+          reason: 'nothing can be visited and walked back by 15.45');
+    });
+
+    test('a restored session does not show the closing reminder again',
+        () async {
+      final g = guide();
+      final gate = g.content.gate.position;
+      walk(gate);
+      g.startSession();
+      clock.setNow(today(15, 50)); // past the threshold anywhere in the park
+      walk(gate);
+      expect(g.reminder, GuideReminder.closing);
+      g.dismissReminder();
+      await pumpEventQueue();
+
+      final again = relaunch()..hydrationMin = 0; // only the closing reminder
+      expect(again.sessionActive, isTrue);
+      walk(gate);
+      walk(gate);
+      expect(again.reminder, isNull, reason: 'already shown in this session');
+    });
+
+    test('Home and the route chooser use one rule: done by closing − 15 min',
+        () {
+      final g = guide();
+      final santai = g.content.routes.firstWhere((r) => r.id == 'santai');
+      final latest =
+          today(15, 45).subtract(Duration(minutes: santai.durationMin));
+      clock.setNow(latest);
+      expect(g.routeFits(santai), isTrue);
+      clock.setNow(latest.add(const Duration(minutes: 1)));
+      expect(g.routeFits(santai), isFalse,
+          reason: 'ends before 16.00 but inside the 15 min buffer');
+    });
+  });
+
   test('PB06: an ended session is not resumed but kept as the last session',
       () async {
     final g = guide()..startSession();

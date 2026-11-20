@@ -96,7 +96,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T20 | Search UI09 + facility finder (A04): matching (D12), filter, sort by walking distance (via B's `TrailRouter`) | A | T17 (list widget), T14 (stub works) | 2 | ☐ |
 | T21 | Explore screen composition: map + banners + bottom sheet (built in the `shell` module) | B | T04, T09 | 2 | ☐ |
 | T22 | W12 end-to-end run on replay + demo video | all | T01–T21 | 2 | ☐ |
-| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ☐ |
+| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ◐ 20 Nov: `TimeBudget`, `ReminderScheduler` + `ClosingReminder`/`HydrationReminder`, once-per-session across restarts, one fit rule for reminder, F07 filter and route chooser, tests; open: system notification when the app is hidden (notify, C) and voice (needs TTS, T07/T15) |
 | T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
@@ -858,6 +858,13 @@ Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10
 
 #### Verify
 TC-10 (fake clock, fixed position) — reminder fires at the computed minute, not ±1 min off. Unit tests: fires once, fires immediately when late, threshold moves as position changes.
+
+#### As built (T23, 2026-11-20)
+- `TimeBudget` (`routing`): `deadline` = close − buffer, `walkToGate`, `remaining`, `tripVia`/`fits` (F07 filter: equal to the deadline still fits), `routeFits` (routes are gate → gate, so the whole duration must end by the deadline), `closingReminderAt`. `timeBudgetProvider`. The recommendation filter and both route-fit checks (Home start card, route chooser; before: one with the 15 min buffer, one without) now call it.
+- `reminders`: `Reminder` strategies `ClosingReminder` (text "Kawasan tutup pukul 16.00. Waktu jalan ke gerbang sekitar N menit.", minutes rounded up, action P01) and `HydrationReminder` (moved unchanged from `GuideController`, owner C); `ReminderScheduler` (list order = priority, closing first; once-per-session dedupe; `toJson`/`restore`); `ReminderStore` owns key `reminders.session` (R6), so a restored session doesn't repeat the closing reminder (bug before T23).
+- `GuideController` checks the scheduler on every fix, every 5 s (heartbeat) and on demo ticks, and publishes E10 `ReminderDue`; UI13 unchanged.
+- Not built: UC-A03-2 final call, system notification when the app is hidden (needs a reminder channel in `notify`, owner C), voice (needs `TtsService`, T07/T15). Until then A03 AC ("suara + notifikasi") is partial.
+- Tests: `test/modules/routing/time_budget_test.dart`, `test/modules/reminders/reminder_scheduler_test.dart`, T23 group in `test/modules/shell/guide_controller_test.dart` (TC-10 at P06; restart; route rule). The restart test was checked by mutation (removing the restore makes it fail).
 
 ---
 

@@ -5,5 +5,6 @@
 library;
 
 export 'src/domain/graph_trail_router.dart' show GraphTrailRouter;
+export 'src/domain/time_budget.dart';
 export 'src/domain/trail_router.dart';
 export 'src/routing_providers.dart';

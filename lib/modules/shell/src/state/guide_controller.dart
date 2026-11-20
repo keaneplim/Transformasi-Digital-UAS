@@ -10,6 +10,7 @@ import 'package:jelajah_taman/modules/audio/audio.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
+import 'package:jelajah_taman/modules/reminders/reminders.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
 import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
@@ -39,6 +40,7 @@ class GuideController extends ChangeNotifier {
     KeyValueStore? store,
     this.bus,
     bool Function(GeoPoint)? insideZone,
+    TimeBudget? timeBudget,
   })  : _baseClock = clock,
         _store = store ?? MemoryKeyValueStore(),
         _insideZone = insideZone ?? ((_) => true),
@@ -55,6 +57,12 @@ class GuideController extends ChangeNotifier {
     mode =
         AppMode.values.asNameMap()[_store.getString(_modeKey)] ?? AppMode.real;
     _sessions = SessionStore(_store);
+    budget = timeBudget ?? TimeBudget.fromContent(content, router);
+    _reminders = ReminderScheduler([
+      ClosingReminder(budget, gatePoiId: content.gate.id),
+      const HydrationReminder(),
+    ]);
+    _reminderStore = ReminderStore(_store);
     final loc = location;
     if (loc != null) {
       _subs
@@ -354,8 +362,7 @@ class GuideController extends ChangeNotifier {
     _lastGood = fix != null && !fix!.isWeak(_weakM)
         ? fix
         : null; // walking starts from here
-    _hydrationAnchor = now();
-    _closingShown = false;
+    _reminders.reset();
     _record = SessionRecord(
       id: 's${sessionStart!.millisecondsSinceEpoch}',
       startedAt: sessionStart!,
@@ -364,6 +371,7 @@ class GuideController extends ChangeNotifier {
       interests: interests.toList(),
     );
     _persist(force: true);
+    _saveReminders();
     bus?.publish(SessionStarted(
         at: sessionStart!,
         sessionId: _record!.id,
@@ -387,6 +395,7 @@ class GuideController extends ChangeNotifier {
     if (wasActive && _record != null) {
       final id = _record!.id;
       _finishRecord();
+      unawaited(_reminderStore.clear());
       bus?.publish(SessionEnded(at: sessionEnd!, sessionId: id));
     }
     notifyListeners();
@@ -466,7 +475,9 @@ class GuideController extends ChangeNotifier {
       ..clear()
       ..addAll(r.trail);
     if (isDemo && trail.isNotEmpty) position = trail.last;
-    _hydrationAnchor = now();
+    // What was already shown stays shown: no second closing reminder after a restart.
+    final shown = _reminderStore.load(r.id);
+    if (shown != null) _reminders.restore(shown);
     // Real mode: tracking restarts in _initLocation once the GPS is running.
     if (!isDemo) _startHeartbeat();
     AppLog.info('Session ${r.id} restored: ${visited.length} visited, '
@@ -966,30 +977,47 @@ class GuideController extends ChangeNotifier {
     audioPos = 0;
   }
 
-  // ---- reminders (A03 closing, F08 hydration) --------------------------------------------
+  // ---- reminders (A03 closing, F08 hydration; rules in `reminders` + `TimeBudget`) --------
   GuideReminder? reminder;
-  DateTime? _hydrationAnchor;
-  bool _closingShown = false;
 
-  Duration get walkToGate => router.walkingTime(origin, content.gate.graphNode);
+  /// The one closing-time rule (T23): reminder, recommendation filter and route chooser.
+  late final TimeBudget budget;
+  late final ReminderScheduler _reminders;
+  late final ReminderStore _reminderStore;
 
-  /// A03: jam tutup − waktu jalan ke gerbang − 15 menit.
-  DateTime get closingReminderAt => closingTime.subtract(walkToGate).subtract(
-      Duration(minutes: content.park.param('closing_buffer_min').round()));
+  Duration get walkToGate => budget.walkToGate(origin);
+
+  /// A03: jam tutup − waktu jalan ke gerbang − 15 menit, from where the visitor is now.
+  DateTime get closingReminderAt => budget.closingReminderAt(origin, now());
+
+  /// F08 route chooser: the whole route (gate → gate) ends by closing − 15 min.
+  bool routeFits(TrailRoute r) =>
+      budget.routeFits(Duration(minutes: r.durationMin), now());
 
   void _checkReminders() {
     if (reminder != null || !sessionActive) return;
-    if (!_closingShown && now().isAfter(closingReminderAt)) {
-      _closingShown = true;
-      reminder = GuideReminder.closing;
-    } else if (hydrationMin > 0 &&
-        _hydrationAnchor != null &&
-        now().difference(_hydrationAnchor!).inMinutes >= hydrationMin) {
-      _hydrationAnchor = now();
-      reminder = GuideReminder.hydration;
-    }
+    final due = _reminders.check(ReminderContext(
+      now: now(),
+      position: origin,
+      sessionStart: sessionStart!,
+      hydrationEvery: Duration(minutes: hydrationMin),
+    ));
+    if (due == null) return;
+    reminder = switch (due.kind) {
+      ReminderKind.hydration => GuideReminder.hydration,
+      ReminderKind.closing || ReminderKind.finalCall => GuideReminder.closing,
+    };
+    _saveReminders();
+    bus?.publish(due);
   }
 
+  void _saveReminders() {
+    final r = _record;
+    if (r == null || !sessionActive) return;
+    unawaited(_reminderStore.save(r.id, _reminders.toJson()));
+  }
+
+  /// Settings → Mode demo preview; doesn't count as shown.
   void showReminder(GuideReminder r) {
     reminder = r;
     if (vibration) HapticFeedback.mediumImpact();
@@ -997,20 +1025,23 @@ class GuideController extends ChangeNotifier {
   }
 
   void dismissReminder() {
+    if (reminder case final r?) {
+      _reminders.acknowledge(
+          r == GuideReminder.closing
+              ? ReminderKind.closing
+              : ReminderKind.hydration,
+          now());
+      _saveReminders();
+    }
     reminder = null;
-    _hydrationAnchor = now();
     notifyListeners();
   }
 
   // ---- recommendation (F07, simplified) ---------------------------------------------------
   Recommendation recommend() {
     final w = content.park.recWeights;
-    final buffer =
-        Duration(minutes: content.park.param('closing_buffer_min').round());
-    final left = timeToClose - buffer;
-    final gate = content.gate.graphNode;
-    final candidates =
-        <({Place place, double score, List<String> reasons, Duration total})>[];
+    final at = now();
+    final candidates = <({Place place, double score, List<String> reasons})>[];
     final dists = <String, double>{};
     for (final p in pois) {
       if (p.isGate || visited.contains(p.id)) continue;
@@ -1021,10 +1052,9 @@ class GuideController extends ChangeNotifier {
     for (final p in pois) {
       final d = dists[p.id];
       if (d == null) continue;
-      final total = walkingTime(p) +
-          Duration(minutes: p.poi!.visitMinutes) +
-          router.walkingTimeBetween(p.node, gate);
-      if (total > left) continue;
+      // F07 AC3: walk there + visit + walk to the gate by closing − 15 min (TimeBudget, T23).
+      final visit = Duration(minutes: p.poi!.visitMinutes);
+      if (!budget.fits(origin, p.node, visit, at)) continue;
       final interest = interests.contains(p.kind) ? 1.0 : 0.0;
       final onRoute = p.poi!.routes.contains(routeId) ? 1.0 : 0.0;
       final easy = (3 - p.poi!.difficulty) / 2;
@@ -1035,7 +1065,6 @@ class GuideController extends ChangeNotifier {
       candidates.add((
         place: p,
         score: score,
-        total: total,
         reasons: [
           if (d == dists.values.reduce(math.min)) 'Paling dekat',
           if (interest > 0)
@@ -1092,5 +1121,6 @@ final guideProvider = ChangeNotifierProvider<GuideController>((ref) {
     store: ref.watch(keyValueStoreProvider),
     bus: ref.watch(eventBusProvider),
     insideZone: scene.isInsideZone,
+    timeBudget: ref.watch(timeBudgetProvider),
   );
 });
