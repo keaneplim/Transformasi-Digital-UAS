@@ -20,6 +20,7 @@ dependencies:
   go_router: ^14.6.0
   just_audio: ^0.10.6 # module audio only (R5)
   latlong2: ^0.10.1
+  mobile_scanner: ^7.5.0 # module trigger only (R5); bundled ML Kit model = scans offline
   shared_preferences: ^2.5.6 # core only (R5)
   vibration: ^3.2.1 # module notify only (R5)
 

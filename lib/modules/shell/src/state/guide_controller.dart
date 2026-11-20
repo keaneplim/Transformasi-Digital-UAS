@@ -626,6 +626,29 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A02: a scanned board. Triggered + Visited at once (PRD §4.2), logged with source `qr`.
+  /// No trigger card: scanning already says "show me this place", so the scanner opens POI
+  /// Detail itself (UC-A02-1). Starts a session if none runs (the visit must be logged).
+  void scanQr(Place p) {
+    if (!p.isPoi) return;
+    if (!sessionActive) startSession();
+    if (isDemo && p.position != position) {
+      stopWalking();
+      _moveTo(p.position, record: false);
+    }
+    final events = _engine.qr(p.id, now());
+    for (final e in events) {
+      bus?.publish(e);
+    }
+    triggered.add(p.id);
+    visited.add(p.id);
+    if (pendingTrigger?.id == p.id) pendingTrigger = null;
+    _queue.removeWhere((q) => q.id == p.id);
+    approaching = null;
+    _logEvents(events);
+    notifyListeners();
+  }
+
   /// Dengarkan (`listened`) / Lihat (`opened`) → visited (D05). Nanti → triggered only.
   void resolveTrigger(
       {required bool engaged, EngagementKind how = EngagementKind.opened}) {

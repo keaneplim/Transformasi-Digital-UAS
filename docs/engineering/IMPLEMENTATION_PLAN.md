@@ -83,7 +83,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C | — | 0 | ☐ |
 | T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests. Start right after day 1 (A is free once T01–T02 are done). | A | T01 | 0–1 | ☑ |
 | T09 | Trigger controller: fixes → engine → events; approaching banner UI04 | A | T08 | 1 | ◐ |
-| T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ☐ |
+| T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ◐ 20 Nov (Keane): real camera (`mobile_scanner`), payload parsing, unknown/foreign message, permission fallback, scan → POI Detail as a QR visit; open: printed boards, phone test TC-04 (offline, 2 phones), deep link UC-A02-4 |
 | T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ◐ built 14 Nov (PB07); phone check pending |
 | T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ◐ decided: option (b), see F04; phone check pending |
 | T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX (script + tests done; run on the survey GPX pending) | B | survey | 0–1 | ◐ |
@@ -547,6 +547,13 @@ TC-04: scan P05/P06 in airplane mode → correct POI ≤3 s; scan an unrelated Q
 
 #### Done when
 Both cave QRs printed and opening the right POI offline on 2 phones; manual pick works with location denied.
+
+#### As built (T10, 2026-11-20)
+- `trigger`: `poiIdFromQr` / `resolveQr` (pure, `src/domain/qr_payload.dart`): case-insensitive scheme, trailing slashes and spaces tolerated, ID upper-cased, extra path or query → foreign; resolved by POI ID against the bundled content (offline). `QrCamera` (`src/ui/`, mobile_scanner 7.5.0, QR format only, no-duplicates detection, torch, lifecycle handled by the plugin). Bundled ML Kit model (the plugin's default): no Play Services download, works offline; APK +3–10 MB. `qrCameraProvider` is null until the composition root binds it (`bindQrCamera`), so tests and the web preview run without the plugin.
+- `shell` UI12: live camera when bound; a board → short confirmation → `GuideController.scanQr` (Triggered + Visited, both logged with source `qr`, session started if none) → POI Detail replaces the scanner. **No trigger card** on a scan (the visitor asked for this place; plan UC-A02-1). Unknown ID or foreign code → "QR tidak dikenali. Pastikan Anda memindai papan Jelajah Taman." for 4 s, scanner stays open. Camera denied/unavailable → explanation + "Pilih tempat dari daftar". The tap-to-scan list of codes stays for demo mode and where no camera is bound.
+- Camera permission: requested by the plugin when the scanner opens (the one in-context prompt, ARCHITECTURE §9); `CAMERA` comes from the plugin's manifest, camera feature not required.
+- Tests: `test/modules/trigger/qr_payload_test.dart`, `test/modules/shell/scan_screen_test.dart` (fake camera: P05 opens detail as QR visit without a card, foreign + unknown message then a board still works, permission denied, torch, no-camera list).
+- Not built: printed boards (≥ 8 cm, error correction H, POI name under the code), deep link UC-A02-4. **Not verified on a phone** (TC-04 in airplane mode).
 
 ---
 

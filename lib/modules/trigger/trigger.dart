@@ -8,4 +8,7 @@ library;
 
 export 'src/application/geofence_targets.dart';
 export 'src/domain/geofence_engine.dart';
+export 'src/domain/qr_payload.dart';
 export 'src/domain/trigger_contracts.dart';
+export 'src/trigger_providers.dart';
+export 'src/ui/qr_camera.dart' show QrCameraBuilder, QrCameraProblem;
