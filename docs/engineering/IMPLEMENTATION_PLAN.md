@@ -83,7 +83,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C | — | 0 | ☐ |
 | T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests. Start right after day 1 (A is free once T01–T02 are done). | A | T01 | 0–1 | ☑ |
 | T09 | Trigger controller: fixes → engine → events; approaching banner UI04 | A | T08 | 1 | ◐ |
-| T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ☐ |
+| T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ◐ 20 Nov (Keane): real camera (`mobile_scanner`), payload parsing, unknown/foreign message, permission fallback, scan → POI Detail as a QR visit; open: printed boards, phone test TC-04 (offline, 2 phones), deep link UC-A02-4 |
 | T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ◐ built 14 Nov (PB07); phone check pending |
 | T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ◐ decided: option (b), see F04; phone check pending |
 | T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX (script + tests done; run on the survey GPX pending) | B | survey | 0–1 | ◐ |
@@ -96,7 +96,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T20 | Search UI09 + facility finder (A04): matching (D12), filter, sort by walking distance (via B's `TrailRouter`) | A | T17 (list widget), T14 (stub works) | 2 | ☐ |
 | T21 | Explore screen composition: map + banners + bottom sheet (built in the `shell` module) | B | T04, T09 | 2 | ☐ |
 | T22 | W12 end-to-end run on replay + demo video | all | T01–T21 | 2 | ☐ |
-| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ☐ |
+| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ◐ 20 Nov: `TimeBudget`, `ReminderScheduler` + `ClosingReminder`/`HydrationReminder`, once-per-session across restarts, one fit rule for reminder, F07 filter and route chooser, tests; open: system notification when the app is hidden (notify, C) and voice (needs TTS, T07/T15) |
 | T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
@@ -548,6 +548,13 @@ TC-04: scan P05/P06 in airplane mode → correct POI ≤3 s; scan an unrelated Q
 #### Done when
 Both cave QRs printed and opening the right POI offline on 2 phones; manual pick works with location denied.
 
+#### As built (T10, 2026-11-20)
+- `trigger`: `poiIdFromQr` / `resolveQr` (pure, `src/domain/qr_payload.dart`): case-insensitive scheme, trailing slashes and spaces tolerated, ID upper-cased, extra path or query → foreign; resolved by POI ID against the bundled content (offline). `QrCamera` (`src/ui/`, mobile_scanner 7.5.0, QR format only, no-duplicates detection, torch, lifecycle handled by the plugin). Bundled ML Kit model (the plugin's default): no Play Services download, works offline; APK +3–10 MB. `qrCameraProvider` is null until the composition root binds it (`bindQrCamera`), so tests and the web preview run without the plugin.
+- `shell` UI12: live camera when bound; a board → short confirmation → `GuideController.scanQr` (Triggered + Visited, both logged with source `qr`, session started if none) → POI Detail replaces the scanner. **No trigger card** on a scan (the visitor asked for this place; plan UC-A02-1). Unknown ID or foreign code → "QR tidak dikenali. Pastikan Anda memindai papan Jelajah Taman." for 4 s, scanner stays open. Camera denied/unavailable → explanation + "Pilih tempat dari daftar". The tap-to-scan list of codes stays for demo mode and where no camera is bound.
+- Camera permission: requested by the plugin when the scanner opens (the one in-context prompt, ARCHITECTURE §9); `CAMERA` comes from the plugin's manifest, camera feature not required.
+- Tests: `test/modules/trigger/qr_payload_test.dart`, `test/modules/shell/scan_screen_test.dart` (fake camera: P05 opens detail as QR visit without a card, foreign + unknown message then a board still works, permission denied, torch, no-camera list).
+- Not built: printed boards (≥ 8 cm, error correction H, POI name under the code), deep link UC-A02-4. **Not verified on a phone** (TC-04 in airplane mode).
+
 ---
 
 ### A06 — Battery-Aware Tracking
@@ -858,6 +865,13 @@ Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10
 
 #### Verify
 TC-10 (fake clock, fixed position) — reminder fires at the computed minute, not ±1 min off. Unit tests: fires once, fires immediately when late, threshold moves as position changes.
+
+#### As built (T23, 2026-11-20)
+- `TimeBudget` (`routing`): `deadline` = close − buffer, `walkToGate`, `remaining`, `tripVia`/`fits` (F07 filter: equal to the deadline still fits), `routeFits` (routes are gate → gate, so the whole duration must end by the deadline), `closingReminderAt`. `timeBudgetProvider`. The recommendation filter and both route-fit checks (Home start card, route chooser; before: one with the 15 min buffer, one without) now call it.
+- `reminders`: `Reminder` strategies `ClosingReminder` (text "Kawasan tutup pukul 16.00. Waktu jalan ke gerbang sekitar N menit.", minutes rounded up, action P01) and `HydrationReminder` (moved unchanged from `GuideController`, owner C); `ReminderScheduler` (list order = priority, closing first; once-per-session dedupe; `toJson`/`restore`); `ReminderStore` owns key `reminders.session` (R6), so a restored session doesn't repeat the closing reminder (bug before T23).
+- `GuideController` checks the scheduler on every fix, every 5 s (heartbeat) and on demo ticks, and publishes E10 `ReminderDue`; UI13 unchanged.
+- Not built: UC-A03-2 final call, system notification when the app is hidden (needs a reminder channel in `notify`, owner C), voice (needs `TtsService`, T07/T15). Until then A03 AC ("suara + notifikasi") is partial.
+- Tests: `test/modules/routing/time_budget_test.dart`, `test/modules/reminders/reminder_scheduler_test.dart`, T23 group in `test/modules/shell/guide_controller_test.dart` (TC-10 at P06; restart; route rule). The restart test was checked by mutation (removing the restore makes it fail).
 
 ---
 

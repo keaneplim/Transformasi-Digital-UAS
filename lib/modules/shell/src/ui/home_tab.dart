@@ -268,8 +268,7 @@ class _StartCard extends ConsumerWidget {
         !demo.outsideZone &&
         demo.walkingM(demo.place('P01')!) < 40;
     final finish = demo.now().add(Duration(minutes: r.durationMin));
-    final fits =
-        finish.isBefore(demo.closingTime.subtract(const Duration(minutes: 15)));
+    final fits = demo.routeFits(r);
     final diffColor = switch (r.difficulty) {
       1 => JT.leaf,
       2 => JT.doodle,

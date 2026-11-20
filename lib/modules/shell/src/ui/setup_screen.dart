@@ -311,8 +311,7 @@ class RouteCard extends ConsumerWidget {
       for (final id in route.nodePath)
         if (graph.nodes[id] case final n?) n.elevationM,
     ];
-    final ends = demo.now().add(Duration(minutes: route.durationMin));
-    final fits = !ends.isAfter(demo.closingTime);
+    final fits = demo.routeFits(route);
     final pois = route.poiSequence.toSet().length - 1;
     final color = switch (route.difficulty) {
       1 => JT.leaf,

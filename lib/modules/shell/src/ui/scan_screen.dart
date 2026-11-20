@@ -1,17 +1,24 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+import 'package:jelajah_taman/modules/trigger/trigger.dart';
 
 import '../state/guide_controller.dart';
 import '../state/places.dart';
 import 'main_shell.dart';
 import 'widgets.dart';
 
-/// UI12 QR fallback (A02). Dark viewfinder with breathing corners and a scan line.
-/// In the preview the camera is mocked: pick a code below to "scan" it.
+/// UI12 QR fallback (A02). Dark viewfinder with breathing corners and a scan line over the
+/// live camera. A board (`jelajahtaman://poi/P05`) opens that POI's detail page as a visit;
+/// any other code shows a message and the scanner stays open (UC-A02-2).
+///
+/// Without a camera binding (tests, web preview) and in demo mode the list of the park's
+/// codes below the finder "scans" a code by tapping it.
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
 
@@ -27,43 +34,91 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
   bool _torch = false;
   String? _found;
 
+  /// "QR tidak dikenali…" after a foreign or unknown code; clears itself.
+  bool _unknown = false;
+  Timer? _unknownTimer;
+  QrCameraProblem? _problem;
+
   @override
   void dispose() {
+    _unknownTimer?.cancel();
     _c.dispose();
     super.dispose();
   }
 
+  void _onCode(String raw) {
+    if (_found != null) return; // already opening a POI
+    final guide = ref.read(guideProvider);
+    switch (resolveQr(raw, guide.content)) {
+      case QrPoi(:final poi):
+        final p = guide.place(poi.id);
+        if (p != null) unawaited(_scan(p));
+      case QrUnknownPoi() || QrForeign():
+        if (guide.vibration) unawaited(HapticFeedback.lightImpact());
+        _unknownTimer?.cancel();
+        setState(() => _unknown = true);
+        _unknownTimer = Timer(const Duration(seconds: 4), () {
+          if (mounted) setState(() => _unknown = false);
+        });
+    }
+  }
+
+  /// Short confirmation, then the POI as a visit (A02 AC: correct POI ≤ 3 s).
   Future<void> _scan(Place p) async {
-    setState(() => _found = p.id);
+    setState(() {
+      _found = p.id;
+      _unknown = false;
+    });
+    if (ref.read(guideProvider).vibration) {
+      unawaited(HapticFeedback.mediumImpact());
+    }
     await Future<void>.delayed(const Duration(milliseconds: 650));
     if (!mounted) return;
-    final demo = ref.read(guideProvider);
-    if (!demo.sessionActive) demo.startSession();
-    demo.teleportTo(p);
-    context.pop();
-    demo.triggerNow(p, viaQr: true);
+    ref.read(guideProvider).scanQr(p);
+    context.pushReplacement('/poi/${p.id}');
   }
+
+  /// Called from the camera's error builder (during build), so the state change waits a frame.
+  Widget _cameraProblem(QrCameraProblem problem) {
+    if (_problem != problem) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _problem = problem);
+      });
+    }
+    return _feed();
+  }
+
+  /// Painted stand-in for the camera: blurred forest tones that drift slowly.
+  Widget _feed() => AnimatedBuilder(
+        animation: _c,
+        builder: (context, _) => CustomPaint(painter: _FeedPainter(_c.value)),
+      );
 
   @override
   Widget build(BuildContext context) {
     final demo = ref.watch(guideProvider);
+    final camera = ref.watch(qrCameraProvider);
     final qrPlaces = [
       for (final p in demo.pois)
         if (p.poi?.qrCode != null) p,
     ];
+    // The tap-to-scan list stands in for the camera where there is none, and lets a demo
+    // run without a printed board.
+    final showCodes = camera == null || demo.isDemo;
     final size = MediaQuery.sizeOf(context);
     final box = math.min(size.width - 80, 290.0);
     return Scaffold(
       backgroundColor: JT.dusk,
       body: Stack(
         children: [
-          // Fake camera feed: blurred forest tones that drift slowly.
           Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _c,
-              builder: (context, _) =>
-                  CustomPaint(painter: _FeedPainter(_c.value)),
-            ),
+            child: camera == null
+                ? _feed()
+                : camera(
+                    onCode: _onCode,
+                    torch: _torch,
+                    problemBuilder: _cameraProblem,
+                  ),
           ),
           Positioned.fill(
             child: CustomPaint(painter: _MaskPainter(box: box, radius: 34)),
@@ -148,34 +203,54 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                   ),
                 ),
                 const Spacer(),
-                const _WeakSignal(),
+                if (_unknown)
+                  const _Notice(
+                    icon: Icons.qr_code_2_rounded,
+                    text:
+                        'QR tidak dikenali. Pastikan Anda memindai papan Jelajah Taman.',
+                  )
+                else if (_problem != null)
+                  _Notice(
+                    icon: Icons.no_photography_rounded,
+                    text: _problem == QrCameraProblem.permissionDenied
+                        ? 'Kamera belum diizinkan. Izinkan kamera untuk Jelajah Taman di pengaturan ponsel, atau pilih tempat dari daftar.'
+                        : 'Kamera tidak dapat dibuka. Pilih tempat dari daftar.',
+                  )
+                else
+                  const _Notice(
+                    icon: Icons.location_disabled_rounded,
+                    text:
+                        'Di dalam gua sinyal lokasi melemah. Kode QR membuka ceritanya langsung.',
+                    calm: true,
+                  ),
                 const SizedBox(height: 14),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(26),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('KODE DI TAMAN',
-                          style:
-                              JTText.overline.copyWith(color: Colors.white60)),
-                      const SizedBox(height: 10),
-                      for (final p in qrPlaces) ...[
-                        _CodeRow(
-                            place: p,
-                            busy: _found == p.id,
-                            onTap: () => _scan(p)),
-                        if (p != qrPlaces.last) const SizedBox(height: 8),
+                if (showCodes)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('KODE DI TAMAN',
+                            style: JTText.overline
+                                .copyWith(color: Colors.white60)),
+                        const SizedBox(height: 10),
+                        for (final p in qrPlaces) ...[
+                          _CodeRow(
+                              place: p,
+                              busy: _found == p.id,
+                              onTap: () => _scan(p)),
+                          if (p != qrPlaces.last) const SizedBox(height: 8),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
                 const SizedBox(height: 12),
                 TextButton.icon(
                   onPressed: () {
@@ -234,31 +309,41 @@ class _CodeRow extends StatelessWidget {
       );
 }
 
-class _WeakSignal extends StatelessWidget {
-  const _WeakSignal();
+/// One-line note above the code list: the cave hint (calm), or a scan/camera problem.
+class _Notice extends StatelessWidget {
+  const _Notice({required this.icon, required this.text, this.calm = false});
+
+  final IconData icon;
+  final String text;
+  final bool calm;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final tint = calm ? JT.sun : JT.terracotta;
+    return Semantics(
+      liveRegion: !calm,
+      child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: JT.sun.withValues(alpha: 0.14),
+          color: tint.withValues(alpha: calm ? 0.14 : 0.28),
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: [
-            const Icon(Icons.location_disabled_rounded,
-                color: JT.sun, size: 20),
+            Icon(icon, color: calm ? JT.sun : Colors.white, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Di dalam gua sinyal lokasi melemah. Kode QR membuka ceritanya langsung.',
+                text,
                 style: JTText.bodySm.copyWith(color: Colors.white),
               ),
             ),
           ],
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _FeedPainter extends CustomPainter {
