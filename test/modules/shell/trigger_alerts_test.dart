@@ -48,6 +48,17 @@ class FakeNotifier implements AlertNotifier {
   @override
   Future<void> cancelTrigger() async => calls.add('cancelTrigger');
   @override
+  Future<void> showNext(
+      {required String poiId,
+      required String title,
+      required String body}) async {
+    calls.add('next:$poiId');
+    shown['next'] = (title: title, body: body);
+  }
+
+  @override
+  Future<void> cancelNext() async => calls.add('cancelNext');
+  @override
   Future<void> vibrate(List<int> pattern) async =>
       calls.add('vibrate:${pattern.join(",")}');
   @override
@@ -262,5 +273,46 @@ void main() {
     arriveAt('P05');
     n.tap('P05', AlertAction.later);
     expect(g.stateOf(poi('P05')), PoiState.triggered);
+  });
+
+  group('F07 next suggestion with the screen off', () {
+    void visitAndFinish(String id) {
+      arriveAt(id);
+      g
+        ..resolveTrigger(engaged: true)
+        ..detailClosed(poi(id));
+    }
+
+    test('screen off: one silent "Berikutnya" card; back on screen it goes',
+        () {
+      g.startSession();
+      alerts.setVisible(false);
+      visitAndFinish('P06');
+      final main = g.lastRecommendation!.rec.items.first.place;
+      expect(n.calls, contains('next:${main.id}'));
+      expect(n.shown['next']!.title, 'Berikutnya: ${main.name}');
+      g.detailClosed(poi('P06'));
+      expect(n.count('next:'), 1, reason: 'once per visited POI');
+      alerts.setVisible(true);
+      expect(n.calls.last, 'cancelNext');
+    });
+
+    test('app visible: no notification (the sheet shows it)', () {
+      g.startSession();
+      visitAndFinish('P06');
+      expect(g.recommendationCount, 1);
+      expect(n.count('next:'), 0);
+    });
+
+    test('no time left: the card says go back to the gate', () {
+      g
+        ..startSession()
+        ..setDemoTime(15, 30);
+      alerts.setVisible(false);
+      visitAndFinish('P06');
+      expect(n.calls, contains('next:${g.content.gate.id}'));
+      expect(n.shown['next']!.title, 'Waktunya kembali ke gerbang');
+      expect(n.shown['next']!.body, '${gateWalkLabel(g.walkToGate)}.');
+    });
   });
 }

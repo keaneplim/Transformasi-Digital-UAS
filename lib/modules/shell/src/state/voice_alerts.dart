@@ -15,7 +15,9 @@ import 'places.dart';
 ///   Auto-Play the short form, and the guide starts the narration when it has been said.
 /// - Navigation (setting "Arahan suara", F04 e): start, each turn ~20 m ahead, re-route, arrival.
 /// - Reminders (always, F04 f): closing time as a safety line, hydration as a reminder.
-/// - Narration played to the end: "Selesai. Berikutnya: …" (UC-F04-1 step 5).
+/// - Recommendation after a visit (F07, once per visited POI, not while navigating): narration
+///   played to the end → "Selesai. Berikutnya: …" (UC-F04-1 step 5); walked away (phone in a
+///   pocket) → "Berikutnya: …". Closing the detail says nothing: the visitor is looking.
 /// Silent outside a session. Narration ducks under every line (guide.onVoiceDuck).
 class VoiceAlerts {
   VoiceAlerts({required this.guide, required this.tts, required EventBus bus}) {
@@ -29,7 +31,7 @@ class VoiceAlerts {
     _to = guide.navigation?.to;
     _arrived = guide.arrivedAt != null;
     _reroutes = guide.reroutes;
-    _done = guide.narrationsDone;
+    _recs = guide.recommendationCount;
     _wasActive = guide.sessionActive;
     _skipPassedTurns();
   }
@@ -46,7 +48,7 @@ class VoiceAlerts {
   final Set<int> _spokenTurns = {};
   bool _arrived = false;
   int _reroutes = 0;
-  int _done = 0;
+  int _recs = 0;
   bool _wasActive = false;
 
   bool get _navVoice => guide.sessionActive && guide.voiceGuidance;
@@ -68,9 +70,9 @@ class VoiceAlerts {
     if (_wasActive && !guide.sessionActive) unawaited(tts.stopAll());
     _wasActive = guide.sessionActive;
     _navigation();
-    if (guide.narrationsDone != _done) {
-      _done = guide.narrationsDone;
-      _narrationDone();
+    if (guide.recommendationCount != _recs) {
+      _recs = guide.recommendationCount;
+      _recommended();
     }
   }
 
@@ -134,13 +136,20 @@ class VoiceAlerts {
     }
   }
 
-  void _narrationDone() {
-    if (!guide.sessionActive) return;
-    final r = guide.recommend();
+  void _recommended() {
+    final last = guide.lastRecommendation;
+    if (!guide.sessionActive || last == null) return;
     // Back to the gate: the closing reminder / summary say what to do then.
-    if (r.backToGate) return;
-    _say('Selesai. Berikutnya: ${r.items.first.place.name}.',
-        VoicePriority.reminder);
+    if (last.rec.backToGate) return;
+    final next = last.rec.items.first.place.name;
+    switch (last.reason) {
+      case FinishReason.narrationDone:
+        _say('Selesai. Berikutnya: $next.', VoicePriority.reminder);
+      case FinishReason.leftArea:
+        _say('Berikutnya: $next.', VoicePriority.reminder);
+      case FinishReason.detailClosed:
+        break;
+    }
   }
 
   void _onReminder(ReminderDue e) {

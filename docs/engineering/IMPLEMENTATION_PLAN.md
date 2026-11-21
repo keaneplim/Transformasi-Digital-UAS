@@ -97,7 +97,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T21 | Explore screen composition: map + banners + bottom sheet (built in the `shell` module) | B | T04, T09 | 2 | ☐ |
 | T22 | W12 end-to-end run on replay + demo video | all | T01–T21 | 2 | ☐ |
 | T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ◐ 20 Nov: `TimeBudget`, `ReminderScheduler` + `ClosingReminder`/`HydrationReminder`, once-per-session across restarts, one fit rule for reminder, F07 filter and route chooser, tests; voice added with T15 (closing = safety line); open: system notification when the app is hidden (notify, C) |
-| T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
+| T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ◐ 21 Nov (done by B): `recommendation` module to spec, automatic UI08 after E7 (once per visited POI), Explore button, log, voice + silent notification, tests; open: TC-09/TC-10 runs on replay, phone check of the notification |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
 | T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C → B (21 Nov) | T01, T16 | 3 | ◐ 21 Nov: step counter (sensor, permission, reboot/restore, "–" without sensor), tests; open: kcal per D11 (MET 3,5/6,0 by grade, now flat 4,0), distance filter ≤ 20 m accuracy, TC-12 on phones |
@@ -839,13 +839,13 @@ candidates = pois where
      and router.walkingTime(pos, poi) + poi.visit_minutes + router.walkingTimeBetween(poi, gate) ≤ budget   // = timeBudget.fits(...) from T23
 if candidates empty → BackToGate(router.walkingTime(pos, gate))
 for c in candidates:
-     dist       = 1 − walkingDistance(c) / max(walkingDistance over candidates)      // 0..1, nearest = 1
+     dist       = 1 − walkingDistance(c) / max(walkingDistance over candidates)      // 0..1, farthest = 0
      interest   = 1 if c.category ∈ user.interests else 0
      route      = 1 if activeRoute != null and c.id ∈ activeRoute.poi_sequence else 0
      difficulty = 1 if c.difficulty ≤ activeRoute.difficulty (or 1 if no route) else 0
      score = 0.50·dist + 0.25·interest + 0.15·route + 0.10·difficulty            // D10, weights in park.json
 sort by score desc, tie → shorter walk
-return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "Terdekat" if dist == 1)
+return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "Terdekat" for the shortest walk)
 ```
 
 #### Acceptance criteria ↔ tests
@@ -861,6 +861,14 @@ return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "T
 
 #### Done when
 Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10 pass on replay + fake clock.
+
+#### As built (T24 recommendation, 2026-11-21, B for A)
+- `recommendation` (was empty): pure `Recommender` with the four `ScoreFactor`s (`DistanceFactor`, `InterestFactor`, `RouteFactor` = in the active route's `poi_sequence`, `DifficultyFactor` = POI difficulty ≤ route difficulty), weights from `park.json` `rec_weights` (D10 defaults for a missing key), tie → shorter walk (scores equal within 1e-9). Candidates: not visited (D05), not the gate, P11 only on Trekking (same rule as its geofence), `TimeBudget.fits` (T23). Distance is normalised over the **candidates**. Result: up to 3 items with `RecReason`s, or back to the gate with "all visited" vs "no time".
+- **Spec fix:** the algorithm said `dist … nearest = 1` and "Terdekat if dist == 1", but `1 − d/max` gives the nearest less than 1 (only the farthest is exact: 0), so "Terdekat" would never show. Kept the formula (min-max scaling would turn a 10 m difference into half the score), "Terdekat" = the shortest walk among the candidates.
+- Guide: E7 from all three sources (engine `leftArea`, narration played to the end, detail closed via `PopScope`) → the first finish of a **visited** POI (D05) computes the recommendation, logs it in the session record (`recommendations`: time, POI, reason, E7 time, ids → TC-09 evidence and AC2) and sets a cue; the overlay host opens UI08 once no trigger card or reminder is showing. A new trigger drops a waiting cue. While navigating it is only logged (the visitor already chose). Opening the sheet by hand (detail "Selesai, lihat berikutnya", arrival "Lihat tujuan berikutnya") counts as that POI's recommendation. After an app restart, POIs already asked about stay quiet.
+- UC-F07-5: round "Ke mana selanjutnya?" button on the map (session only). UC-F07-2/3: sheet shows the walk to the gate ("±25 mnt jalan ke gerbang", "Gerbang sudah dekat" under 1 min), *Navigasi ke gerbang*, and *Akhiri Jelajah* when everything is visited. Reason chips: "Terdekat", "Sesuai minat Sejarah", "Ada di rute Santai", "Jalur mudah"/"Sesuai tingkat rute"; "Belum dikunjungi" dropped (every candidate is).
+- Screen off: voice "Selesai. Berikutnya: …" (narration end) or "Berikutnya: …" (walked away), nothing after closing the detail; silent notification on a new `next` channel (low importance, no sound/vibration), cancelled when the app is back on screen.
+- Not done: TC-09/TC-10 on GPX replay (unit tests cover them with a fixed position + fake clock).
 
 ---
 

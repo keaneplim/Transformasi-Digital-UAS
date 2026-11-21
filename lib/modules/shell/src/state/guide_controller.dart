@@ -10,6 +10,7 @@ import 'package:jelajah_taman/modules/audio/audio.dart';
 import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
+import 'package:jelajah_taman/modules/recommendation/recommendation.dart';
 import 'package:jelajah_taman/modules/reminders/reminders.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
 import 'package:jelajah_taman/modules/session/session.dart';
@@ -396,6 +397,8 @@ class GuideController extends ChangeNotifier {
         ? fix
         : null; // walking starts from here
     _reminders.reset();
+    _recommendedFor.clear();
+    recommendationCue = null;
     _record = SessionRecord(
       id: 's${sessionStart!.millisecondsSinceEpoch}',
       startedAt: sessionStart!,
@@ -515,6 +518,10 @@ class GuideController extends ChangeNotifier {
     // What was already shown stays shown: no second closing reminder after a restart.
     final shown = _reminderStore.load(r.id);
     if (shown != null) _reminders.restore(shown);
+    // A POI that already got its recommendation doesn't open the sheet again.
+    _recommendedFor
+      ..clear()
+      ..addAll(r.recommendations.map((e) => e.afterPoiId));
     // Real mode: tracking restarts in _initLocation once the GPS is running. Steps continue
     // from the stored count; the sensor kept counting while the app was closed.
     if (!isDemo) {
@@ -564,6 +571,8 @@ class GuideController extends ChangeNotifier {
     approaching = null;
     pendingTrigger = null;
     reminder = null;
+    recommendationCue = null;
+    _recommendedFor.clear();
     stopAudio();
     _clockOffset = Duration.zero;
     notifyListeners();
@@ -626,6 +635,9 @@ class GuideController extends ChangeNotifier {
           }
         case PoiVisited(:final poiId):
           visited.add(poiId);
+        case PoiFinished(:final poiId, :final reason, :final at):
+          // Engine events (leftArea) are already on the bus.
+          _onFinished(poiId, reason, at, publish: false);
         default:
           break;
       }
@@ -647,6 +659,7 @@ class GuideController extends ChangeNotifier {
   void _showTrigger(Place p) {
     approaching = null;
     pendingTrigger = p;
+    recommendationCue = null; // a new place beats "where next" for the last one
     // Vibration (app visible) or the lock-screen notification (app hidden): TriggerAlerts.
     if (navigation != null) _pauseWalk = true;
     final announce = announceTrigger?.call(p);
@@ -1041,6 +1054,7 @@ class GuideController extends ChangeNotifier {
           audioPos = audioLength(p);
           audioPlaying = false;
           narrationsDone++;
+          _onFinished(p.id, FinishReason.narrationDone, now());
           notifyListeners();
         });
       }
@@ -1066,6 +1080,7 @@ class GuideController extends ChangeNotifier {
         audioPlaying = false;
         _audioTimer?.cancel();
         narrationsDone++;
+        _onFinished(nowPlaying!.id, FinishReason.narrationDone, now());
       }
       notifyListeners();
     });
@@ -1233,52 +1248,123 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---- recommendation (F07, simplified) ---------------------------------------------------
-  Recommendation recommend() {
-    final w = content.park.recWeights;
-    final at = now();
-    final candidates = <({Place place, double score, List<String> reasons})>[];
-    final dists = <String, double>{};
-    for (final p in pois) {
-      if (p.isGate || visited.contains(p.id)) continue;
-      dists[p.id] = walkingM(p);
-    }
-    if (dists.isEmpty) return const Recommendation.backToGate(allVisited: true);
-    final maxD = dists.values.reduce(math.max);
-    for (final p in pois) {
-      final d = dists[p.id];
-      if (d == null) continue;
-      // F07 AC3: walk there + visit + walk to the gate by closing − 15 min (TimeBudget, T23).
-      final visit = Duration(minutes: p.poi!.visitMinutes);
-      if (!budget.fits(origin, p.node, visit, at)) continue;
-      final interest = interests.contains(p.kind) ? 1.0 : 0.0;
-      final onRoute = p.poi!.routes.contains(routeId) ? 1.0 : 0.0;
-      final easy = (3 - p.poi!.difficulty) / 2;
-      final score = (w['dist'] ?? 0.5) * (1 - d / math.max(1, maxD)) +
-          (w['interest'] ?? 0.25) * interest +
-          (w['route'] ?? 0.15) * onRoute +
-          (w['difficulty'] ?? 0.1) * easy;
-      candidates.add((
-        place: p,
-        score: score,
-        reasons: [
-          if (d == dists.values.reduce(math.min)) 'Paling dekat',
-          if (interest > 0)
-            'Sesuai minat ${categoryLabel(p.kind).toLowerCase()}',
-          if (onRoute > 0) 'Di rute ${route.name}',
-          if (p.poi!.difficulty == 1) 'Jalur mudah',
-          'Belum dikunjungi',
-        ],
-      ));
-    }
-    if (candidates.isEmpty) return const Recommendation.backToGate();
-    candidates.sort((a, b) => b.score.compareTo(a.score));
-    return Recommendation(
-      [
-        for (final c in candidates.take(3)) (place: c.place, reasons: c.reasons)
-      ],
-    );
+  // ---- recommendation (F07, T24; rules in `recommendation`) --------------------------------
+  late final Recommender _recommender =
+      Recommender(weights: content.park.recWeights);
+
+  /// UC-F07-1: a visited POI was just finished and UI08 should open (≤ 2 s, AC2). The overlay
+  /// host opens the sheet and calls [takeRecommendationCue]. Not set while navigating: the
+  /// visitor already chose where to go.
+  ({String afterPoiId, FinishReason reason})? recommendationCue;
+
+  /// The last automatic recommendation and how many there were (VoiceAlerts / TriggerAlerts
+  /// react to the count: voice line, silent notification when the screen is off).
+  ({
+    String afterPoiId,
+    FinishReason reason,
+    Recommendation rec
+  })? lastRecommendation;
+  int recommendationCount = 0;
+
+  /// POIs that already got their recommendation this session (once per visited POI).
+  final Set<String> _recommendedFor = {};
+
+  Place get gatePlace => place(content.gate.id)!;
+
+  /// The sheet was opened for the cue. False when there was none (already taken).
+  bool takeRecommendationCue() {
+    if (recommendationCue == null) return false;
+    recommendationCue = null;
+    return true;
   }
+
+  /// UI08 opened by hand right after [p] (detail "Selesai, lihat berikutnya", arrival "Lihat
+  /// tujuan berikutnya"): logged, and it counts as [p]'s recommendation, so closing the
+  /// detail or walking away later doesn't open the sheet a second time.
+  void recommendationOpened(Place p) {
+    if (!sessionActive || !visited.contains(p.id)) return;
+    if (_recommendedFor.add(p.id)) {
+      _logRecommendation(p.id, 'manual', now(), recommend());
+    }
+  }
+
+  /// POI Detail closed (UC-F03-4): E7 detailClosed.
+  void detailClosed(Place p) {
+    if (!p.isPoi) return;
+    _onFinished(p.id, FinishReason.detailClosed, now());
+    notifyListeners();
+  }
+
+  /// E7 from any source (detail closed, narration done, left the area): the first finish of a
+  /// visited POI recommends the next one.
+  void _onFinished(String poiId, FinishReason reason, DateTime at,
+      {bool publish = true}) {
+    if (publish) {
+      bus?.publish(PoiFinished(at: at, poiId: poiId, reason: reason));
+    }
+    // D05: walking past ("Nanti") is not a visit, so it doesn't ask "where next".
+    if (!sessionActive || !visited.contains(poiId)) return;
+    if (!_recommendedFor.add(poiId)) return;
+    final rec = recommend();
+    _logRecommendation(poiId, reason.name, at, rec);
+    if (navigation != null) return;
+    recommendationCue = (afterPoiId: poiId, reason: reason);
+    lastRecommendation = (afterPoiId: poiId, reason: reason, rec: rec);
+    recommendationCount++;
+  }
+
+  void _logRecommendation(
+      String after, String reason, DateTime finishedAt, Recommendation rec) {
+    final r = _record;
+    if (r == null) return;
+    r.recommendations.add(RecommendationEntry(
+      at: now(),
+      afterPoiId: after,
+      reason: reason,
+      finishedAt: finishedAt,
+      poiIds: [for (final i in rec.items) i.place.id],
+    ));
+    _persist(force: true);
+  }
+
+  /// What was recommended this session (TC-09 evidence).
+  List<RecommendationEntry> get recommendationLog =>
+      List.unmodifiable(_record?.recommendations ?? []);
+
+  /// F07 (UC-F07-1…5): same algorithm for the automatic sheet and "Ke mana selanjutnya?".
+  Recommendation recommend() {
+    final at = now();
+    final from = origin;
+    final r = _recommender.recommend(
+      pois: content.pois,
+      visited: visited,
+      gateId: content.gate.id,
+      interests: interests,
+      route: route,
+      walkM: (poi) => router.walkingDistanceM(from, poi.graphNode),
+      // AC3: walk there + visit + walk to the gate by closing − 15 min (TimeBudget, T23).
+      fits: (poi) => budget.fits(
+          from, poi.graphNode, Duration(minutes: poi.visitMinutes), at),
+    );
+    final gate = walkToGate;
+    if (r.backToGate) {
+      return Recommendation.backToGate(
+          allVisited: r.allVisited, gateWalk: gate);
+    }
+    return Recommendation([
+      for (final i in r.items)
+        if (place(i.poi.id) case final p?)
+          (place: p, reasons: [for (final x in i.reasons) _reasonLabel(x, p)]),
+    ], gateWalk: gate);
+  }
+
+  String _reasonLabel(RecReason r, Place p) => switch (r) {
+        RecReason.nearest => 'Terdekat',
+        RecReason.interest => 'Sesuai minat ${categoryLabel(p.kind)}',
+        RecReason.onRoute => 'Ada di rute ${route.name}',
+        RecReason.difficulty =>
+          p.poi!.difficulty <= 1 ? 'Jalur mudah' : 'Sesuai tingkat rute',
+      };
 
   bool _disposed = false;
 
@@ -1299,11 +1385,17 @@ class GuideController extends ChangeNotifier {
 enum GuideReminder { closing, hydration }
 
 class Recommendation {
-  const Recommendation(this.items) : allVisited = false;
-  const Recommendation.backToGate({this.allVisited = false}) : items = const [];
+  const Recommendation(this.items, {this.gateWalk = Duration.zero})
+      : allVisited = false;
+  const Recommendation.backToGate(
+      {this.allVisited = false, this.gateWalk = Duration.zero})
+      : items = const [];
 
   final List<({Place place, List<String> reasons})> items;
   final bool allVisited;
+
+  /// Walk from the visitor to the gate (UC-F07-2 "Kembali ke gerbang — ±25 mnt").
+  final Duration gateWalk;
   bool get backToGate => items.isEmpty;
 }
 

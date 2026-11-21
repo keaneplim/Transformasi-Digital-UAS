@@ -45,6 +45,7 @@ class LocalAlertNotifier implements AlertNotifier {
 
   static const triggerId = 7001;
   static const approachId = 7002;
+  static const nextId = 7003;
   static const _icon = 'ic_stat_jelajah';
 
   /// Channel settings are fixed once created on the phone (Android 8+): changing them needs a
@@ -62,6 +63,15 @@ class LocalAlertNotifier implements AlertNotifier {
     'Mendekati tempat menarik',
     description: 'Getar dan bunyi singkat saat Anda mendekati tempat menarik',
     vibrationPattern: Int64List.fromList(const [0, 300]),
+  );
+
+  static const _nextChannel = AndroidNotificationChannel(
+    'next',
+    'Rekomendasi berikutnya',
+    description: 'Tempat yang disarankan setelah Anda selesai di sebuah tempat',
+    importance: Importance.low,
+    playSound: false,
+    enableVibration: false,
   );
 
   static Future<LocalAlertNotifier> create() async {
@@ -100,6 +110,7 @@ class LocalAlertNotifier implements AlertNotifier {
         AndroidFlutterLocalNotificationsPlugin>();
     await android?.createNotificationChannel(_triggerChannel);
     await android?.createNotificationChannel(_approachChannel);
+    await android?.createNotificationChannel(_nextChannel);
 
     final launch = await plugin.getNotificationAppLaunchDetails();
     final response = launch?.notificationResponse;
@@ -110,6 +121,7 @@ class LocalAlertNotifier implements AlertNotifier {
     // remove the GPS foreground-service notification.
     await plugin.cancel(id: triggerId);
     await plugin.cancel(id: approachId);
+    await plugin.cancel(id: nextId);
     return n;
   }
 
@@ -188,6 +200,35 @@ class LocalAlertNotifier implements AlertNotifier {
 
   @override
   Future<void> cancelTrigger() => _cancel(triggerId);
+
+  @override
+  Future<void> showNext(
+          {required String poiId,
+          required String title,
+          required String body}) =>
+      _show(
+        id: nextId,
+        poiId: poiId,
+        title: title,
+        body: body,
+        details: AndroidNotificationDetails(
+          _nextChannel.id,
+          _nextChannel.name,
+          channelDescription: _nextChannel.description,
+          icon: _icon,
+          importance: Importance.low,
+          priority: Priority.low,
+          playSound: false,
+          enableVibration: false,
+          category: AndroidNotificationCategory.recommendation,
+          visibility: NotificationVisibility.public,
+          onlyAlertOnce: true,
+          timeoutAfter: const Duration(minutes: 10).inMilliseconds,
+        ),
+      );
+
+  @override
+  Future<void> cancelNext() => _cancel(nextId);
 
   @override
   Future<void> vibrate(List<int> pattern) async {

@@ -269,7 +269,9 @@ class _Actions extends ConsumerWidget {
           label: 'Lihat tujuan berikutnya',
           icon: Icons.explore_rounded,
           onTap: () {
-            demo.markVisited(place);
+            demo
+              ..markVisited(place)
+              ..recommendationOpened(place);
             onClose();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               final ctx = rootNavigatorContext;

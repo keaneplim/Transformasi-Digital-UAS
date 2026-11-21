@@ -71,6 +71,13 @@ abstract interface class AlertNotifier {
 
   Future<void> cancelTrigger();
 
+  /// F07 when the phone isn't being looked at: the next suggestion, silent (no sound, no
+  /// vibration; the voice line already said it). A tap opens the app on the sheet.
+  Future<void> showNext(
+      {required String poiId, required String title, required String body});
+
+  Future<void> cancelNext();
+
   /// In-app vibration while the app is visible (milliseconds: wait, buzz, wait, buzz…).
   Future<void> vibrate(List<int> pattern);
 

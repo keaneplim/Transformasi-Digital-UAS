@@ -36,6 +36,62 @@ class VisitEvent {
       };
 }
 
+/// One shown recommendation (F07 UC-F07-1 postcondition): TC-09 evidence (always unvisited)
+/// and, with the E7 time, AC2 (≤ 2 s after finishing a POI).
+class RecommendationEntry {
+  const RecommendationEntry({
+    required this.at,
+    required this.afterPoiId,
+    required this.reason,
+    required this.finishedAt,
+    required this.poiIds,
+  });
+
+  /// Null for anything that isn't a well-formed entry (stored data is never trusted).
+  static RecommendationEntry? tryParse(Object? o) {
+    if (o is! Map) return null;
+    final at = DateTime.tryParse('${o['at']}');
+    final fin = DateTime.tryParse('${o['finished_at']}');
+    final after = o['after'];
+    final reason = o['reason'];
+    final ids = o['pois'];
+    if (at == null ||
+        fin == null ||
+        after is! String ||
+        reason is! String ||
+        ids is! List) {
+      return null;
+    }
+    return RecommendationEntry(
+      at: at,
+      afterPoiId: after,
+      reason: reason,
+      finishedAt: fin,
+      poiIds: [for (final i in ids) '$i'],
+    );
+  }
+
+  final DateTime at;
+
+  /// The POI that was finished.
+  final String afterPoiId;
+
+  /// `FinishReason` name (detailClosed / narrationDone / leftArea).
+  final String reason;
+  final DateTime finishedAt;
+
+  /// Main first, then the alternatives. Empty = back to the gate.
+  final List<String> poiIds;
+
+  Map<String, Object?> toJson() => {
+        'at': at.toIso8601String(),
+        'after': afterPoiId,
+        'reason': reason,
+        'finished_at': finishedAt.toIso8601String(),
+        'pois': poiIds,
+      };
+}
+
 /// One exploration session as stored on the device, so it survives the app being killed
 /// (ARCHITECTURE §9 "Background": restore from storage on next launch).
 class SessionRecord {
@@ -49,11 +105,13 @@ class SessionRecord {
     this.walkedM = 0,
     List<GeoPoint>? trail,
     List<VisitEvent>? events,
+    List<RecommendationEntry>? recommendations,
     this.triggerState,
     this.stepState,
   })  : interests = [...interests],
         trail = trail ?? [],
-        events = events ?? [];
+        events = events ?? [],
+        recommendations = recommendations ?? [];
 
   factory SessionRecord.fromJson(Map<String, Object?> j) {
     final ended = j['ended_at'] as String?;
@@ -76,6 +134,11 @@ class SessionRecord {
         for (final e in j['events']! as List<Object?>)
           VisitEvent.fromJson(e! as Map<String, Object?>),
       ],
+      recommendations: [
+        if (j['recommendations'] case final List<Object?> l)
+          for (final o in l)
+            if (RecommendationEntry.tryParse(o) case final e?) e,
+      ],
       triggerState: j['trigger'] as Map<String, Object?>?,
       stepState: j['steps'] as Map<String, Object?>?,
     );
@@ -95,6 +158,9 @@ class SessionRecord {
   double walkedM;
   final List<GeoPoint> trail;
   final List<VisitEvent> events;
+
+  /// Every recommendation shown in this session (F07).
+  final List<RecommendationEntry> recommendations;
 
   /// Trigger engine snapshot (`GeofenceEngine.toJson`), opaque to this module.
   Map<String, Object?>? triggerState;
@@ -143,6 +209,8 @@ class SessionRecord {
             ],
         ],
         'events': [for (final e in events) e.toJson()],
+        if (recommendations.isNotEmpty)
+          'recommendations': [for (final r in recommendations) r.toJson()],
         if (triggerState != null) 'trigger': triggerState,
         if (stepState != null) 'steps': stepState,
       };

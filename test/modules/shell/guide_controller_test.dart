@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +10,7 @@ import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
 import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
+import 'package:jelajah_taman/modules/shell/src/state/places.dart';
 
 import '../../helpers/test_content.dart';
 
@@ -455,6 +457,159 @@ void main() {
       walk(p06.position);
       expect(g.manualPickList.first.id, 'P06');
       expect(g.manualPickList.any((p) => p.isGate), isFalse);
+    });
+  });
+
+  group('F07 recommendation after a visit (T24)', () {
+    /// Visit [id] by GPS ("Lihat"), then walk away to well outside r + 15 m.
+    Place visitAndLeave(GuideController g, String id) {
+      final p = g.place(id)!;
+      standAt(p.position);
+      expect(g.pendingTrigger?.id, id);
+      g.resolveTrigger(engaged: true);
+      final away = lerp(p.position, g.content.gate.position, 0.5);
+      expect(haversineM(away, p.position), greaterThan(p.poi!.radiusM + 15));
+      standAt(away);
+      return p;
+    }
+
+    test('UC-F07-1: walking away from a visited POI asks once, and is logged',
+        () {
+      final g = guide()..startSession();
+      final p05 = visitAndLeave(g, 'P05');
+      expect(g.recommendationCue?.afterPoiId, 'P05');
+      expect(g.recommendationCue?.reason, FinishReason.leftArea);
+      final log = g.recommendationLog.single;
+      expect(log.afterPoiId, 'P05');
+      expect(log.reason, 'leftArea');
+      expect(log.poiIds, isNotEmpty);
+      expect(log.poiIds, isNot(contains('P05')), reason: 'AC1');
+      expect(log.at.difference(log.finishedAt).inSeconds, lessThanOrEqualTo(2),
+          reason: 'AC2');
+      expect(SessionStore(store).loadCurrent()?.recommendations, hasLength(1),
+          reason: 'TC-09 evidence is saved at once');
+
+      expect(g.takeRecommendationCue(), isTrue);
+      expect(g.takeRecommendationCue(), isFalse,
+          reason: 'the sheet opens once');
+      g.detailClosed(p05);
+      expect(g.recommendationCue, isNull, reason: 'once per visited POI');
+      expect(g.recommendationLog, hasLength(1));
+    });
+
+    test('D05: walking past ("Nanti") is not a visit, so nothing is asked', () {
+      final g = guide()..startSession();
+      final p05 = g.place('P05')!;
+      standAt(p05.position);
+      g.resolveTrigger(engaged: false);
+      standAt(lerp(p05.position, g.content.gate.position, 0.5));
+      expect(g.recommendationCue, isNull);
+      expect(g.recommendationLog, isEmpty);
+    });
+
+    test('UC-F03-4: closing the detail of a visited POI asks', () {
+      final g = guide()..startSession();
+      final p06 = g.place('P06')!;
+      standAt(p06.position);
+      g.resolveTrigger(engaged: true);
+      g.detailClosed(p06);
+      expect(g.recommendationCue?.reason, FinishReason.detailClosed);
+    });
+
+    test('opened by hand ("Selesai, lihat berikutnya") → no second sheet later',
+        () {
+      final g = guide()..startSession();
+      final p06 = g.place('P06')!;
+      standAt(p06.position);
+      g
+        ..resolveTrigger(engaged: true)
+        ..recommendationOpened(p06)
+        ..detailClosed(p06);
+      expect(g.recommendationCue, isNull);
+      expect(g.recommendationLog.single.reason, 'manual');
+    });
+
+    test('while navigating: logged, but no sheet (the visitor chose already)',
+        () {
+      final g = guide()..startSession();
+      final p06 = g.place('P06')!;
+      standAt(p06.position);
+      g.resolveTrigger(engaged: true);
+      expect(g.startNavigation(g.place('P03')!), isTrue);
+      g.detailClosed(p06);
+      expect(g.recommendationCue, isNull);
+      expect(g.recommendationCount, 0);
+      expect(g.recommendationLog, hasLength(1));
+    });
+
+    test('a new trigger replaces a waiting recommendation', () {
+      final g = guide()..startSession();
+      final p06 = g.place('P06')!;
+      standAt(p06.position);
+      g
+        ..resolveTrigger(engaged: true)
+        ..detailClosed(p06);
+      expect(g.recommendationCue, isNotNull);
+      standAt(g.place('P05')!.position);
+      expect(g.pendingTrigger?.id, 'P05');
+      expect(g.recommendationCue, isNull);
+    });
+
+    test('after a restart a POI that was already asked about stays quiet',
+        () async {
+      final g = guide()..startSession();
+      final p06 = g.place('P06')!;
+      standAt(p06.position);
+      g
+        ..resolveTrigger(engaged: true)
+        ..detailClosed(p06);
+      await pumpEventQueue();
+      final again = relaunch();
+      expect(again.recommendationLog, hasLength(1));
+      again.detailClosed(again.place('P06')!);
+      expect(again.recommendationCue, isNull);
+    });
+
+    test('AC1: over random visit sets, always an unvisited, non-gate POI', () {
+      final g = guide()..startSession();
+      final ids = [
+        for (final p in g.pois)
+          if (!p.isGate) p.id
+      ];
+      final rnd = math.Random(7);
+      for (var i = 0; i < 200; i++) {
+        g.visited
+          ..clear()
+          ..addAll(ids.where((_) => rnd.nextBool()));
+        final r = g.recommend();
+        for (final it in r.items) {
+          expect(g.visited, isNot(contains(it.place.id)));
+          expect(it.place.isGate, isFalse);
+          expect(it.place.id, isNot('P11'), reason: 'Santai is active');
+        }
+        expect(r.items.length, lessThanOrEqualTo(3));
+      }
+    });
+
+    test('UC-F07-2: back to the gate carries the walk to the gate', () {
+      final g = guide();
+      final p06 = g.place('P06')!.position;
+      walk(p06);
+      g.startSession();
+      clock.setNow(DateTime(2026, 11, 14, 15, 30));
+      final r = g.recommend();
+      expect(r.backToGate, isTrue);
+      expect(r.allVisited, isFalse);
+      expect(r.gateWalk, g.walkToGate);
+      expect(r.gateWalk, greaterThan(Duration.zero));
+    });
+
+    test('reason chips in Bahasa Indonesia, no "Belum dikunjungi" filler', () {
+      final g = guide()..startSession();
+      final reasons = g.recommend().items.expand((i) => i.reasons).toSet();
+      expect(reasons, isNotEmpty);
+      expect(reasons, isNot(contains('Belum dikunjungi')));
+      expect(reasons.where((r) => r.startsWith('Ada di rute ')), isNotEmpty);
     });
   });
 }

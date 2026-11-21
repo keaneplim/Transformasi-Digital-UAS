@@ -4,6 +4,7 @@ import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/modules/notify/notify.dart';
 
 import 'guide_controller.dart';
+import 'places.dart';
 
 /// PB07: turns the guide's trigger state into alerts the visitor notices without looking.
 ///
@@ -27,6 +28,7 @@ class TriggerAlerts {
     required this.navigate,
   }) {
     _wasActive = guide.sessionActive;
+    _recs = guide.recommendationCount;
     guide.addListener(_onGuide);
     _subs
       ..add(bus.on<PoiApproached>().listen(_onApproached))
@@ -52,6 +54,9 @@ class TriggerAlerts {
   /// POI whose trigger notification is currently posted.
   String? _posted;
 
+  int _recs = 0;
+  bool _nextPosted = false;
+
   /// Two short pulses (IMPLEMENTATION_PLAN F04 "Vibration patterns").
   static const triggerVibration = [0, 200, 150, 200];
 
@@ -60,6 +65,8 @@ class TriggerAlerts {
     if (visible == _visible) return;
     _visible = visible;
     if (!visible) _postPending();
+    // Back on screen: the sheet itself shows the suggestion.
+    if (visible) _cancelNext();
   }
 
   void _onGuide() {
@@ -76,8 +83,13 @@ class TriggerAlerts {
         }
       }
     }
+    if (guide.recommendationCount != _recs) {
+      _recs = guide.recommendationCount;
+      _postNext();
+    }
     if (_wasActive && !guide.sessionActive) {
       _cancelTrigger();
+      _cancelNext();
       unawaited(notifier.cancelApproach());
     }
     _wasActive = guide.sessionActive;
@@ -93,6 +105,35 @@ class TriggerAlerts {
       body: 'Ingin mendengar ceritanya?',
       listenLabel: 'Dengarkan',
     ));
+  }
+
+  /// F07 with the screen off: silent card for the next suggestion (the voice says it).
+  void _postNext() {
+    final last = guide.lastRecommendation;
+    if (_visible || last == null || !guide.sessionActive) return;
+    final rec = last.rec;
+    final main = rec.items.isEmpty ? null : rec.items.first.place;
+    _nextPosted = true;
+    unawaited(main == null
+        ? notifier.showNext(
+            poiId: guide.gatePlace.id,
+            title: rec.allVisited
+                ? 'Semua tempat sudah Anda kunjungi'
+                : 'Waktunya kembali ke gerbang',
+            body: '${gateWalkLabel(rec.gateWalk)}.',
+          )
+        : notifier.showNext(
+            poiId: main.id,
+            title: 'Berikutnya: ${main.name}',
+            body: '±${minutesLabel(guide.walkingTime(main))} jalan kaki. '
+                'Buka untuk melihat pilihan lain.',
+          ));
+  }
+
+  void _cancelNext() {
+    if (!_nextPosted) return;
+    _nextPosted = false;
+    unawaited(notifier.cancelNext());
   }
 
   void _cancelTrigger() {

@@ -12,6 +12,7 @@ import '../state/guide_controller.dart';
 import '../state/places.dart';
 import 'main_shell.dart';
 import 'manual_pick_sheet.dart';
+import 'overlays.dart';
 import 'park_map.dart';
 import 'tab_stage.dart';
 import 'widgets.dart';
@@ -271,6 +272,16 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
             from: const Offset(24, 0),
             child: Column(
               children: [
+                // UC-F07-5: the same recommendation any time during a session.
+                if (demo.sessionActive) ...[
+                  CircleIconButton(
+                    icon: Icons.explore_rounded,
+                    tooltip: 'Ke mana selanjutnya?',
+                    foreground: JT.forest,
+                    onTap: () => showRecommendations(context),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 CircleIconButton(
                   icon: _satellite
                       ? Icons.satellite_alt_rounded

@@ -102,6 +102,31 @@ void main() {
     setUp(setUpGuide);
     tearDown(tearDownGuide);
 
+    test('F07: walking away from a visited place names the next one', () {
+      final g = guide()..startSession();
+      final p05 = g.place('P05')!;
+      arriveAt(p05);
+      g.resolveTrigger(engaged: true);
+      final away = GeoPoint(
+          (p05.position.lat + g.content.gate.position.lat) / 2,
+          (p05.position.lng + g.content.gate.position.lng) / 2);
+      walk(away, s: 31);
+      walk(away);
+      final next = g.lastRecommendation!.rec.items.first.place.name;
+      expect(tts.said.last, ('Berikutnya: $next.', VoicePriority.reminder));
+    });
+
+    test('F07: closing the detail shows the sheet but says nothing', () {
+      final g = guide()..startSession();
+      final p05 = g.place('P05')!;
+      arriveAt(p05);
+      g.resolveTrigger(engaged: true);
+      final said = tts.said.length;
+      g.detailClosed(p05);
+      expect(g.recommendationCue, isNotNull);
+      expect(tts.said.length, said);
+    });
+
     test('trigger prompt names the place and asks (F04 b)', () {
       final g = guide()..startSession();
       final p05 = g.place('P05')!;
@@ -322,12 +347,35 @@ void main() {
         setUpGuide();
         final g = guide()..startSession();
         final p = g.place('P05')!;
+        arriveAt(p);
+        async.flushMicrotasks();
+        g.resolveTrigger(engaged: true, how: EngagementKind.listened);
         g.playAudio(p);
         async.elapse(Duration(seconds: g.audioLength(p).ceil() + 1));
         expect(g.audioPlaying, isFalse);
         final next = g.recommend().items.first.place.name;
         expect(tts.said.last,
             ('Selesai. Berikutnya: $next.', VoicePriority.reminder));
+        // F07 once per visited POI: listening again says nothing new.
+        final said = tts.said.length;
+        g.playAudio(p);
+        async.elapse(Duration(seconds: g.audioLength(p).ceil() + 1));
+        expect(tts.said.length, said);
+        g.stopAudio();
+        tearDownGuide();
+        async.flushMicrotasks();
+      });
+    });
+
+    test('a narration of a place not visited (D05) recommends nothing', () {
+      fakeAsync((async) {
+        setUpGuide();
+        final g = guide()..startSession();
+        final p = g.place('P05')!; // played from Search, never triggered
+        g.playAudio(p);
+        async.elapse(Duration(seconds: g.audioLength(p).ceil() + 1));
+        expect(tts.said.where((s) => s.$1.contains('Berikutnya')), isEmpty);
+        expect(g.recommendationCue, isNull);
         tearDownGuide();
         async.flushMicrotasks();
       });

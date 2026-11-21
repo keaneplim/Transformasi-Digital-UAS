@@ -13,7 +13,7 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 BuildContext? get rootNavigatorContext => rootNavigatorKey.currentContext;
 
 /// Floats above every screen (it sits above the Navigator, so no Tooltip/Overlay widgets here):
-/// UI04 approaching banner, UI05 trigger card, UI13 reminders.
+/// UI04 approaching banner, UI05 trigger card, UI13 reminders; opens UI08 after a visit (F07).
 class DemoOverlayHost extends ConsumerWidget {
   const DemoOverlayHost({super.key, required this.router, required this.child});
 
@@ -34,6 +34,18 @@ class DemoOverlayHost extends ConsumerWidget {
     final path = router.routerDelegate.currentConfiguration.uri.path;
     final onAppScreens =
         demo.onboarded && path != '/' && path != '/welcome' && path != '/setup';
+
+    // UC-F07-1: UI08 right after a visit, once the trigger card / reminder are out of the way.
+    if (demo.recommendationCue != null &&
+        trigger == null &&
+        reminder == null &&
+        onAppScreens) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = rootNavigatorContext;
+        if (ctx == null || !demo.takeRecommendationCue()) return;
+        showRecommendations(ctx);
+      });
+    }
 
     return Material(
       type: MaterialType.transparency,
@@ -485,15 +497,32 @@ class _RecommendationSheet extends ConsumerWidget {
               Text(
                 rec.allVisited
                     ? 'Semua tempat sudah Anda kunjungi. Saatnya kembali ke gerbang.'
-                    : 'Sisa waktu tidak cukup untuk mampir ke tempat lain sebelum kawasan tutup pukul ${clockLabel(demo.closingTime)}.',
+                    : 'Waktu tidak cukup untuk mampir ke tempat lain sebelum kawasan tutup pukul ${clockLabel(demo.closingTime)}.',
                 style: JTText.body.copyWith(color: JT.muted),
+              ),
+              const SizedBox(height: 12),
+              Pill(
+                label: gateWalkLabel(rec.gateWalk),
+                icon: Icons.directions_walk_rounded,
+                color: rec.allVisited ? JT.forest : JT.terracotta,
               ),
               const SizedBox(height: 16),
               PrimaryPill(
-                label: 'Kembali ke gerbang',
+                label: 'Navigasi ke gerbang',
                 icon: Icons.door_front_door_rounded,
-                onTap: () => navigate(demo.place('P01')!),
+                onTap: () => navigate(demo.gatePlace),
               ),
+              if (rec.allVisited) ...[
+                const SizedBox(height: 10),
+                SoftButton(
+                  label: 'Akhiri Jelajah',
+                  icon: Icons.flag_rounded,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    rootNavigatorContext?.push('/summary');
+                  },
+                ),
+              ],
             ] else ...[
               _MainRec(item: rec.items.first, onNavigate: navigate),
               if (rec.items.length > 1) ...[
