@@ -53,6 +53,7 @@ Do every step and fill in the table in §3.
 - Preferred engine: **Speech Services by Google**. Open its settings → *Install voice data* → **Indonesian (Indonesia)** → download.
 - Test: turn on **airplane mode**, go back to the TTS screen, set language Indonesian, tap *Play*/*Listen to an example*. It must speak Indonesian with no internet.
 - If the engine is the brand's own (Samsung TTS, etc.), install Google's engine anyway and set it as preferred.
+- **In the app (F04 voice, `feat/voice`):** Settings → Pemandu shows "Suara bahasa Indonesia belum terpasang…" when the offline voice is missing; it must disappear after the download (restart the app). Then, in airplane mode, Mode demo: walk into Gua Jepang → "Anda tiba di Gua Jepang. Ingin mendengar ceritanya?"; Auto-Play on → narration starts ≤ 3 s after the card; navigate to a toilet → "Menuju …", a direction ~20 m before each junction, "Anda tiba di …"; a direction while the narration plays → narration turns down, then back up.
 
 ### 1.5 Battery killer (needed for F01 screen-off tracking, TC-06)
 Look up the brand on **dontkillmyapp.com** and note its score. Prepare these settings (they'll be applied to the app once it's installed):
@@ -71,6 +72,7 @@ Look up the brand on **dontkillmyapp.com** and note its score. Prepare these set
 ### 1.6 Audio & notifications
 - Earphones available (wired or Bluetooth) and the play/pause button works with any music app on the lock screen.
 - Notifications show on the lock screen (Settings → Notifications → Lock screen → show all content).
+- **In the app (F04 media session, TC-06):** start a narration, lock the phone → the lock screen shows the POI name with ⏪ ⏯ ⏩; pause and play from there and from the earphone button; ⏪/⏩ jump 10 s. Pause, wait 2 min with the screen off, press play on the lock screen → it must resume (Android 12+ foreground-service rule). Pull the earphones out while playing → narration pauses (doesn't blare from the speaker). Call the phone while it plays → pauses, resumes after hanging up. A POI triggers while locked → press the earphone button → its narration plays (UC-F04-1 step 3; may only work once the app has played something since launch). End the session → the media notification disappears. Back out of the app and reopen it → the app continues where it was (the activity now shares audio_service's engine), no blank screen; tap a trigger notification after backing out → it opens the right POI.
 
 ---
 
@@ -102,5 +104,7 @@ Look up the brand on **dontkillmyapp.com** and note its score. Prepare these set
 | Battery settings applied | ☐ | ☐ | ☐ |
 | Screen-off 15 min test (S3): gaps? | | | |
 | Earphone button controls lock-screen media | ☐ | ☐ | ☐ |
+| App's lock-screen controls: pause/resume, earphone, unplug pauses, call resumes, resume after 2 min paused | ☐ | ☐ | ☐ |
+| App speaks (prompt, Auto-Play ≤ 3 s, turns, arrival) in airplane mode | ☐ | ☐ | ☐ |
 
 **Minimum to proceed:** at least 2 Android phones with a step counter and offline Indonesian TTS, and at least one of them from a "bad" battery brand so the risk is tested early, not at the S5 field test.

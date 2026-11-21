@@ -9,6 +9,8 @@ environment:
 # Add a plugin only in the PR of the module that owns it (docs/engineering/ARCHITECTURE.md §3, rule R5).
 # Commit pubspec.lock. Don't upgrade dependencies during Sprint 4–5.
 dependencies:
+  audio_service: ^0.18.19 # module audio only (R5); lock-screen/earphone controls (F04)
+  audio_session: ^0.2.4 # module audio only (R5); interruptions (call, earphones unplugged)
   flutter:
     sdk: flutter
   flutter_compass: ^0.8.1 # module location only (R5)
@@ -16,6 +18,7 @@ dependencies:
   flutter_local_notifications: ^22.0.0
   flutter_map: ^8.3.2
   flutter_riverpod: ^2.6.1
+  flutter_tts: ^4.2.5 # module audio only (R5); needs minSdk 24, compileSdk 36
   geolocator: ^14.1.2 # module location only (R5)
   go_router: ^14.6.0
   just_audio: ^0.10.6 # module audio only (R5)

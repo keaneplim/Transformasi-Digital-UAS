@@ -61,7 +61,8 @@ Future<List<Override>> bootstrap({AssetBundle? bundle}) async {
     if (prefs != null) keyValueStoreProvider.overrideWithValue(prefs),
     if (alerts != null) alerts,
     // Real audio and GPS only in the app; tests keep the silent/no-GPS fallbacks (no plugins).
-    bindJustAudioNarrationPlayer(),
+    bindNarrationPlayer(),
+    bindFlutterTts(),
     bindGeolocatorLocationService(),
     bindQrCamera(),
   ];

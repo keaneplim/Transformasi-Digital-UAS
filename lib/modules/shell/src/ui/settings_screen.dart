@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+import 'package:jelajah_taman/modules/audio/audio.dart';
 
 import '../state/guide_controller.dart';
 import '../state/places.dart';
@@ -15,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demo = ref.watch(guideProvider);
+    final voice = ref.watch(ttsServiceProvider);
     final pad = MediaQuery.paddingOf(context);
     return Scaffold(
       backgroundColor: JT.cream,
@@ -72,7 +74,8 @@ class SettingsScreen extends ConsumerWidget {
                       icon: Icons.record_voice_over_rounded,
                       color: JT.sky,
                       title: 'Arahan suara',
-                      subtitle: 'Petunjuk belok dibacakan saat navigasi.',
+                      subtitle:
+                          'Petunjuk belok dan kedatangan dibacakan saat navigasi.',
                       value: demo.voiceGuidance,
                       onChanged: (v) =>
                           demo.update(() => demo.voiceGuidance = v),
@@ -88,6 +91,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (voice != null) _VoiceHint(voice),
                 _Group(
                   title: 'Kesehatan',
                   children: [
@@ -216,6 +220,44 @@ Future<bool> _confirm(BuildContext context, String title, String body,
       ),
     ) ??
     false;
+
+/// F04 / risk R3: without an offline Indonesian voice the guide can't speak in the park.
+/// Shown only then; nothing when the voice is ready.
+class _VoiceHint extends StatelessWidget {
+  const _VoiceHint(this.voice);
+
+  final TtsService voice;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<VoiceSupport>(
+        future: voice.support,
+        builder: (context, snap) {
+          final s = snap.data;
+          if (s == null || s == VoiceSupport.ready) {
+            return const SizedBox.shrink();
+          }
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    size: 18, color: JT.muted),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Suara bahasa Indonesia belum terpasang di ponsel ini, jadi '
+                    'panduan suara tidak terdengar. Pasang lewat Pengaturan '
+                    'ponsel → Teks ke ucapan.',
+                    style: JTText.caption,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+}
 
 class _Group extends StatelessWidget {
   const _Group({required this.title, required this.children});

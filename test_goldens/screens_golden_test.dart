@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/providers.dart';
+import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
 import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
 import 'package:jelajah_taman/modules/shell/src/state/search.dart';
@@ -93,11 +94,45 @@ Future<void> _precache(WidgetTester tester) async {
   });
 }
 
+/// GPS stand-in for real-mode shots: a permission answer and no fixes.
+class _NoFixGps implements LocationService {
+  _NoFixGps(this.granted);
+  final LocationAccess granted;
+
+  @override
+  Stream<LocationFix> get fixes => const Stream.empty();
+  @override
+  Stream<GpsQuality> get quality => const Stream.empty();
+  @override
+  Stream<double> get headings => const Stream.empty();
+  @override
+  LocationFix? get last => null;
+  @override
+  GpsQuality get currentQuality => GpsQuality.none;
+  @override
+  bool get isRunning => true;
+  @override
+  Future<LocationAccess> access() async => granted;
+  @override
+  Future<LocationAccess> requestAccess() async => granted;
+  @override
+  Future<void> openSettings() async {}
+  @override
+  Future<void> start() async {}
+  @override
+  Future<void> startSession() async {}
+  @override
+  Future<void> stopSession() async {}
+  @override
+  Future<void> stop() async {}
+}
+
 void _shot(String name, Future<void> Function(_Harness h) setup,
     {int? introMs,
     int? foldMs,
     bool returning = false,
     bool realMode = false,
+    LocationService? gps,
     Size size = _phone}) {
   testWidgets(name, (tester) async {
     tester.view.physicalSize = size * _dpr;
@@ -115,6 +150,7 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
         // shots start in real mode without GPS, as on a phone that hasn't granted location
         keyValueStoreProvider.overrideWithValue(
             MemoryKeyValueStore({'app_mode': realMode ? 'real' : 'demo'})),
+        if (gps != null) locationServiceProvider.overrideWithValue(gps),
       ],
     );
     addTearDown(container.dispose);
@@ -147,7 +183,8 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
     // Stop anything that ticks so no timer outlives the test.
     h.demo
       ..pauseAudio()
-      ..stopWalking();
+      ..stopWalking()
+      ..endSession();
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 6));
   });
@@ -440,6 +477,42 @@ void main() {
     h.container.read(tabProvider.notifier).state = 1;
     await h.frames();
   }, realMode: true);
+  // F01 AC4: location not allowed → the guide still works by manual pick / QR
+  _shot('28_peta_lokasi_ditolak', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 1;
+    await h.frames();
+  }, realMode: true, gps: _NoFixGps(LocationAccess.denied));
+  // D08: no usable fix for 60 s in a session (cave) → Pindai QR / Pilih manual
+  _shot('29_peta_gps_lemah', (h) async {
+    await h.onboarded();
+    h.demo.startSession();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 1;
+    h.demo.heartbeat();
+    (h.container.read(clockProvider) as FakeClock)
+        .advance(const Duration(seconds: 60));
+    h.demo.heartbeat();
+    await h.frames();
+  }, realMode: true, gps: _NoFixGps(LocationAccess.granted));
+  _shot('s360_peta_gps_lemah', (h) async {
+    await h.onboarded();
+    h.demo.startSession();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 1;
+    h.demo.heartbeat();
+    (h.container.read(clockProvider) as FakeClock)
+        .advance(const Duration(seconds: 60));
+    h.demo.heartbeat();
+    await h.frames();
+  }, realMode: true, gps: _NoFixGps(LocationAccess.granted), size: _small);
+  _shot('s360_peta_lokasi_ditolak', (h) async {
+    await h.onboarded();
+    await h.go('/home');
+    h.container.read(tabProvider.notifier).state = 1;
+    await h.frames();
+  }, realMode: true, gps: _NoFixGps(LocationAccess.denied), size: _small);
   _shot('s360_welcome', (_) async {}, introMs: 3400, size: _small);
   _shot('s360_onboarding_1', (h) async => h.frames(), size: _small);
   _shot('s360_onboarding_izin', (h) async {

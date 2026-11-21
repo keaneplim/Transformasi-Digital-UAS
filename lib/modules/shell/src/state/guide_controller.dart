@@ -70,6 +70,8 @@ class GuideController extends ChangeNotifier {
         ..add(loc.headings.listen(_onHeading))
         ..add(loc.quality.listen(_onQuality));
     }
+    final pl = player;
+    if (pl != null) _subs.add(pl.commands.listen(onMediaCommand));
     _restoreSession();
     if (mode == AppMode.real) unawaited(_initLocation());
   }
@@ -253,7 +255,9 @@ class GuideController extends ChangeNotifier {
       _recordWalk(f);
       _navOnFix(f);
     }
-    _apply(_engine.onFix(f, now()));
+    // Geofences only run during a session (D07, #31): before "Mulai jelajah" (or at home)
+    // nothing triggers; the map still shows the dot.
+    if (sessionActive) _apply(_engine.onFix(f, now()));
     _checkReminders();
     _persist();
     notifyListeners();
@@ -295,11 +299,16 @@ class GuideController extends ChangeNotifier {
     _heartbeat?.cancel();
     if (isDemo || location == null) return;
     // reminders and the weak-GPS banner depend on time passing, not only on new fixes
-    _heartbeat = Timer.periodic(const Duration(seconds: 5), (_) {
-      final before = (reminder, gpsWeakBanner);
-      _checkReminders();
-      if ((reminder, gpsWeakBanner) != before) notifyListeners();
-    });
+    _heartbeat = Timer.periodic(const Duration(seconds: 5), (_) => heartbeat());
+  }
+
+  /// One heartbeat (every 5 s during a real-mode session): no fixes at all also count as
+  /// weak GPS (D08), and reminders fire on time. Public so tests and goldens can step time.
+  void heartbeat() {
+    final before = (reminder, gpsWeakBanner);
+    _engine.tick(now());
+    _checkReminders();
+    if ((reminder, gpsWeakBanner) != before) notifyListeners();
   }
 
   // ---- settings ----------------------------------------------------------------------------
@@ -595,12 +604,31 @@ class GuideController extends ChangeNotifier {
     _logEvents(events);
   }
 
+  /// Speaks the trigger prompt (VoiceAlerts, F04 b); completes when it has been said. Null
+  /// without a voice (tests, preview): Auto-Play then starts at once.
+  Future<void> Function(Place p)? announceTrigger;
+
+  /// F04 AC2: Auto-Play starts the narration at most this long after the trigger.
+  static const autoPlayWithin = Duration(seconds: 3);
+
   void _showTrigger(Place p) {
     approaching = null;
     pendingTrigger = p;
     // Vibration (app visible) or the lock-screen notification (app hidden): TriggerAlerts.
     if (navigation != null) _pauseWalk = true;
-    if (autoPlay) playAudio(p);
+    final announce = announceTrigger?.call(p);
+    if (!autoPlay) return;
+    if (announce == null) {
+      playAudio(p);
+      return;
+    }
+    // After the short prompt ("Anda tiba di …"), or at 3 s if the voice is slow or stuck.
+    unawaited(announce.timeout(autoPlayWithin, onTimeout: () {}).then((_) {
+      if (_disposed || !autoPlay || pendingTrigger?.id != p.id) return;
+      // Dengarkan pressed meanwhile.
+      if (audioPlaying && nowPlaying?.id == p.id) return;
+      playAudio(p);
+    }));
   }
 
   void dismissApproaching() {
@@ -642,6 +670,46 @@ class GuideController extends ChangeNotifier {
     }
     triggered.add(p.id);
     visited.add(p.id);
+    if (pendingTrigger?.id == p.id) pendingTrigger = null;
+    _queue.removeWhere((q) => q.id == p.id);
+    approaching = null;
+    _logEvents(events);
+    notifyListeners();
+  }
+
+  /// UC-A02-3 "Pilih manual" order: nearest first while the position is known, otherwise
+  /// alphabetical (walking distances from the gate would mean nothing). Gate left out.
+  List<Place> get manualPickList {
+    final list = noPosition
+        ? (pois.toList()..sort((a, b) => a.name.compareTo(b.name)))
+        : nearest(poisOnly: true);
+    return [
+      for (final p in list)
+        if (!p.isGate) p
+    ];
+  }
+
+  /// UC-A02-3 / F01 AC4 "Pilih manual": the visitor says where they are when GPS can't
+  /// (cave, permission denied). Triggered with source `manual`, and the screen opens POI
+  /// Detail at once, which counts as opening it (D05). No trigger card or spoken prompt: the
+  /// visitor already chose the place. Starts a session if none runs, like a QR scan, so the
+  /// visit is logged.
+  void manualPick(Place p) {
+    if (!p.isPoi) return;
+    if (!sessionActive) startSession();
+    if (isDemo && p.position != position) {
+      stopWalking();
+      _moveTo(p.position, record: false);
+    }
+    final events = [
+      ..._engine.manual(p.id, now()),
+      ..._engine.onEngaged(p.id, EngagementKind.opened, now()),
+    ];
+    for (final e in events) {
+      bus?.publish(e);
+    }
+    triggered.add(p.id);
+    if (events.whereType<PoiVisited>().isNotEmpty) visited.add(p.id);
     if (pendingTrigger?.id == p.id) pendingTrigger = null;
     _queue.removeWhere((q) => q.id == p.id);
     approaching = null;
@@ -882,6 +950,12 @@ class GuideController extends ChangeNotifier {
   Place? nowPlaying;
   double audioPos = 0; // seconds
   bool audioPlaying = false;
+
+  /// Counts narrations played to the end (VoiceAlerts says "Selesai. Berikutnya: …").
+  int narrationsDone = 0;
+
+  /// Paused by a safety voice line (closing reminder); resumed when the voice is done.
+  bool _voicePaused = false;
   Timer? _audioTimer;
   StreamSubscription<Duration>? _posSub;
   StreamSubscription<void>? _doneSub;
@@ -898,7 +972,9 @@ class GuideController extends ChangeNotifier {
   void playAudio(Place p) {
     final switching = nowPlaying?.id != p.id;
     if (switching) {
-      _stopPlayback();
+      // Not stop(): the next file replaces this one, and the media session (lock screen)
+      // stays up instead of restarting its service while the phone may be locked.
+      _stopPlayback(release: false);
       audioPos = 0;
     }
     nowPlaying = p;
@@ -916,7 +992,11 @@ class GuideController extends ChangeNotifier {
     final pl = player!;
     try {
       if (fresh) {
-        final d = await pl.open(narrationAsset(p.poi!.audio!));
+        final d = await pl.open(narrationAsset(p.poi!.audio!),
+            info: NarrationInfo(
+                id: p.id,
+                title: p.name,
+                subtitle: 'Tahura Djuanda · Dago Pakar'));
         if (d != null) _fileSeconds[p.id] = d.inMilliseconds / 1000;
         _posSub = pl.position.listen((d) {
           if (nowPlaying?.id != p.id) return;
@@ -927,6 +1007,7 @@ class GuideController extends ChangeNotifier {
           if (nowPlaying?.id != p.id) return;
           audioPos = audioLength(p);
           audioPlaying = false;
+          narrationsDone++;
           notifyListeners();
         });
       }
@@ -951,30 +1032,88 @@ class GuideController extends ChangeNotifier {
         audioPos = audioLength(nowPlaying!);
         audioPlaying = false;
         _audioTimer?.cancel();
+        narrationsDone++;
       }
       notifyListeners();
     });
   }
 
-  void _stopPlayback() {
+  void _stopPlayback({bool release = true}) {
     _audioTimer?.cancel();
     _posSub?.cancel();
     _doneSub?.cancel();
     _posSub = null;
     _doneSub = null;
-    if (player != null) unawaited(player!.stop());
+    if (player != null) {
+      unawaited(release ? player!.stop() : player!.pause());
+    }
   }
 
   void toggleAudio(Place p) =>
       (audioPlaying && nowPlaying?.id == p.id) ? pauseAudio() : playAudio(p);
 
   void pauseAudio() {
+    _voicePaused =
+        false; // the visitor paused: a voice line ending must not resume it
+    _pause();
+  }
+
+  void _pause() {
     audioPlaying = false;
     _audioTimer?.cancel();
     if (nowPlaying != null && _usesFile(nowPlaying!)) {
       unawaited(player!.pause());
     }
     notifyListeners();
+  }
+
+  /// F04 voice arbitration: narration turns down under a spoken line, and pauses for a safety
+  /// line (closing reminder) and resumes after it.
+  void onVoiceDuck(VoiceDuck d) {
+    switch (d) {
+      case VoiceDuck.duck:
+        if (player != null) unawaited(player!.setVolume(0.2));
+      case VoiceDuck.pause:
+        if (player != null) unawaited(player!.setVolume(0.2));
+        if (audioPlaying) {
+          _voicePaused = true;
+          _pause();
+        }
+      case VoiceDuck.none:
+        if (player != null) unawaited(player!.setVolume(1));
+        final p = nowPlaying;
+        if (_voicePaused && p != null && !audioPlaying) playAudio(p);
+        _voicePaused = false;
+    }
+  }
+
+  /// F04 AC1 / UC-F04-1: buttons outside the app (lock screen, notification, earphones) and
+  /// audio interruptions, answered like the in-app buttons.
+  /// - play: a trigger waiting for an answer is listened to first (step 3: "presses the
+  ///   earphone play button → narration plays"), otherwise the paused narration continues;
+  /// - resume (call ended): only the narration that was interrupted, never a new POI.
+  void onMediaCommand(MediaCommand c) {
+    switch (c) {
+      case MediaCommand.play:
+        final t = pendingTrigger;
+        if (t != null && !(audioPlaying && nowPlaying?.id == t.id)) {
+          resolveTrigger(engaged: true, how: EngagementKind.listened);
+          playAudio(t);
+        } else if (nowPlaying case final p? when !audioPlaying) {
+          playAudio(p);
+        }
+      case MediaCommand.resume:
+        if (nowPlaying case final p? when !audioPlaying) playAudio(p);
+      case MediaCommand.pause:
+        if (audioPlaying) pauseAudio();
+      case MediaCommand.stop:
+        stopAudio();
+        notifyListeners();
+      case MediaCommand.rewind:
+        skipAudio(-10);
+      case MediaCommand.fastForward:
+        skipAudio(10);
+    }
   }
 
   void seekAudio(double fraction) {
@@ -995,6 +1134,7 @@ class GuideController extends ChangeNotifier {
 
   void stopAudio() {
     _stopPlayback();
+    _voicePaused = false;
     audioPlaying = false;
     nowPlaying = null;
     audioPos = 0;

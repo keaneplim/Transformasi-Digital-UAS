@@ -368,4 +368,93 @@ void main() {
     expect(g.pendingTrigger?.id, 'P05');
     expect(g.stateOf(g.place('P05')!), PoiState.triggered);
   });
+
+  test(
+      '#31: before a session, good fixes at a POI move the dot but never trigger',
+      () {
+    final g = guide();
+    final p05 = g.place('P05')!;
+    for (var i = 0; i < 4; i++) {
+      walk(p05.position);
+    }
+    expect(g.showUser, isTrue);
+    expect(g.pendingTrigger, isNull);
+    expect(g.triggered, isEmpty);
+    g.startSession();
+    walk(p05.position);
+    walk(p05.position);
+    expect(g.pendingTrigger?.id, 'P05', reason: 'in a session it does');
+  });
+
+  group('D08 GPS-weak banner', () {
+    test('no fixes at all for 60 s (cave) → banner; a good fix hides it',
+        () async {
+      final g = guide();
+      await pumpEventQueue(); // access() resolves
+      g.startSession();
+      final p05 = g.place('P05')!;
+      walk(p05.position); // last good fix at the cave mouth, then silence
+      for (var i = 0; i < 11; i++) {
+        clock.advance(const Duration(seconds: 5));
+        g.heartbeat();
+      }
+      expect(g.gpsWeakBanner, isFalse, reason: '55 s: not yet');
+      clock.advance(const Duration(seconds: 5));
+      g.heartbeat();
+      expect(g.gpsWeakBanner, isTrue);
+      walk(p05.position);
+      expect(g.gpsWeakBanner, isFalse);
+    });
+
+    test('never a fix since the session started → banner after 60 s', () async {
+      final g = guide();
+      await pumpEventQueue();
+      g.startSession();
+      g.heartbeat();
+      clock.advance(const Duration(seconds: 60));
+      g.heartbeat();
+      expect(g.gpsWeakBanner, isTrue);
+    });
+
+    test('not outside a session, not without permission', () async {
+      gps.granted = LocationAccess.denied;
+      final g = guide();
+      await pumpEventQueue();
+      g.startSession();
+      g.heartbeat();
+      clock.advance(const Duration(seconds: 90));
+      g.heartbeat();
+      expect(g.gpsWeakBanner, isFalse,
+          reason: 'denied has its own card (Aktifkan lokasi / Pilih manual)');
+      g.endSession();
+      expect(g.gpsWeakBanner, isFalse);
+    });
+  });
+
+  group('UC-A02-3 Pilih manual', () {
+    test('logs a manual trigger + opened visit, starts a session, no card', () {
+      final g = guide();
+      final p05 = g.place('P05')!;
+      g.manualPick(p05);
+      expect(g.sessionActive, isTrue);
+      expect(g.pendingTrigger, isNull, reason: 'Detail opens directly');
+      expect(g.visited, contains('P05'));
+      expect(g.visitLog.map((e) => (e.poiId, e.kind, e.how)), [
+        ('P05', VisitKind.triggered, 'manual'),
+        ('P05', VisitKind.visited, 'opened'),
+      ]);
+    });
+
+    test('list: A–Z without a position, nearest first with one, never the gate',
+        () {
+      final g = guide();
+      final az = g.manualPickList.map((p) => p.name).toList();
+      expect(az, [...az]..sort());
+      expect(g.manualPickList.any((p) => p.isGate), isFalse);
+      final p06 = g.place('P06')!;
+      walk(p06.position);
+      expect(g.manualPickList.first.id, 'P06');
+      expect(g.manualPickList.any((p) => p.isGate), isFalse);
+    });
+  });
 }

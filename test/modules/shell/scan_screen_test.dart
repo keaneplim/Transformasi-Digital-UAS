@@ -134,6 +134,31 @@ void main() {
     expect(find.text('Pilih tempat dari daftar'), findsOneWidget);
   });
 
+  testWidgets(
+      'UC-A02-3: the list way out picks a place by hand and opens it as a manual visit',
+      (tester) async {
+    camera.problem = QrCameraProblem.permissionDenied;
+    await open(tester);
+    await tester.tap(find.text('Pilih tempat dari daftar'));
+    await _frames(tester, 8);
+    expect(find.text('Anda sedang di mana?'), findsOneWidget);
+    final g = guide();
+    final name = g.place('P06')!.name;
+    final row = find.descendant(
+        of: find.byType(BottomSheet), matching: find.text(name));
+    await tester.scrollUntilVisible(row, 120,
+        scrollable: find
+            .descendant(
+                of: find.byType(BottomSheet), matching: find.byType(Scrollable))
+            .first);
+    await tester.tap(row);
+    await _frames(tester, 10);
+    expect(find.text('detail P06'), findsOneWidget);
+    expect(g.sessionActive, isTrue);
+    expect(g.visitLog.map((e) => (e.kind.name, e.how)),
+        [('triggered', 'manual'), ('visited', 'opened')]);
+  });
+
   testWidgets('the torch button switches the camera torch', (tester) async {
     await open(tester);
     expect(camera.torch, isFalse);

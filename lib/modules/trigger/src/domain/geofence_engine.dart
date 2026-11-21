@@ -102,6 +102,7 @@ class GeofenceEngine implements TriggerEngine {
   final Map<String, _Track> _tracks = {};
   DateTime? _lastTriggerAt;
   DateTime? _weakSince;
+  DateTime? _lastGoodAt;
   bool _weakBanner = false;
 
   /// Replace the targets (e.g. active route changed) keeping the state of known POIs.
@@ -133,6 +134,16 @@ class GeofenceEngine implements TriggerEngine {
   /// GPS has been weak or absent for ≥ 60 s (UI12 banner, D08).
   bool get weakBanner => _weakBanner;
 
+  /// Time passing without a fix (heartbeat). Inside a cave the OS often stops delivering
+  /// fixes at all, so the banner can't wait for a weak one: the clock runs from the last good
+  /// fix, or from the first tick when there has been none since [reset].
+  void tick(DateTime now) {
+    _weakSince ??= _lastGoodAt ?? now;
+    if (now.difference(_weakSince!) >= params.weakBannerAfter) {
+      _weakBanner = true;
+    }
+  }
+
   /// The nearest POI currently in the approaching ring, with its distance.
   ({String id, double distanceM})? get approaching {
     ({String id, double distanceM})? best;
@@ -148,13 +159,11 @@ class GeofenceEngine implements TriggerEngine {
   /// E7 PoiFinished(leftArea)).
   List<DomainEvent> onFix(LocationFix fix, DateTime now) {
     if (fix.isWeak(params.weakAccuracyM)) {
-      _weakSince ??= now;
-      if (now.difference(_weakSince!) >= params.weakBannerAfter) {
-        _weakBanner = true;
-      }
+      tick(now);
       return const [];
     }
     _weakSince = null;
+    _lastGoodAt = now;
     _weakBanner = false;
     final out = <DomainEvent>[];
     final candidates = <(String, double)>[];
@@ -327,6 +336,7 @@ class GeofenceEngine implements TriggerEngine {
     _tracks.updateAll((_, __) => _Track());
     _lastTriggerAt = null;
     _weakSince = null;
+    _lastGoodAt = null;
     _weakBanner = false;
   }
 }

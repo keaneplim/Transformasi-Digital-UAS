@@ -186,6 +186,29 @@ void main() {
     expect(w.e.weakBanner, isFalse);
   });
 
+  test('8c. no fixes at all: tick() counts from the last good fix (D08, cave)',
+      () {
+    final w = Walk(engine())..fix(-200);
+    final last = w.t;
+    w.e.tick(last.add(const Duration(seconds: 59)));
+    expect(w.e.weakBanner, isFalse);
+    w.e.tick(last.add(const Duration(seconds: 60)));
+    expect(w.e.weakBanner, isTrue);
+    w.t = last.add(const Duration(seconds: 60));
+    w.fix(-200);
+    expect(w.e.weakBanner, isFalse);
+
+    // never a fix since reset: the first tick starts the clock
+    final e = engine();
+    final t0 = DateTime(2026, 11, 14, 10);
+    e.tick(t0);
+    expect(e.weakBanner, isFalse);
+    e.tick(t0.add(const Duration(seconds: 60)));
+    expect(e.weakBanner, isTrue);
+    e.reset();
+    expect(e.weakBanner, isFalse);
+  });
+
   test('9. QR → Triggered(qr) + Visited regardless of GPS', () {
     final e = engine();
     final out = e.qr('B', DateTime(2026, 11, 14, 10));
