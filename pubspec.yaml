@@ -24,6 +24,8 @@ dependencies:
   just_audio: ^0.10.6 # module audio only (R5)
   latlong2: ^0.10.1
   mobile_scanner: ^7.5.0 # module trigger only (R5); bundled ML Kit model = scans offline
+  pedometer: ^4.2.0 # module wellness only (R5); step counter sensor (F08, TC-12)
+  permission_handler: ^12.0.1 # module shell only (R5); 13.x needs compileSdk 37, Flutter 3.47.9 builds with 36
   shared_preferences: ^2.5.6 # core only (R5)
   vibration: ^3.2.1 # module notify only (R5)
 

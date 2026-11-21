@@ -100,7 +100,7 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
-| T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C | T01, T16 | 3 | ☐ |
+| T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C → B (21 Nov) | T01, T16 | 3 | ◐ 21 Nov: step counter (sensor, permission, reboot/restore, "–" without sensor), tests; open: kcal per D11 (MET 3,5/6,0 by grade, now flat 4,0), distance filter ≤ 20 m accuracy, TC-12 on phones |
 | T28 | Hydration reminder (a `Reminder` strategy plugged into T23's scheduler) | C | T23 | 3 | ☐ |
 | T29 | Session summary UI14, composed in `shell` from `session` + `wellness` data, with the walked route on the map | B | T16, T27 | 3 | ☐ |
 | T30 | Accessibility pass (A07), contrast fix #19 | C | screens | 3 | ☐ |
@@ -930,6 +930,12 @@ TC-10 (fake clock, fixed position) — reminder fires at the computed minute, no
 - Phone without step-counter sensor → hide steps, show distance only, note in summary; record test phone models (Risk R4).
 - Sensor counter resets on reboot mid-session → detect negative delta, re-baseline, keep accumulated steps.
 - App killed mid-session → session restored from SQLite on reopen with "Lanjutkan jelajah?".
+
+#### As built (T27 step counter, 2026-11-21, B)
+- `wellness` (was empty): `StepCounter` (pure: first reading after start = baseline; a lower reading = reboot, the new count is added; `toJson`/`restore`), `StepTracker` (permission check → sensor stream → `StepStatus` off/starting/counting/denied/noSensor), `PedometerStepSource` on `pedometer` 4.2.0 (Android TYPE_STEP_COUNTER, counts since boot, keeps counting with the screen off; the plugin errors on a phone without the sensor). Bound in the composition root.
+- Permission: `StepPermissions` interface in `wellness`, implemented in `shell` with `permission_handler` 12.0.3 (13.x needs compileSdk 37); `ACTIVITY_RECOGNITION` in the manifest (the plugin doesn't declare it). Onboarding's "Aktivitas fisik" toggle now asks the OS (real mode only); the module never prompts by itself.
+- Guide: real mode + session → steps from the sensor (`GuideController.steps`); demo mode, tests and web preview keep the estimate (distance ÷ 0,72 m). No sensor or not allowed → `stepsKnown` false → "–" in the stats strip and summary, no steps pill on arrival; distance and duration still count. The counter snapshot is saved in the session record (`steps`) and restored after an app restart; steps taken while the app was closed are counted at the next reading.
+- Not done: kcal per D11 (still flat MET 4,0), "active time", distance accuracy filter (≤ 20 m), asking again from Settings after a denial. TC-12 needs the phones (DEVICE_CHECK §1.3).
 
 #### Done when
 TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values; session survives app restart.

@@ -14,6 +14,7 @@ import 'package:jelajah_taman/modules/reminders/reminders.dart';
 import 'package:jelajah_taman/modules/routing/routing.dart';
 import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
+import 'package:jelajah_taman/modules/wellness/wellness.dart';
 
 import 'places.dart';
 
@@ -37,6 +38,7 @@ class GuideController extends ChangeNotifier {
     required Clock clock,
     this.player,
     this.location,
+    this.stepTracker,
     KeyValueStore? store,
     this.bus,
     bool Function(GeoPoint)? insideZone,
@@ -72,6 +74,11 @@ class GuideController extends ChangeNotifier {
     }
     final pl = player;
     if (pl != null) _subs.add(pl.commands.listen(onMediaCommand));
+    stepTracker?.onChange = () {
+      if (_disposed) return;
+      _persist();
+      notifyListeners();
+    };
     _restoreSession();
     if (mode == AppMode.real) unawaited(_initLocation());
   }
@@ -83,6 +90,9 @@ class GuideController extends ChangeNotifier {
 
   /// Device position; null where no GPS plugin is bound (tests, web preview).
   final LocationService? location;
+
+  /// The phone's step counter (F08, TC-12); null where no plugin is bound (tests, preview).
+  final StepTracker? stepTracker;
   final EventBus? bus;
   final KeyValueStore _store;
   final bool Function(GeoPoint) _insideZone;
@@ -336,7 +346,21 @@ class GuideController extends ChangeNotifier {
   double walkedM = 0;
   final List<GeoPoint> trail = [];
 
-  int get steps => (walkedM / 0.72).round();
+  /// Real mode on a phone: the hardware step counter (TC-12). Demo mode, tests and the web
+  /// preview: estimated from the walked distance (0,72 m per step).
+  bool get _sensorSteps => !isDemo && stepTracker != null;
+  int get steps => _sensorSteps ? stepTracker!.steps : (walkedM / 0.72).round();
+
+  /// False when the phone can't count steps (no sensor, "Aktivitas fisik" not allowed): the
+  /// screens then show "–" instead of a number (plan F08 edge case, Risk R4).
+  bool get stepsKnown =>
+      !_sensorSteps ||
+      (stepTracker!.status != StepStatus.denied &&
+          stepTracker!.status != StepStatus.noSensor);
+
+  /// Onboarding "Aktivitas fisik": asks the OS. True when allowed (or nothing to ask).
+  Future<bool> requestActivity() async =>
+      await stepTracker?.requestAccess() ?? true;
   Duration get sessionDuration => sessionStart == null
       ? Duration.zero
       : (sessionEnd ?? now()).difference(sessionStart!);
@@ -388,6 +412,7 @@ class GuideController extends ChangeNotifier {
         interests: interests.toList()));
     if (!isDemo) {
       unawaited(location?.startSession());
+      unawaited(stepTracker?.start());
       _startHeartbeat();
     }
     notifyListeners();
@@ -401,6 +426,7 @@ class GuideController extends ChangeNotifier {
     navigation = null;
     _heartbeat?.cancel();
     if (!isDemo) unawaited(location?.stopSession());
+    unawaited(stepTracker?.stop()); // the count stays for the summary
     if (wasActive && _record != null) {
       final id = _record!.id;
       _finishRecord();
@@ -435,7 +461,8 @@ class GuideController extends ChangeNotifier {
       ..interests = interests.toList()
       ..walkedM = walkedM
       ..trail.replaceRange(0, r.trail.length, trail)
-      ..triggerState = _engine.toJson();
+      ..triggerState = _engine.toJson()
+      ..stepState = _sensorSteps ? stepTracker!.toJson() : null;
     unawaited(_sessions.save(r));
   }
 
@@ -446,7 +473,8 @@ class GuideController extends ChangeNotifier {
       ..endedAt = sessionEnd ?? now()
       ..walkedM = walkedM
       ..trail.replaceRange(0, r.trail.length, trail)
-      ..triggerState = _engine.toJson();
+      ..triggerState = _engine.toJson()
+      ..stepState = _sensorSteps ? stepTracker!.toJson() : r.stepState;
     unawaited(_sessions.finish(r));
     _record = null;
   }
@@ -487,8 +515,12 @@ class GuideController extends ChangeNotifier {
     // What was already shown stays shown: no second closing reminder after a restart.
     final shown = _reminderStore.load(r.id);
     if (shown != null) _reminders.restore(shown);
-    // Real mode: tracking restarts in _initLocation once the GPS is running.
-    if (!isDemo) _startHeartbeat();
+    // Real mode: tracking restarts in _initLocation once the GPS is running. Steps continue
+    // from the stored count; the sensor kept counting while the app was closed.
+    if (!isDemo) {
+      _startHeartbeat();
+      unawaited(stepTracker?.start(restore: r.stepState));
+    }
     AppLog.info('Session ${r.id} restored: ${visited.length} visited, '
         '${walkedM.round()} m walked');
   }
@@ -527,6 +559,7 @@ class GuideController extends ChangeNotifier {
     trail.clear();
     if (isDemo) position = content.gate.position;
     _engine.reset();
+    unawaited(stepTracker?.reset());
     _queue.clear();
     approaching = null;
     pendingTrigger = null;
@@ -1252,6 +1285,7 @@ class GuideController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    stepTracker?.onChange = null;
     _walkTimer?.cancel();
     _heartbeat?.cancel();
     for (final s in _subs) {
@@ -1281,6 +1315,7 @@ final guideProvider = ChangeNotifierProvider<GuideController>((ref) {
     clock: ref.watch(clockProvider),
     player: ref.watch(narrationPlayerProvider),
     location: ref.watch(locationServiceProvider),
+    stepTracker: ref.watch(stepTrackerProvider),
     store: ref.watch(keyValueStoreProvider),
     bus: ref.watch(eventBusProvider),
     insideZone: scene.isInsideZone,

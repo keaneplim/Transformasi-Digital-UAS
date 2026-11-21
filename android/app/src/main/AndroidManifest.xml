@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- F08 / TC-12: the hardware step counter (Android 10+ runtime permission "Aktivitas
+         fisik"). The pedometer plugin doesn't declare it. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <!-- F04: narration media session (audio_service): lock screen + earphone controls. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />

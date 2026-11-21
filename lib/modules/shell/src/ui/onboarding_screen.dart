@@ -153,15 +153,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     } else {
       // "Izinkan & berangkat": the real OS prompts, one after the other (Android shows one
       // permission dialog at a time). Location only in real mode; notifications (PB07) in
-      // both, the lock-screen card is part of the demo too. Pedometer and camera are asked
-      // when their engines land.
+      // both, the lock-screen card is part of the demo too. "Aktivitas fisik" (step counter,
+      // F08) only in real mode: demo steps are simulated. The camera is asked when the
+      // scanner first opens.
       final guide = ref.read(guideProvider);
       final notifier = ref.read(alertNotifierProvider);
       final askLocation = _perms['lokasi'] == true && !guide.isDemo;
       final askNotify = _perms['notifikasi'] == true && notifier != null;
+      final askActivity = _perms['aktivitas'] == true && !guide.isDemo;
       unawaited(() async {
         if (askLocation) await guide.requestLocation();
         if (askNotify) await notifier.requestPermission();
+        if (askActivity) await guide.requestActivity();
       }());
       context.go('/setup');
     }

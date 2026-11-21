@@ -9,6 +9,9 @@ import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
 import 'package:jelajah_taman/modules/notify/notify.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
+import 'package:jelajah_taman/modules/wellness/wellness.dart';
+
+import '../data/activity_permissions.dart';
 
 /// The ONLY place where implementations are bound to interfaces (rule R8).
 ///
@@ -65,5 +68,6 @@ Future<List<Override>> bootstrap({AssetBundle? bundle}) async {
     bindFlutterTts(),
     bindGeolocatorLocationService(),
     bindQrCamera(),
+    bindPedometerStepTracker(const ActivityRecognitionPermissions()),
   ];
 }

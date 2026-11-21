@@ -46,6 +46,7 @@ Do every step and fill in the table in §3.
 - Install a sensor viewer app (e.g., "Sensor Test" / "Sensors Multitool") and look for **"Step Counter"** (type `TYPE_STEP_COUNTER`). It must be a hardware sensor, not just an accelerometer.
 - Or with USB debugging: `adb shell dumpsys sensorservice | grep -i step`
 - **No step counter → this phone can't pass TC-12.** It can still test everything else.
+- **In the app (TC-12, real mode):** onboarding asks "Aktivitas fisik" → allow. Start a session, walk 200 counted steps (phone in pocket, then again in hand) → LANGKAH in the stats strip within ±20 (≤ 10 %). Steps may update in bursts (the sensor batches, especially with the screen off) — check the total after stopping. Deny the permission (Settings → Apps) → LANGKAH shows "–". Close the app from recents mid-session, walk 50 steps, reopen → the count includes them.
 - Quick sanity test: walk 50 counted steps with the sensor app open; note the counted value.
 
 ### 1.4 Offline Indonesian TTS voice (needed for F04)

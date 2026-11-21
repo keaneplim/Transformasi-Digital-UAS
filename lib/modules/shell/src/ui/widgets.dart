@@ -461,10 +461,13 @@ class StatStrip extends ConsumerWidget {
       children: [
         cell(
             Icons.directions_walk_rounded,
-            AnimatedCount(
-                value: demo.steps.toDouble(),
-                format: thousands,
-                style: JTText.number(20, color: fg)),
+            demo.stepsKnown
+                ? AnimatedCount(
+                    value: demo.steps.toDouble(),
+                    format: thousands,
+                    style: JTText.number(20, color: fg))
+                // no step counter / not allowed: distance and time still count
+                : Text('–', style: JTText.number(20, color: sub)),
             'LANGKAH'),
         div(),
         cell(

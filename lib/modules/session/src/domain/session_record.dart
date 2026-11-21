@@ -50,6 +50,7 @@ class SessionRecord {
     List<GeoPoint>? trail,
     List<VisitEvent>? events,
     this.triggerState,
+    this.stepState,
   })  : interests = [...interests],
         trail = trail ?? [],
         events = events ?? [];
@@ -76,6 +77,7 @@ class SessionRecord {
           VisitEvent.fromJson(e! as Map<String, Object?>),
       ],
       triggerState: j['trigger'] as Map<String, Object?>?,
+      stepState: j['steps'] as Map<String, Object?>?,
     );
   }
 
@@ -96,6 +98,10 @@ class SessionRecord {
 
   /// Trigger engine snapshot (`GeofenceEngine.toJson`), opaque to this module.
   Map<String, Object?>? triggerState;
+
+  /// Step counter snapshot (`StepTracker.toJson`, F08), opaque to this module. Null in demo
+  /// mode and on phones without a step counter.
+  Map<String, Object?>? stepState;
 
   bool get isEnded => endedAt != null;
 
@@ -138,5 +144,6 @@ class SessionRecord {
         ],
         'events': [for (final e in events) e.toJson()],
         if (triggerState != null) 'trigger': triggerState,
+        if (stepState != null) 'steps': stepState,
       };
 }

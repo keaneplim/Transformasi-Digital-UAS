@@ -96,7 +96,8 @@ class SummaryScreen extends ConsumerWidget {
                         icon: Icons.directions_walk_rounded,
                         color: JT.forest,
                         value: demo.steps.toDouble(),
-                        format: (v) => thousands(v.round()),
+                        format: (v) =>
+                            demo.stepsKnown ? thousands(v.round()) : '–',
                         label: 'langkah',
                       ),
                       _Stat(

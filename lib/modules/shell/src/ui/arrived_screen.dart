@@ -127,11 +127,12 @@ class _ArrivedScreenState extends ConsumerState<ArrivedScreen> {
                               runSpacing: 8,
                               alignment: WrapAlignment.center,
                               children: [
-                                Pill(
-                                  icon: Icons.directions_walk_rounded,
-                                  label: '${thousands(demo.steps)} langkah',
-                                  background: JT.surface,
-                                ),
+                                if (demo.stepsKnown)
+                                  Pill(
+                                    icon: Icons.directions_walk_rounded,
+                                    label: '${thousands(demo.steps)} langkah',
+                                    background: JT.surface,
+                                  ),
                                 Pill(
                                   icon: Icons.route_rounded,
                                   label: '${km(demo.walkedM)} km',
