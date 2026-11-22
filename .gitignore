@@ -58,3 +58,7 @@ survey/raw/osm/dem_google.json
 tmp/
 .claude/launch.json
 .claude/settings.local.json
+
+# Release APK: published only on the apk-latest GitHub Release by CI (ADR 0010), never committed
+jelajah-taman.apk
+*.apk

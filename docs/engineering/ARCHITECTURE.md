@@ -339,7 +339,7 @@ Decisions live in [`docs/adr/`](../adr/README.md), one file per decision with co
 | [0007](../adr/0007-open-closed-only-at-listed-extension-points.md) | Open/Closed only at the extension points in §6 |
 | [0008](../adr/0008-bundled-vector-basemap.md) | Bundled vector basemap instead of MBTiles raster tiles |
 | [0009](../adr/0009-guide-controller-with-two-position-sources.md) | One `GuideController` with real and demo position sources |
-| [0010](../adr/0010-ci-release-apk-publishing.md) | CI builds and publishes a release APK on every push to `main` |
+| [0010](../adr/0010-ci-release-apk-publishing.md) | CI builds a release APK and publishes it on the `apk-latest` release (not committed) |
 | [0011](../adr/0011-android-only-committed-platform.md) | Only `android/` is committed; `web/` and `ios/` stay local |
 | [0012](../adr/0012-design-system-v2-sunlit-field-guide.md) | Design system v2 "Sunlit Field Guide" |
 

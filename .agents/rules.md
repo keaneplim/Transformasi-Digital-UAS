@@ -79,7 +79,7 @@ Report results faithfully, including what was not verified (for example: not tes
 Gotchas:
 - `flutter analyze`/`flutter create`/`flutter build` may rewrite `analysis_options.yaml` (adds `web/**`) and `.metadata`; revert them (`git checkout analysis_options.yaml .metadata`).
 - Only `android/` is committed; `web/` (browser preview) and `ios/` (local Xcode runs) stay untracked via `.git/info/exclude` (ADR 0011).
-- `jelajah-taman.apk` is written by CI after each push to `main`; `git pull` before new work and never commit the APK by hand.
+- The APK is published only on the `apk-latest` GitHub Release by CI (ADR 0010, debug-signed). Never commit an APK (`*.apk` is gitignored).
 - Stop dev servers, simulators and other long-running processes started during the session once they are no longer needed, unless the user asks to keep them.
 
 ## 7. Git

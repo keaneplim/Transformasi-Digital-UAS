@@ -15,8 +15,8 @@ How to update (see `rules.md` §9):
 **Git**
 - `origin/main` = `fc34738` (CI APK commit for `66ecdac`). Since the 20 Nov handoff, `main` gained T23 `TimeBudget` + reminders (`17702cd`), PB10 real QR scanner (PR #10, `ee87c2b`) and an updated Sprint 1–2 progress deck (`66ecdac`).
 - Pushed but **not merged** (all by Keane, 21 Nov, stacked on each other): `feat/voice` (F04 voice + media session, D08/T17 weak-GPS card, manual pick, #31 session gate) → `feat/pedometer` (+ F08 step counter, TC-12) → `feat/recommendation` (+ F07 to spec, T24, #34). No PRs open for them yet.
-- Branch `docs/agent-context` (this restructure) is open as a PR.
-- CI commits `jelajah-taman.apk` after each push to `main`: `git pull` before new work.
+- Branch `docs/agent-context` = PR #11 (docs restructure + APK distribution change), open, not merged.
+- After PR #11 merges, CI publishes the APK only on the `apk-latest` GitHub Release (no more bot commits on `main`); the root `jelajah-taman.apk` is deleted by that PR.
 - Untracked on purpose: `web/`, `ios/` (local only, ADR 0011).
 
 **Sprint status** — Sprint 4 (16–22 Nov) ends today; feature freeze end of W13. Sprint 5 (23–29 Nov) is field test, usability, fixes.
@@ -41,7 +41,7 @@ How to update (see `rules.md` §9):
 2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `docs/qa/DEVICE_CHECK.md` §3.
 3. Sourced POI texts (F03) and printed QR codes for P05/P06 before the field test.
 4. Sprint 5: run `docs/qa/scenario/` in the field (TC-01…TC-13), usability test (≥5 respondents, SUS), record results.
-5. Decide PB12 (OSM vs GPX), #33, #35 (APK commits bloat the repo), branch protection on `main`.
+5. Merge PR #11; then decide PB12 (OSM vs GPX), #33, branch protection on `main`.
 
 **Last known check results** (20 Nov, `feat/reminders-timebudget`): content 0 errors (33 warnings) · Python tests pass · analyze clean · architecture pass · 167 Flutter tests. Goldens: compare against a render of unchanged `HEAD` on the same machine, not the committed PNGs.
 
@@ -54,4 +54,5 @@ How to update (see `rules.md` §9):
 - **Decisions (user):** folder `.agents/` with `AGENTS.md` (complete context), `rules.md`, `MEMORY.md`, `PROGRESS.md`; root `CLAUDE.md` stays as a short loader that references `.agents/`; the PRD stays in `docs/prd/` unchanged; the AI disclosure log is a QA deliverable and moves to `docs/qa/`; ADRs 001–009 are split into `docs/adr/` with three new ones (0010 APK publishing, 0011 Android-only platforms, 0012 design system v2), in English; other docs grouped by function; delivered as a PR.
 - **Moves:** `CLAUDE.md` content → `.agents/AGENTS.md` (rewritten, comprehensive) + `.agents/rules.md` (new); `PROGRESS.md` → `.agents/PROGRESS.md`; `LLM_History.md` §1 → `.agents/MEMORY.md`, §2–§4 → `docs/qa/AI_DISCLOSURE_LOG.md`; `docs/scenario/` → `docs/qa/scenario/`; `docs/engineering/DEVICE_CHECK.md` → `docs/qa/`; `docs/engineering/SURVEY_CHECKLIST.md` → `docs/survey/`; `docs/design/STITCH_PROMPTS.md` + `screens/` → `docs/design/archive-v1/`; `docs/prd/Kickoff_Kel5.pdf` → `docs/prd/archive/`. ARCHITECTURE §12 now links to `docs/adr/`.
 - **Checks:** `tools/prd_to_md.py` regenerated with no diff (PRD untouched); path references in docs and tools updated; CI checks listed in the PR.
-- **Next action:** team members re-read `.agents/AGENTS.md` once; anyone with local edits to moved files rebases after the merge.
+- **Follow-up in the same session:** the team confirmed ADR 0010 and 0012. CI no longer commits the APK (release `apk-latest` only, debug-signed, #35 closed); root APK deleted and `*.apk` gitignored; design v2 is official. ADRs amended, README/DEVICE_CHECK/AGENTS/rules/PROGRESS updated.
+- **Next action:** merge PR #11; team members re-read `.agents/AGENTS.md` once; anyone with local edits to moved files rebases after the merge.

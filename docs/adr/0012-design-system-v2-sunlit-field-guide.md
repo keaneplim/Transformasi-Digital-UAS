@@ -1,6 +1,6 @@
 # 0012 Design System v2 "Sunlit Field Guide"
 
-Status: Accepted (team review of PR #1 pending at the time)
+Status: Accepted (confirmed by the team 2026-11-22)
 
 Date: 2026-11-12
 
@@ -49,4 +49,8 @@ Golden images differ across operating systems; comparisons are made against a re
 
 ## Follow-up
 
-Team confirmation of v2 recorded in PROGRESS decisions.
+None planned.
+
+## Amendment — 2026-11-22
+
+The team confirmed v2 as the official design of the app, replacing v1 for the product, the presentation and the product video. v1 material remains in `docs/design/archive-v1/` for history only.

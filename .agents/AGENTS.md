@@ -205,7 +205,7 @@ E1 `SessionStarted` · E2 `SessionEnded` · E3 `PoiApproached` · E4 `PoiTrigger
 
 ## 7. Design system (`docs/design/DESIGN.md`, ADR 0012)
 
-v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting doodles and a scalloped canopy edge, forest-green primary actions, terracotta only for closing time/destructive actions, sky-blue visitor dot. Fonts **Bricolage Grotesque** (display, numbers with tabular figures) and **Plus Jakarta Sans** (UI/body), both bundled. Mascot **Pako** (pinecone with a leaf sprout) changes pose with the situation. Tokens: `JT` / `JTText` in `lib/core/theme/app_theme.dart`; widgets in `lib/core/ui/`. Copy rules in DESIGN.md §8. Visual baselines: `test_goldens/baselines/*.png` (390×844 and 360×780).
+v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting doodles and a scalloped canopy edge, forest-green primary actions, terracotta only for closing time/destructive actions, sky-blue visitor dot. Fonts **Bricolage Grotesque** (display, numbers with tabular figures) and **Plus Jakarta Sans** (UI/body), both bundled. Mascot **Pako** (pinecone with a leaf sprout) changes pose with the situation. Tokens: `JT` / `JTText` in `lib/core/theme/app_theme.dart`; widgets in `lib/core/ui/`. Copy rules in DESIGN.md §8. Visual baselines: `test_goldens/baselines/*.png` (390×844 and 360×780). Confirmed by the team as the official design on 2026-11-22; v1 is archived.
 
 ---
 
@@ -214,7 +214,7 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 - **Unit/widget tests** in `test/` mirror `lib/`; domain logic is tested without a device. Required suites: trigger engine, routing (Dijkstra/snapping/ETA/turns), search, recommender, reminders, voice arbiter, content validation.
 - **Golden screens** in `test_goldens/` (not in CI; regenerate after UI changes and inspect).
 - **Python tool tests** in `tools/tests/`.
-- **CI** (`.github/workflows/ci.yml`): content validation → PRD.md sync → Python tests → `dart format` → `flutter analyze` → architecture check → `flutter test`; then a release arm64 APK on every PR and push. On push to `main` the APK is committed to the root as `jelajah-taman.apk` (bot commit `apk: … [skip ci]`) and published on the `apk-latest` release (ADR 0010).
+- **CI** (`.github/workflows/ci.yml`): content validation → PRD.md sync → Python tests → `dart format` → `flutter analyze` → architecture check → `flutter test`; then a release arm64 APK on every PR (workflow artifact) and push. On push to `main` the APK is published as `jelajah-taman.apk` on the **`apk-latest` GitHub Release**, signed with the CI debug key; it is never committed to the repository (ADR 0010).
 - **Field testing:** `docs/qa/scenario/` (conventions, result log, traceability), `docs/qa/DEVICE_CHECK.md` (≥2 Android test phones; iPhone can't run the APK).
 - **Platforms:** Android only is in scope and committed; `web/` (browser preview) and `ios/` (personal simulator/device runs) stay local (ADR 0011).
 
@@ -251,7 +251,6 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 | `tools/` | Validators, generators, checker (§6). |
 | `survey/raw/` | Raw survey data (GPX, geo/OSM caches; photos gitignored). |
 | `.github/workflows/ci.yml` | CI (§8). |
-| `jelajah-taman.apk` | **Generated** by CI. Never edit, commit or merge by hand. |
 
 History: docs moved into `docs/` on 2026-11-06; agent context consolidated into `.agents/`, ADRs split into `docs/adr/`, and QA/survey/archive folders created on 2026-11-22. Removed 2026-11-03 (still in git history, commit 414c626): PRD md mirror, Naskah md, course template docx, `figures/`.
 
