@@ -67,6 +67,27 @@ class GeofenceTarget {
   final bool enabled;
 }
 
+/// Read-only per-POI diagnostic snapshot for the Explore debug overlay (T31 / §6.5).
+class GeofenceDebugEntry {
+  const GeofenceDebugEntry({
+    required this.poiId,
+    required this.state,
+    required this.radiusM,
+    required this.debounce,
+    required this.enabled,
+    required this.leftZone,
+    this.distanceM,
+  });
+
+  final String poiId;
+  final PoiState state;
+  final double? distanceM;
+  final double radiusM;
+  final int debounce;
+  final bool enabled;
+  final bool leftZone;
+}
+
 class _Track {
   PoiState state = PoiState.outside;
   int debounce = 0;
@@ -133,6 +154,35 @@ class GeofenceEngine implements TriggerEngine {
 
   /// GPS has been weak or absent for ≥ 60 s (UI12 banner, D08).
   bool get weakBanner => _weakBanner;
+
+  /// Debug simulation (T31): force the weak-GPS banner state on or off.
+  void setWeakBannerForDebug(bool active) {
+    _weakBanner = active;
+  }
+
+  /// Per-POI diagnostics sorted by nearest known distance (for the Explore debug overlay).
+  List<GeofenceDebugEntry> debugSnapshot() {
+    final entries = <GeofenceDebugEntry>[
+      for (final t in _targets.values)
+        if (_tracks[t.id] case final tr?)
+          GeofenceDebugEntry(
+            poiId: t.id,
+            state: tr.state,
+            distanceM: tr.distanceM,
+            radiusM: t.radiusM,
+            debounce: tr.debounce,
+            enabled: t.enabled,
+            leftZone: tr.leftZone,
+          ),
+    ];
+    entries.sort((a, b) {
+      final da = a.distanceM ?? double.infinity;
+      final db = b.distanceM ?? double.infinity;
+      final cmp = da.compareTo(db);
+      return cmp != 0 ? cmp : a.poiId.compareTo(b.poiId);
+    });
+    return entries;
+  }
 
   /// Time passing without a fix (heartbeat). Inside a cave the OS often stops delivering
   /// fixes at all, so the banner can't wait for a weak one: the clock runs from the last good

@@ -350,7 +350,8 @@ class _ReminderCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demo = ref.watch(guideProvider);
-    final closing = kind == GuideReminder.closing;
+    final finalCall = kind == GuideReminder.finalCall;
+    final closing = kind == GuideReminder.closing || finalCall;
     final to = demo.reminderDestination(kind);
     final tint = closing ? JT.terracotta : JT.sky;
     return Padding(
@@ -373,10 +374,12 @@ class _ReminderCard extends ConsumerWidget {
                   children: [
                     Positioned.fill(
                         child: ColoredBox(
-                            color: Color.lerp(tint, JT.cream, 0.78)!)),
+                            color: Color.lerp(
+                                tint, JT.cream, finalCall ? 0.62 : 0.78)!)),
                     Positioned.fill(
                       child: DoodlePattern(
-                          color: tint.withValues(alpha: 0.35),
+                          color:
+                              tint.withValues(alpha: finalCall ? 0.45 : 0.35),
                           seed: closing ? 3 : 8,
                           iconSize: 26),
                     ),
@@ -394,26 +397,34 @@ class _ReminderCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Pill(
-                      label: closing
-                          ? 'Pengingat jam tutup'
-                          : 'Waktunya istirahat',
-                      icon: closing
-                          ? Icons.schedule_rounded
-                          : Icons.water_drop_rounded,
+                      label: finalCall
+                          ? 'Panggilan terakhir'
+                          : closing
+                              ? 'Pengingat jam tutup'
+                              : 'Waktunya istirahat',
+                      icon: finalCall
+                          ? Icons.warning_amber_rounded
+                          : closing
+                              ? Icons.schedule_rounded
+                              : Icons.water_drop_rounded,
                       color: tint,
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      closing
-                          ? 'Kawasan tutup pukul ${clockLabel(demo.closingTime)}'
-                          : demo.hydrationLine,
+                      finalCall
+                          ? 'Segera menuju gerbang sekarang'
+                          : closing
+                              ? 'Kawasan tutup pukul ${clockLabel(demo.closingTime)}'
+                              : demo.hydrationLine,
                       style: JTText.h2,
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      closing
-                          ? 'Mulai kembali sekarang agar tidak terburu-buru.'
-                          : 'Istirahat sebentar di tempat teduh terdekat.',
+                      finalCall
+                          ? 'Waktu jalan ke gerbang sudah mepet dengan jam tutup kawasan.'
+                          : closing
+                              ? 'Mulai kembali sekarang agar tidak terburu-buru.'
+                              : 'Istirahat sebentar di tempat teduh terdekat.',
                       style: JTText.body.copyWith(color: JT.muted),
                     ),
                     const SizedBox(height: 14),

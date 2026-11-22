@@ -7,4 +7,5 @@ library;
 
 export 'src/application/location_service_impl.dart' show LocationServiceImpl;
 export 'src/domain/location_contracts.dart';
+export 'src/domain/tracking_policy.dart';
 export 'src/location_providers.dart';

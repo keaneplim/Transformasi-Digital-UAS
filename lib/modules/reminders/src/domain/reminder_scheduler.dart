@@ -22,19 +22,33 @@ class ReminderScheduler {
   /// A snoozed reminder waits for its time, then comes back once whatever its own rule says.
   ReminderDue? check(ReminderContext ctx) {
     for (final r in _reminders) {
-      final until = _snoozed[r.kind];
-      if (until != null && ctx.now.isBefore(until)) continue;
-      if (until == null && r.oncePerSession && _fired.contains(r.kind)) {
-        continue;
-      }
-      final due = until != null ? r.due(ctx) : r.check(ctx, _handled[r.kind]);
-      if (due == null) continue;
-      _snoozed.remove(r.kind);
-      _fired.add(r.kind);
-      _handled[r.kind] = ctx.now;
-      return due;
+      final due = _checkOne(r, ctx);
+      if (due != null) return due;
     }
     return null;
+  }
+
+  /// Evaluates a single [kind] (e.g. UC-A03-2 final call superseding an open softer card).
+  ReminderDue? checkOnly(ReminderKind kind, ReminderContext ctx) {
+    for (final r in _reminders) {
+      if (r.kind != kind) continue;
+      return _checkOne(r, ctx);
+    }
+    return null;
+  }
+
+  ReminderDue? _checkOne(Reminder r, ReminderContext ctx) {
+    final until = _snoozed[r.kind];
+    if (until != null && ctx.now.isBefore(until)) return null;
+    if (until == null && r.oncePerSession && _fired.contains(r.kind)) {
+      return null;
+    }
+    final due = until != null ? r.due(ctx) : r.check(ctx, _handled[r.kind]);
+    if (due == null) return null;
+    _snoozed.remove(r.kind);
+    _fired.add(r.kind);
+    _handled[r.kind] = ctx.now;
+    return due;
   }
 
   /// The visitor closed the reminder: repeating reminders count again from [now].

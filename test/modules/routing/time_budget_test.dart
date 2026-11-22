@@ -81,4 +81,18 @@ void main() {
     final near = budget.closingReminderAt(content.gate.position, day);
     expect(near.isAfter(far), isTrue);
   });
+
+  test('finalCallAt is closing − walk (15 min after closingReminderAt)', () {
+    final p06 = poi('P06').position;
+    final walk = router.walkingTime(p06, content.gate.graphNode);
+    expect(budget.finalCallAt(p06, day), at(16, 0).subtract(walk));
+    expect(
+      budget
+          .finalCallAt(p06, day)
+          .difference(budget.closingReminderAt(p06, day)),
+      budget.buffer,
+    );
+    expect(budget.distanceToGateM(p06), greaterThan(200));
+    expect(budget.distanceToGateM(content.gate.position), lessThan(200));
+  });
 }

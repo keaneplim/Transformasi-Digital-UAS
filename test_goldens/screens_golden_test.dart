@@ -155,6 +155,10 @@ class _NoFixGps implements LocationService {
   @override
   bool get isRunning => true;
   @override
+  Duration get currentInterval => const Duration(seconds: 3);
+  @override
+  Future<void> setInterval(Duration interval) async {}
+  @override
   Future<LocationAccess> access() async => granted;
   @override
   Future<LocationAccess> requestAccess() async => granted;

@@ -17,18 +17,21 @@ void main() {
 
   ReminderScheduler scheduler() => ReminderScheduler([
         ClosingReminder(budget, gatePoiId: content.gate.id),
+        FinalCallReminder(budget, gatePoiId: content.gate.id),
         const HydrationReminder(),
       ]);
 
   ReminderContext ctx(DateTime now,
           {GeoPoint? at,
           DateTime? sessionStart,
-          Duration hydration = Duration.zero}) =>
+          Duration hydration = Duration.zero,
+          bool navigatingToGate = false}) =>
       ReminderContext(
         now: now,
         position: at ?? p06,
         sessionStart: sessionStart ?? start,
         hydrationEvery: hydration,
+        navigatingToGate: navigatingToGate,
       );
 
   setUp(() {
@@ -90,6 +93,59 @@ void main() {
       final s = scheduler()..check(ctx(threshold));
       s.reset();
       expect(s.check(ctx(threshold))?.kind, ReminderKind.closing);
+    });
+  });
+
+  group('final call reminder (UC-A03-2)', () {
+    test('fires once at close − walk when > 200 m from gate', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      // Closing fires first at closingReminderAt.
+      expect(s.check(ctx(threshold))?.kind, ReminderKind.closing);
+      // Not a second before finalCallAt.
+      expect(
+          s.check(ctx(finalAt.subtract(const Duration(seconds: 1)))), isNull);
+      final due = s.check(ctx(finalAt));
+      expect(due, isNotNull);
+      expect(due!.kind, ReminderKind.finalCall);
+      expect(due.actionDestinationId, 'P01');
+      expect(due.text, startsWith('Segera menuju gerbang sekarang.'));
+      // Fires at most once per session.
+      expect(s.check(ctx(finalAt.add(const Duration(minutes: 2)))), isNull);
+    });
+
+    test('silent when already within 200 m of the gate', () {
+      final s = scheduler();
+      final late = DateTime(2026, 11, 20, 15, 59);
+      expect(
+          s.checkOnly(
+              ReminderKind.finalCall, ctx(late, at: content.gate.position)),
+          isNull);
+    });
+
+    test('silent when already navigating to the gate', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      expect(
+          s.checkOnly(
+              ReminderKind.finalCall, ctx(finalAt, navigatingToGate: true)),
+          isNull);
+      // Cancelling navigation later while still > 200 m allows it to fire.
+      expect(s.checkOnly(ReminderKind.finalCall, ctx(finalAt))?.kind,
+          ReminderKind.finalCall);
+    });
+
+    test('persisted across app restart', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      expect(s.checkOnly(ReminderKind.finalCall, ctx(finalAt))?.kind,
+          ReminderKind.finalCall);
+      final again = scheduler()..restore(s.toJson());
+      expect(again.hasFired(ReminderKind.finalCall), isTrue);
+      expect(
+          again.checkOnly(ReminderKind.finalCall,
+              ctx(finalAt.add(const Duration(minutes: 1)))),
+          isNull);
     });
   });
 

@@ -465,6 +465,38 @@ void main() {
       g.endSession();
       expect(n.calls, contains('cancelReminder'));
     });
+
+    test('UC-A03-2 final call: urgent buzz visible, urgent notification locked',
+        () {
+      // Stand at P06 (> 200 m from gate) so final call is eligible.
+      final p06 = poi('P06');
+      g
+        ..update(() => g.hydrationMin = 0)
+        ..teleportTo(p06)
+        ..startSession();
+      final finalAt = g.finalCallAt;
+      // Visible: closing fires first, then final call supersedes it with stronger buzz.
+      clock.setNow(g.closingReminderAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.closing);
+      clock.setNow(finalAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.finalCall);
+      expect(n.calls,
+          contains('vibrate:${TriggerAlerts.finalCallVibration.join(",")}'));
+
+      // Lock screen: urgent finalCall notification is posted and Navigasi goes to P01.
+      alerts.setVisible(false);
+      final r = n.reminders.last;
+      expect(r.kind, ReminderKind.finalCall);
+      expect(r.to, 'P01');
+      expect(r.title, 'Segera menuju gerbang sekarang');
+      expect(r.snoozes, isFalse);
+      n.tapReminder(ReminderKind.finalCall, 'P01', AlertAction.navigate);
+      expect(g.reminder, isNull);
+      expect(g.navigation?.to.id, 'P01');
+      expect(routes, ['/navigate']);
+    });
   });
 
   test('Settings "Getar" also switches the notification vibration (PB07)', () {

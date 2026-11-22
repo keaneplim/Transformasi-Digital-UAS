@@ -17,7 +17,8 @@ class LocationServiceImpl implements LocationService {
     this.noFixAfter = const Duration(seconds: 10),
   })  : _source = source,
         _permissions = permissions,
-        _headingSource = headingSource;
+        _headingSource = headingSource,
+        _activeInterval = interval;
 
   final LocationSource _source;
   final LocationPermissions _permissions;
@@ -34,6 +35,7 @@ class LocationServiceImpl implements LocationService {
   Timer? _noFix;
   bool _background = false;
   bool _compassAlive = false;
+  Duration _activeInterval;
 
   LocationFix? _last;
   GpsQuality _currentQuality = GpsQuality.none;
@@ -55,6 +57,18 @@ class LocationServiceImpl implements LocationService {
 
   @override
   bool get isRunning => _sub != null;
+
+  @override
+  Duration get currentInterval => _activeInterval;
+
+  @override
+  Future<void> setInterval(Duration interval) async {
+    if (interval == _activeInterval) return;
+    _activeInterval = interval;
+    if (_sub != null) {
+      await _listen(background: _background, force: true);
+    }
+  }
 
   @override
   Future<LocationAccess> access() => _permissions.check();
@@ -79,14 +93,18 @@ class LocationServiceImpl implements LocationService {
   Future<void> startSession() => _listen(background: true);
 
   @override
-  Future<void> stopSession() => _listen(background: false);
+  Future<void> stopSession() {
+    _activeInterval = interval;
+    return _listen(background: false, force: true);
+  }
 
-  Future<void> _listen({required bool background}) async {
-    if (_sub != null && background == _background) return;
+  Future<void> _listen({required bool background, bool force = false}) async {
+    if (_sub != null && background == _background && !force) return;
     if (await _permissions.check() != LocationAccess.granted) return;
     await _sub?.cancel();
     _background = background;
-    _sub = _source.fixes(interval: interval, background: background).listen(
+    _sub =
+        _source.fixes(interval: _activeInterval, background: background).listen(
       _onFix,
       onError: (Object e) {
         AppLog.info('location stream error: $e');
@@ -115,9 +133,14 @@ class LocationServiceImpl implements LocationService {
     _armNoFix();
   }
 
+  Duration get _effectiveNoFixAfter {
+    final adaptive = _activeInterval * 2 + const Duration(seconds: 4);
+    return adaptive > noFixAfter ? adaptive : noFixAfter;
+  }
+
   void _armNoFix() {
     _noFix?.cancel();
-    _noFix = Timer(noFixAfter, () => _setQuality(GpsQuality.none));
+    _noFix = Timer(_effectiveNoFixAfter, () => _setQuality(GpsQuality.none));
   }
 
   void _setQuality(GpsQuality q) {
@@ -134,6 +157,7 @@ class LocationServiceImpl implements LocationService {
     _compassSub = null;
     _noFix?.cancel();
     _background = false;
+    _activeInterval = interval;
   }
 
   Future<void> dispose() async {

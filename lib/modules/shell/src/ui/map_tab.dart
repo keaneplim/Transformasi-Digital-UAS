@@ -258,6 +258,15 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
                   onManual: _manualPick,
                 ),
               ),
+              if (demo.debugOverlay)
+                Staged(
+                  at: 0.3,
+                  from: const Offset(0, -10),
+                  child: _DebugOverlay(
+                    demo: demo,
+                    onClose: () => demo.setDebugOverlay(false),
+                  ),
+                ),
             ],
           ),
         ),
@@ -953,6 +962,67 @@ class _LayersSheetState extends State<_LayersSheet> {
                 'Garis kontur (tiap 10 m)'),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Explore debug overlay (T31 / §6.5): live GPS accuracy, adaptive interval (T25), and
+/// nearest POI geofence states + debounce counters. Shown only when enabled in debug menu.
+class _DebugOverlay extends StatelessWidget {
+  const _DebugOverlay({required this.demo, required this.onClose});
+
+  final GuideController demo;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = demo.geofenceDebug.where((e) => e.enabled).take(4).toList();
+    final acc = demo.accuracyM == null ? '–' : '±${demo.accuracyM!.round()} m';
+    final interval = '${demo.activeGpsInterval.inSeconds} dtk';
+    final motion =
+        demo.trackingMode == TrackingMode.stationary ? 'diam' : 'bergerak';
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 10),
+      decoration: BoxDecoration(
+        color: JT.dusk.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: JT.sun.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bug_report_rounded, size: 15, color: JT.sun),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'GPS ${demo.quality.name} ($acc) · $interval ($motion) · ${clockLabel(demo.now())}',
+                  style: JTText.caption.copyWith(
+                      color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+              InkWell(
+                onTap: onClose,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close_rounded,
+                      size: 16, color: Colors.white70),
+                ),
+              ),
+            ],
+          ),
+          if (entries.isNotEmpty) const SizedBox(height: 4),
+          for (final e in entries)
+            Text(
+              '${e.poiId}: ${e.distanceM == null ? "–" : "${e.distanceM!.round()} m"} '
+              '/ r${e.radiusM.round()} · ${e.state.name} · db ${e.debounce}',
+              style: JTText.caption.copyWith(color: Colors.white70),
+            ),
+        ],
       ),
     );
   }

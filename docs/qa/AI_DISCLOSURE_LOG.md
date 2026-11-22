@@ -15,6 +15,15 @@ Formerly `LLM_History.md` at the repo root (renamed and moved on 2026-11-22). It
 
 ## 1. Session log (newest first)
 
+### Session 11 — 2026-11-22
+**Tool:** Devin (T3 Code), model Gemini 4 Neon High (Ubuntu). **Human:** Khalfani.
+
+| # | Human request | AI output | Human decision / correction | Verified by | Result |
+|---|---|---|---|---|---|
+| 1 | Deep analysis of all remaining tasks across `CLAUDE.md` and repo | Prioritized inventory (P0 phone check & content, P1 code gaps, P2 PRD/team decisions, P3 Sprint 5/W15 deliverables, housekeeping) | — | Code, docs, git log, `validate_content.py` | No code change |
+| 2 | Plan & implement T25, T31, T23; ask questions first; update docs, push branch, PR to `main`, monitor checks | Full architecture-compliant implementation plan + 4 clarifying questions | Khalfani approved plan and chose: install Flutter 3.47.9 locally on Ubuntu; 7-tap debug menu in all builds (for QA on CI release APKs); final call quiet when already navigating to gate & supersedes open closing card; T25 keeps 3 s both while approaching and navigating | — | Plan approved |
+| 3 | (build) | T25: `TrackingPolicy` (`location/domain`), `LocationService.setInterval` + adaptive `noFixAfter`, `GuideController` wiring, `park.json` tunables; T23: `TimeBudget.finalCallAt`/`distanceToGateM`, `FinalCallReminder`, `ReminderScheduler.checkOnly`, urgent vibration/notification/UI13; T31: `ContentRepository.contentVersion`, `GeofenceEngine.debugSnapshot`, Settings *Data offline* & *Versi aplikasi* (7-tap hidden *Menu debug*), Explore `_DebugOverlay` | — | Full CI parity locally: `validate_content.py` (0 errors, 33 warnings), 19 Python tests, `dart format`, `flutter analyze` (0 issues), `check_architecture.dart` passed, 336 Flutter tests (+24 new); PR CI checks | branch `feat/t25-t23-t31-tracking-finalcall-settings`, PR to `main` |
+
 ### Session 10 — 2026-11-22
 **Tool:** Claude Code (T3 Code), model Claude Opus 5.5. **Human:** Khalfani.
 
@@ -152,6 +161,7 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-22 | Golden scripts: `scrollUntilVisible` found several scrollables, and a camera jump overshot the target | AI's own golden run | `ensureVisible` + drag |
 | 2026-11-22 | Hydration card widget test tapped while the card was still sliding in (tap missed) | AI's own test run | Pump the entrance first |
 | 2026-11-22 | While restructuring the agent docs, AI moved the generated `PRD.md` + figures into the agent folder (copying the reference project, where the PRD lives there) and repointed `tools/prd_to_md.py` and CI; the user wanted the PRD left in `docs/prd/` | Khalfani | Moves and tool/CI edits reverted; generator rerun with zero diff |
+| 2026-11-22 | First test pass for T25/T23/T31 hit 3 test issues: `setDemoTime(h, m)` truncated seconds on `closingReminderAt`, `scrollUntilVisible` left the version row in sliver cache outside tap bounds, and `StreamController.broadcast().cancel()` inside `fakeAsync` ran outside fake microtasks | AI's own test run | Used `clock.setNow` for exact timestamps, `ensureVisible` before tapping, and tested live `setInterval` re-subscription in an async test + adapted timeout in `fakeAsync` |
 | 2026-11-06 | Minor tooling slips: Python escaping in shell heredocs, a `sed` edit that silently didn't apply, CRLF line endings from the PRD generator on Windows | AI | Switched to the edit tools; `newline="\n"` + `.gitattributes` |
 
 ---
@@ -169,5 +179,6 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-10 | Claude Code (Claude Opus 5.5) | Repo review; Sprint 1–2 progress report deck | Status facts supplied by Keane or checked against the repo; slides rendered and checked; team to review before presenting |
 | 2026-11-12 – 2026-11-20 | Claude Code (Claude Opus 5.5) | Sessions 5–7: merges, PB06 geofence + visit log, PB07 notifications, T23 reminders, PB10 QR scanner | Keane chose and approved each task; unit tests per change; phone tests still pending (see session log) |
 | 2026-11-22 | Claude Code (Claude Opus 5.5) | Restructure of agent context docs (`.agents/`, `docs/adr/`, `docs/qa/`) | Khalfani decided layout and scope, corrected the PRD location; PRD unchanged (generator diff empty) |
+| 2026-11-22 | Devin (Gemini 4 Neon High) | T25 battery-aware tracking (A06), T23 final-call reminder (UC-A03-2), T31 Settings offline version + 7-tap hidden debug menu & Explore map debug overlay | Khalfani reviewed plan and decided all 4 options before coding; full local CI parity + 336 Flutter tests passed; phone checks pending |
 
 No facts about Tahura (history, coordinates, hours, routes) were taken from AI. All such values in the app are DUMMY or marked `[VERIFIKASI]` until the survey and the park manager confirm them (PRD §8.2).

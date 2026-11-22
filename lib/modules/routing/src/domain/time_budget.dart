@@ -48,6 +48,10 @@ class TimeBudget {
   /// Walking time from [from] to the gate, slope included (D09).
   Duration walkToGate(GeoPoint from) => _router.walkingTime(from, gateNodeId);
 
+  /// Walking distance in metres from [from] to the gate (used by UC-A03-2 final call).
+  double distanceToGateM(GeoPoint from) =>
+      _router.walkingDistanceM(from, gateNodeId);
+
   /// Time left for walking and visiting: closing − now − buffer. Negative once past it.
   Duration remaining(DateTime now) => deadline(now).difference(now);
 
@@ -69,4 +73,8 @@ class TimeBudget {
   /// the visitor: closer to the gate, later reminder.
   DateTime closingReminderAt(GeoPoint from, DateTime now) =>
       deadline(now).subtract(walkToGate(from));
+
+  /// UC-A03-2 final call: closing − walk to gate (no buffer left).
+  DateTime finalCallAt(GeoPoint from, DateTime now) =>
+      closingTime(now).subtract(walkToGate(from));
 }

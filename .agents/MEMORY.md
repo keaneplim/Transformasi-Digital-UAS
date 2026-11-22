@@ -13,11 +13,10 @@ How to update (see `rules.md` §9):
 ## Current state — as of 2026-11-22
 
 **Git**
-- `origin/main` = `fc34738` (CI APK commit for `66ecdac`). Since the 20 Nov handoff, `main` gained T23 `TimeBudget` + reminders (`17702cd`), PB10 real QR scanner (PR #10, `ee87c2b`) and an updated Sprint 1–2 progress deck (`66ecdac`).
-- PR #11 (docs restructure, APK only on the release) is in `main`.
-- 22 Nov: `feat/wellness-notify-settings` (Khalfani: key facts, saved Settings #32, reminder notifications + snooze #33, kcal D11, "Izin ponsel", Getar channels, TTS fallback) merged into `feat/recommendation` (PR #12); then `feat/recommendation` (with Keane's `feat/voice` → `feat/pedometer` → F07, 21 Nov) merged with `main` and sent to `main` as one PR. After it lands, pull and delete the merged branches.
-- CI publishes the APK only on the `apk-latest` GitHub Release (no more bot commits on `main`); the root `jelajah-taman.apk` is deleted by that PR.
-- Untracked on purpose: `web/`, `ios/` (local only, ADR 0011).
+- `origin/main` = `4df5118` (PR #11 docs/APK release-only, PR #12/#13 F04 voice + F08 pedometer + F07 recommendation + wellness/notify/Settings batch, PR #14 goldens baselines all merged).
+- New branch `feat/t25-t23-t31-tracking-finalcall-settings` (Khalfani): implements T25 battery-aware tracking (A06), T23 `FinalCallReminder` (UC-A03-2), and T31 Settings offline version + 7-tap hidden debug menu + Explore debug overlay; PR opened to `main`.
+- CI publishes the APK only on the `apk-latest` GitHub Release (no bot commits on `main`, ADR 0010).
+- Untracked on purpose on dev Macs: `web/`, `ios/` (local only, ADR 0011).
 
 **Sprint status** — Sprint 4 (16–22 Nov) ends today; feature freeze end of W13. Sprint 5 (23–29 Nov) is field test, usability, fixes.
 
@@ -34,21 +33,32 @@ How to update (see `rules.md` §9):
 | PB14 navigation | ◐ | Logic in `GuideController`; voice depends on F04; demo arrival 3 m vs 15 m; TC-08 |
 | PB15 recommendation (F07) | ◐ code | TC-09/TC-10 |
 | PB16 wellness (F08) | ◐ code: steps, distance filter, active time, kcal D11, hydration snooze | TC-11/TC-12 on a phone |
-| PB17 reminders | ◐ code: closing + hydration, voice, system notification when hidden | UC-A03-2 final call; phone check |
-| PB18 Settings | ◐ saved on the phone, "Izin ponsel" | Version/content info, debug menu |
+| PB17 reminders | ◐ code: closing + final call (UC-A03-2) + hydration, voice, system notification when hidden | Phone check |
+| PB18 Settings | ☑ code: saved on phone, "Izin ponsel", version/offline info, 7-tap hidden debug menu + map overlay | Phone check |
+| A06 battery-aware tracking (T25) | ◐ code: `TrackingPolicy` (3 s ↔ 10 s), pedometer wake-up, approaching/nav keep-fast | 60-min battery test on ≥2 Android phones (SK-A06-01/02) |
 
 **Next steps, in order**
-1. Pull `main` after the merge PR; delete `feat/voice`, `feat/pedometer`, `feat/recommendation`, `feat/wellness-notify-settings`.
+1. Merge `feat/t25-t23-t31-tracking-finalcall-settings` after CI passes; prune old merged remote branches.
 2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `docs/qa/DEVICE_CHECK.md` §3.
-3. Sourced POI texts (F03) and printed QR codes for P05/P06 before the field test.
+3. Sourced POI texts + `key_facts` (F03), P03/P09 photos, 5 ESTIMATE coords (#28), and printed QR codes for P05/P06 before the field test.
 4. Sprint 5: run `docs/qa/scenario/` in the field (TC-01…TC-13), usability test (≥5 respondents, SUS), record results.
-5. Decide PB12 (OSM vs GPX); branch protection on `main`.
+5. Decide PB12 (OSM vs GPX), #13/#25/#26/#27; branch protection on `main`.
 
-**Last known check results** (22 Nov, `feat/recommendation` merged with `main`): content 0 errors (33 warnings) · Python tests pass · analyze clean · architecture pass · 312 Flutter tests. Goldens: compare against a render of unchanged `HEAD` on the same machine, not the committed PNGs.
+**Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **336 Flutter tests pass**.
 
 ---
 
 ## Sessions
+
+### 2026-11-22 — T25 battery-aware tracking, T23 final call, T31 version & debug menu (branch `feat/t25-t23-t31-tracking-finalcall-settings`, Khalfani, Ubuntu / Devin)
+- **Objective:** complete the remaining code items for T25 (A06 battery-aware GPS interval), T23 (UC-A03-2 final call reminder), and T31 (Settings offline content/app version + 7-tap hidden debug menu & Explore map debug overlay).
+- **What changed:**
+  - **T25 (A06):** pure Dart `TrackingPolicy` + `TrackingPolicyParams` (`location/src/domain/tracking_policy.dart`, `park.json` params), `LocationService.setInterval`/`currentInterval` + adaptive `noFixAfter` timeout (`LocationServiceImpl`), wired in `GuideController` to GPS fixes, `StepTracker` wake-up, and `keepFast` while approaching any POI or actively navigating.
+  - **T23 (UC-A03-2):** `TimeBudget.finalCallAt` + `distanceToGateM`, `FinalCallReminder` (`reminders`, Open/Closed strategy > 200 m from gate at `close − walk`, quiet when already navigating to gate, persisted via `ReminderStore`), `ReminderScheduler.checkOnly` so final call supersedes an open softer card, `GuideReminder.finalCall` with urgent vibration/notification (`TriggerAlerts`), safety voice (`VoiceAlerts`), and urgent terracotta UI13 card (`overlays.dart`).
+  - **T31 (UI15):** `ContentRepository.contentVersion`, `GeofenceEngine.debugSnapshot()` + `setWeakBannerForDebug`, *Data offline* & *Versi aplikasi* rows in *Tentang*, 7-tap unlock for `_DebugPanel` (Explore map `_DebugOverlay`, simulated weak-GPS toggle, fine fake-clock stepper/picker, final-call preview, copy session log summary).
+- **Decisions (user):** install Flutter 3.47.9 on Ubuntu for local CI parity; 7-tap debug menu unlockable in all builds (including CI release APKs for Sprint 5 QA); final call stays quiet when already navigating to the gate and supersedes an open closing card; T25 keeps 3 s both while approaching POIs and while actively navigating.
+- **Checks:** `validate_content.py` 0 errors (33 warnings), 19 Python tests, `dart format`, `flutter analyze`, `check_architecture.dart`, 336 Flutter tests (+24 new tests). Not tested on a physical Android phone yet.
+- **Next action:** monitor PR CI (`check` + `build-apk`), merge, then start Android phone checks (`DEVICE_CHECK.md` §3).
 
 ### 2026-11-22 — Wellness, reminders, Settings batch (branch `feat/wellness-notify-settings`, Khalfani, Claude Code)
 - **Objective:** seven open tasks: key facts on UI06, saved Settings (#32), reminder notifications, hydration snooze (#33), kcal D11 + active time + accuracy filter + re-ask "Aktivitas fisik", PB07 permission hint + Getar ↔ channels, TTS fallback (T07).

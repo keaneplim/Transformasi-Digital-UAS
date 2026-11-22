@@ -11,6 +11,7 @@ class ContentRepository {
     required this.park,
     required this.graph,
     this.isDummy = false,
+    this.contentVersion = 1,
   })  : pois = List.unmodifiable(pois),
         facilities = List.unmodifiable(facilities),
         routes = List.unmodifiable(routes),
@@ -43,6 +44,7 @@ class ContentRepository {
       park: ParkConfig.fromJson(park),
       graph: TrailGraph.fromJson(graph),
       isDummy: anyDummy,
+      contentVersion: (pois['version'] as num?)?.toInt() ?? 1,
     );
   }
 
@@ -54,6 +56,9 @@ class ContentRepository {
 
   /// True while any content file is still survey-free dummy data. The UI shows a banner.
   final bool isDummy;
+
+  /// Content dataset version from `pois.json` (Settings UI15, UC-SH-5).
+  final int contentVersion;
 
   final Map<String, Poi> _poiById;
   final Map<String, Facility> _facilityById;

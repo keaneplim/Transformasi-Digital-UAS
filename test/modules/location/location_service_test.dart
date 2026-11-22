@@ -8,11 +8,15 @@ import 'package:jelajah_taman/modules/location/location.dart';
 class _Source implements LocationSource {
   final controller = StreamController<LocationFix>.broadcast();
   bool? lastBackground;
+  Duration? lastInterval;
+  int subscribes = 0;
 
   @override
   Stream<LocationFix> fixes(
       {required Duration interval, bool background = false}) {
     lastBackground = background;
+    lastInterval = interval;
+    subscribes++;
     return controller.stream;
   }
 }
@@ -94,5 +98,53 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(headings, [42]);
     await s.stop();
+  });
+
+  test('setInterval re-subscribes on change and stopSession resets to 3 s',
+      () async {
+    final src = _Source();
+    final s = LocationServiceImpl(source: src, permissions: _Perms());
+    await s.startSession();
+    expect(src.lastInterval, const Duration(seconds: 3));
+    expect(src.subscribes, 1);
+
+    await s.setInterval(const Duration(seconds: 3));
+    expect(src.subscribes, 1, reason: 'no-op when interval is unchanged');
+
+    await s.setInterval(const Duration(seconds: 10));
+    expect(s.currentInterval, const Duration(seconds: 10));
+    expect(src.lastInterval, const Duration(seconds: 10));
+    expect(src.lastBackground, isTrue);
+    expect(src.subscribes, 2);
+
+    await s.stopSession();
+    expect(s.currentInterval, const Duration(seconds: 3));
+    expect(src.lastInterval, const Duration(seconds: 3));
+    expect(src.lastBackground, isFalse);
+    await s.stop();
+  });
+
+  test('10 s stationary interval adapts no-fix timeout so quality stays good',
+      () {
+    fakeAsync((async) {
+      final src = _Source();
+      final s = LocationServiceImpl(source: src, permissions: _Perms());
+      s.setInterval(const Duration(seconds: 10));
+      s.startSession();
+      async.flushMicrotasks();
+      expect(src.lastInterval, const Duration(seconds: 10));
+      src.controller.add(fix(6));
+      async.flushMicrotasks();
+      expect(s.currentQuality, GpsQuality.good);
+
+      // 12 s would be GpsQuality.none at 3 s polling, but at 10 s polling it is normal.
+      async.elapse(const Duration(seconds: 12));
+      expect(s.currentQuality, GpsQuality.good);
+
+      // Truly silent past 24 s → none.
+      async.elapse(const Duration(seconds: 15));
+      expect(s.currentQuality, GpsQuality.none);
+      s.stop();
+    });
   });
 }

@@ -221,8 +221,7 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 
 ## 9. Tech stack (PRD §8.1)
 
-- **On `main` (`pubspec.yaml` is the truth):** Flutter **3.47.9** (pinned in CI; install path per machine) / Dart · flutter_riverpod (no codegen) · go_router · geolocator (+ foreground service) · flutter_map + latlong2 with the bundled vector basemap (PRD still says MBTiles, PROGRESS #26) + optional Esri satellite · own haversine geofence (ADR 0004) and Dijkstra · JSON content + shared_preferences · just_audio · mobile_scanner (bundled ML Kit, offline) · flutter_local_notifications + vibration.
-- **Planned / on open feature branches:** audio_service + flutter_tts (F04), pedometer (F08), flutter_compass, permission_handler. The module table in §5.3 lists the intended owner of each.
+- **On `main` (`pubspec.yaml` is the truth):** Flutter **3.47.9** (pinned in CI; install path per machine) / Dart · flutter_riverpod (no codegen) · go_router · geolocator (+ foreground service) + flutter_compass · flutter_map + latlong2 with the bundled vector basemap (PRD still says MBTiles, PROGRESS #26) + optional Esri satellite · own haversine geofence (ADR 0004) and Dijkstra · JSON content + shared_preferences · just_audio + audio_service + audio_session + flutter_tts · mobile_scanner (bundled ML Kit, offline) · flutter_local_notifications + vibration · pedometer · permission_handler.
 
 ---
 

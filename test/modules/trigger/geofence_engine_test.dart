@@ -337,4 +337,20 @@ void main() {
     expect(on(trek, 'P11'), isTrue);
     expect(on(santai, 'P05'), isTrue);
   });
+
+  test('debugSnapshot exposes per-POI state, distance and debounce (T31)', () {
+    final w = Walk(engine());
+    w.fix(10); // inside A (r=20) once → debounce 1, approaching B (40 m away)
+    final snap = w.e.debugSnapshot();
+    expect(snap.first.poiId, 'A');
+    expect(snap.first.debounce, 1);
+    expect(snap.first.distanceM, closeTo(10, 1));
+    expect(snap.last.poiId, 'B');
+    expect(snap.last.state, PoiState.approaching);
+
+    w.e.setWeakBannerForDebug(true);
+    expect(w.e.weakBanner, isTrue);
+    w.e.setWeakBannerForDebug(false);
+    expect(w.e.weakBanner, isFalse);
+  });
 }

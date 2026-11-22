@@ -75,6 +75,9 @@ class TriggerAlerts {
   /// One long pulse: a reminder appeared on screen.
   static const reminderVibration = [0, 400];
 
+  /// Three urgent pulses: UC-A03-2 final call to head to the gate now.
+  static const finalCallVibration = [0, 400, 150, 400, 150, 400];
+
   /// The app is on screen (resumed, or only covered by the notification shade).
   void setVisible(bool visible) {
     if (visible == _visible) return;
@@ -112,7 +115,9 @@ class TriggerAlerts {
         if (!_visible) {
           _postReminder();
         } else if (guide.vibration) {
-          unawaited(notifier.vibrate(reminderVibration));
+          unawaited(notifier.vibrate(_reminder == GuideReminder.finalCall
+              ? finalCallVibration
+              : reminderVibration));
         }
       }
     }
@@ -135,22 +140,42 @@ class TriggerAlerts {
     if (r == null || !guide.sessionActive || _reminderPosted) return;
     _reminderPosted = true;
     final to = guide.reminderDestination(r);
-    final closing = r == GuideReminder.closing;
-    unawaited(notifier.showReminder(
-      kind: closing ? ReminderKind.closing : ReminderKind.hydration,
-      destinationId: to.id,
-      title: closing
-          ? 'Kawasan tutup pukul ${clockLabel(guide.closingTime)}'
-          : guide.hydrationLine,
-      body: closing
-          ? 'Jalan kaki ke gerbang sekitar ${minutesLabel(guide.walkToGate)} '
-              'dari posisi Anda. Mulai kembali sekarang.'
-          : 'Tempat istirahat terdekat: ${to.name}, '
+    switch (r) {
+      case GuideReminder.closing:
+        unawaited(notifier.showReminder(
+          kind: ReminderKind.closing,
+          destinationId: to.id,
+          title: 'Kawasan tutup pukul ${clockLabel(guide.closingTime)}',
+          body:
+              'Jalan kaki ke gerbang sekitar ${minutesLabel(guide.walkToGate)} '
+              'dari posisi Anda. Mulai kembali sekarang.',
+          navigateLabel: 'Navigasi ke gerbang',
+          laterLabel: 'Nanti',
+          snoozes: false,
+        ));
+      case GuideReminder.finalCall:
+        unawaited(notifier.showReminder(
+          kind: ReminderKind.finalCall,
+          destinationId: to.id,
+          title: 'Segera menuju gerbang sekarang',
+          body: 'Kawasan tutup pukul ${clockLabel(guide.closingTime)}. '
+              'Waktu jalan ke gerbang sekitar ${minutesLabel(guide.walkToGate)}.',
+          navigateLabel: 'Navigasi ke gerbang',
+          laterLabel: 'Nanti',
+          snoozes: false,
+        ));
+      case GuideReminder.hydration:
+        unawaited(notifier.showReminder(
+          kind: ReminderKind.hydration,
+          destinationId: to.id,
+          title: guide.hydrationLine,
+          body: 'Tempat istirahat terdekat: ${to.name}, '
               '${distanceLabel(guide.walkingM(to))}.',
-      navigateLabel: closing ? 'Navigasi ke gerbang' : 'Ke tempat istirahat',
-      laterLabel: closing ? 'Nanti' : 'Ingatkan 10 menit lagi',
-      snoozes: !closing,
-    ));
+          navigateLabel: 'Ke tempat istirahat',
+          laterLabel: 'Ingatkan 10 menit lagi',
+          snoozes: true,
+        ));
+    }
   }
 
   void _cancelReminder() {
@@ -248,9 +273,11 @@ class TriggerAlerts {
   void _handleReminderTap(AlertTap tap) {
     // A button removes its notification itself (cancelNotification).
     _reminderPosted = false;
-    final r = tap.reminder == ReminderKind.hydration
-        ? GuideReminder.hydration
-        : GuideReminder.closing;
+    final r = switch (tap.reminder!) {
+      ReminderKind.hydration => GuideReminder.hydration,
+      ReminderKind.closing => GuideReminder.closing,
+      ReminderKind.finalCall => GuideReminder.finalCall,
+    };
     final open = guide.reminder == r;
     switch (tap.action) {
       case AlertAction.navigate:
