@@ -6,8 +6,9 @@ import 'reminder.dart';
 /// due at the same check, the first one wins and the other waits for the next check
 /// (closing before hydration: safety first).
 ///
-/// It remembers what was shown, so "once per session" also holds after the app is killed and
-/// the session restored ([toJson] / [restore]).
+/// It remembers what was shown and what was snoozed, so "once per session" and "in 10
+/// minutes" also hold after the app is killed and the session restored ([toJson] /
+/// [restore]).
 class ReminderScheduler {
   ReminderScheduler(List<Reminder> reminders)
       : _reminders = List.unmodifiable(reminders);
@@ -15,13 +16,20 @@ class ReminderScheduler {
   final List<Reminder> _reminders;
   final Set<ReminderKind> _fired = {};
   final Map<ReminderKind, DateTime> _handled = {};
+  final Map<ReminderKind, DateTime> _snoozed = {};
 
   /// The reminder due now, or null. A returned reminder counts as shown at [ReminderContext.now].
+  /// A snoozed reminder waits for its time, then comes back once whatever its own rule says.
   ReminderDue? check(ReminderContext ctx) {
     for (final r in _reminders) {
-      if (r.oncePerSession && _fired.contains(r.kind)) continue;
-      final due = r.check(ctx, _handled[r.kind]);
+      final until = _snoozed[r.kind];
+      if (until != null && ctx.now.isBefore(until)) continue;
+      if (until == null && r.oncePerSession && _fired.contains(r.kind)) {
+        continue;
+      }
+      final due = until != null ? r.due(ctx) : r.check(ctx, _handled[r.kind]);
       if (due == null) continue;
+      _snoozed.remove(r.kind);
       _fired.add(r.kind);
       _handled[r.kind] = ctx.now;
       return due;
@@ -30,7 +38,20 @@ class ReminderScheduler {
   }
 
   /// The visitor closed the reminder: repeating reminders count again from [now].
-  void acknowledge(ReminderKind kind, DateTime now) => _handled[kind] = now;
+  void acknowledge(ReminderKind kind, DateTime now) {
+    _handled[kind] = now;
+    _snoozed.remove(kind);
+  }
+
+  /// "Ingatkan 10 menit lagi": the reminder comes back at [now] + [delay], not after its
+  /// full interval (#33). Snoozing again moves the time.
+  void snooze(ReminderKind kind, DateTime now, Duration delay) {
+    _handled[kind] = now;
+    _snoozed[kind] = now.add(delay);
+  }
+
+  /// When a snoozed reminder comes back; null when it isn't snoozed.
+  DateTime? snoozedUntil(ReminderKind kind) => _snoozed[kind];
 
   bool hasFired(ReminderKind kind) => _fired.contains(kind);
 
@@ -38,14 +59,16 @@ class ReminderScheduler {
   void reset() {
     _fired.clear();
     _handled.clear();
+    _snoozed.clear();
   }
+
+  static Map<String, String> _times(Map<ReminderKind, DateTime> m) =>
+      {for (final e in m.entries) e.key.name: e.value.toIso8601String()};
 
   Map<String, Object?> toJson() => {
         'fired': [for (final k in _fired) k.name],
-        'handled': {
-          for (final e in _handled.entries)
-            e.key.name: e.value.toIso8601String()
-        },
+        'handled': _times(_handled),
+        if (_snoozed.isNotEmpty) 'snoozed': _times(_snoozed),
       };
 
   /// Restores what [toJson] wrote; unknown kinds and malformed values are skipped.
@@ -58,13 +81,16 @@ class ReminderScheduler {
         if (kinds[name] case final k?) _fired.add(k);
       }
     }
-    final handled = json['handled'];
-    if (handled is Map) {
-      for (final MapEntry(:key, :value) in handled.entries) {
+    void times(Object? raw, Map<ReminderKind, DateTime> into) {
+      if (raw is! Map) return;
+      for (final MapEntry(:key, :value) in raw.entries) {
         final k = kinds[key];
         final at = value is String ? DateTime.tryParse(value) : null;
-        if (k != null && at != null) _handled[k] = at;
+        if (k != null && at != null) into[k] = at;
       }
     }
+
+    times(json['handled'], _handled);
+    times(json['snoozed'], _snoozed);
   }
 }

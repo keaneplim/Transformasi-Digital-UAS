@@ -121,11 +121,13 @@ class DemoOverlayHost extends ConsumerWidget {
                     alignment: Alignment.bottomCenter,
                     child: _ReminderCard(
                       kind: reminder,
-                      onNavigate: (place) {
-                        demo.dismissReminder();
-                        if (demo.startNavigation(place)) _push('/navigate');
+                      onNavigate: () {
+                        if (demo.navigateForReminder(reminder)) {
+                          _push('/navigate');
+                        }
                       },
-                      onDismiss: demo.dismissReminder,
+                      onLater: demo.dismissReminder,
+                      onSnooze: demo.snoozeReminder,
                     ),
                   )
                 : const SizedBox.shrink(key: ValueKey('none')),
@@ -331,22 +333,25 @@ class _TriggerCard extends StatelessWidget {
   }
 }
 
+/// UI13: closing (A03) or hydration (F08) reminder. The main button navigates (gate / nearest
+/// rest point); hydration snoozes for 10 minutes (#33), closing is "Nanti".
 class _ReminderCard extends ConsumerWidget {
   const _ReminderCard(
-      {required this.kind, required this.onNavigate, required this.onDismiss});
+      {required this.kind,
+      required this.onNavigate,
+      required this.onLater,
+      required this.onSnooze});
 
   final GuideReminder kind;
-  final ValueChanged<Place> onNavigate;
-  final VoidCallback onDismiss;
+  final VoidCallback onNavigate;
+  final VoidCallback onLater;
+  final VoidCallback onSnooze;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demo = ref.watch(guideProvider);
     final closing = kind == GuideReminder.closing;
-    final gate = demo.place('P01')!;
-    final rest = demo.nearest(group: 'fasilitas').firstWhere(
-        (p) => p.kind == 'istirahat',
-        orElse: () => demo.facilities.first);
+    final to = demo.reminderDestination(kind);
     final tint = closing ? JT.terracotta : JT.sky;
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -363,7 +368,7 @@ class _ReminderCard extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: 150,
+                height: 136,
                 child: Stack(
                   children: [
                     Positioned.fill(
@@ -378,7 +383,7 @@ class _ReminderCard extends ConsumerWidget {
                     Center(
                       child: Pako(
                           pose: closing ? PakoPose.sleepy : PakoPose.drink,
-                          size: 130),
+                          size: 122),
                     ),
                   ],
                 ),
@@ -401,16 +406,46 @@ class _ReminderCard extends ConsumerWidget {
                     Text(
                       closing
                           ? 'Kawasan tutup pukul ${clockLabel(demo.closingTime)}'
-                          : 'Sudah ${demo.hydrationMin} menit berjalan. Minum air dulu, yuk.',
+                          : demo.hydrationLine,
                       style: JTText.h2,
                     ),
                     const SizedBox(height: 6),
                     Text(
                       closing
-                          ? 'Jalan kaki ke gerbang sekitar ${minutesLabel(demo.walkToGate)} dari posisi Anda. Mulai kembali sekarang agar tidak terburu-buru.'
-                          : 'Tempat istirahat terdekat: ${rest.name}, ${distanceLabel(demo.walkingM(rest))}.',
+                          ? 'Mulai kembali sekarang agar tidak terburu-buru.'
+                          : 'Istirahat sebentar di tempat teduh terdekat.',
                       style: JTText.body.copyWith(color: JT.muted),
                     ),
+                    const SizedBox(height: 14),
+                    if (closing)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ReminderFact(
+                              icon: Icons.door_front_door_rounded,
+                              color: tint,
+                              label: 'Ke gerbang',
+                              value: '±${minutesLabel(demo.walkToGate)}',
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _ReminderFact(
+                              icon: Icons.lock_clock_rounded,
+                              color: tint,
+                              label: 'Kawasan tutup',
+                              value: clockLabel(demo.closingTime),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      _RestTile(
+                        place: to,
+                        detail:
+                            '${distanceLabel(demo.walkingM(to))} · ±${minutesLabel(demo.walkingTime(to))} jalan kaki',
+                        onTap: onNavigate,
+                      ),
                     const SizedBox(height: 16),
                     PrimaryPill(
                       label: closing
@@ -418,13 +453,14 @@ class _ReminderCard extends ConsumerWidget {
                           : 'Navigasi ke tempat istirahat',
                       icon: Icons.navigation_rounded,
                       color: closing ? JT.terracotta : JT.forest,
-                      onTap: () => onNavigate(closing ? gate : rest),
+                      onTap: onNavigate,
                     ),
                     const SizedBox(height: 8),
                     SoftButton(
                       label: closing ? 'Nanti' : 'Ingatkan 10 menit lagi',
+                      icon: closing ? null : Icons.snooze_rounded,
                       color: JT.cream,
-                      onTap: onDismiss,
+                      onTap: closing ? onLater : onSnooze,
                     ),
                   ],
                 ),
@@ -435,6 +471,106 @@ class _ReminderCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// One number on the closing reminder ("Ke gerbang ±25 mnt", "Kawasan tutup 16.00").
+class _ReminderFact extends StatelessWidget {
+  const _ReminderFact(
+      {required this.icon,
+      required this.color,
+      required this.label,
+      required this.value});
+
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: '$label $value',
+        excludeSemantics: true,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          decoration: BoxDecoration(
+            color: Color.lerp(color, JT.cream, 0.9),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 15, color: color),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: JTText.caption),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(value, style: JTText.number(20)),
+            ],
+          ),
+        ),
+      );
+}
+
+/// The nearest rest point on the hydration reminder (UC-F08-3), tappable like the button.
+class _RestTile extends StatelessWidget {
+  const _RestTile(
+      {required this.place, required this.detail, required this.onTap});
+
+  final Place place;
+  final String detail;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Pressable(
+        onTap: onTap,
+        semanticLabel: 'Tempat istirahat terdekat: ${place.name}, $detail',
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+          decoration: BoxDecoration(
+            color: JT.cream,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: JT.line),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Color.lerp(place.tint, JT.cream, 0.8),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(place.icon, color: place.tint, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('TEMPAT ISTIRAHAT TERDEKAT',
+                        style: JTText.overline.copyWith(fontSize: 10.5)),
+                    const SizedBox(height: 2),
+                    Text(place.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: JTText.title),
+                    Text(detail, style: JTText.caption),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: JT.faint),
+            ],
+          ),
+        ),
+      );
 }
 
 /// UI08 "Berikutnya": 1 main recommendation + 2 alternatives with reasons, or back to the gate.

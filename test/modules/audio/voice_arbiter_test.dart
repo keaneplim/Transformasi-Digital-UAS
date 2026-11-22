@@ -205,4 +205,85 @@ void main() {
     expect(voice.speaking, isNull);
     expect(ducks.last, VoiceDuck.none);
   });
+
+  group('narration read aloud (T07)', () {
+    test('lowest priority: any other line cuts in, the sentence is read again',
+        () async {
+      unawaited(voice.say('Kalimat satu.', priority: VoicePriority.narration));
+      await flush();
+      expect(speaker.current, 'Kalimat satu.');
+      expect(ducks, isEmpty, reason: 'the narration doesn\'t duck itself');
+      unawaited(voice.say('Anda tiba di Gua Jepang.',
+          priority: VoicePriority.reminder));
+      await flush();
+      expect(speaker.stops, ['Kalimat satu.']);
+      expect(speaker.current, 'Anda tiba di Gua Jepang.');
+      speaker.end();
+      await flush();
+      expect(speaker.current, 'Kalimat satu.');
+    });
+
+    test('a waiting narration sentence is late, never dropped as stale',
+        () async {
+      unawaited(voice.say('arah', priority: VoicePriority.navigation));
+      unawaited(voice.say('Kalimat satu.', priority: VoicePriority.narration));
+      await flush();
+      clock.advance(const Duration(seconds: 45));
+      speaker.end();
+      await flush();
+      expect(speaker.current, 'Kalimat satu.');
+    });
+
+    test('cancel(narration) silences only the narration', () async {
+      var done = 0;
+      unawaited(voice
+          .say('Kalimat satu.', priority: VoicePriority.narration)
+          .then((_) => done++));
+      unawaited(voice.say('arah', priority: VoicePriority.navigation));
+      await flush();
+      unawaited(voice
+          .say('Kalimat dua.', priority: VoicePriority.narration)
+          .then((_) => done++));
+      await flush();
+      expect(speaker.current, 'arah');
+      await voice.cancel(VoicePriority.narration);
+      await flush();
+      expect(done, 2, reason: 'their futures complete');
+      expect(speaker.current, 'arah', reason: 'the turn instruction goes on');
+      speaker.end();
+      await flush();
+      expect(voice.speaking, isNull);
+      expect(speaker.spoken.where((t) => t.startsWith('Kalimat')), isEmpty,
+          reason: 'the turn came first; nothing is read after the cancel');
+    });
+  });
+
+  group('NarrationScript', () {
+    test('sentences with estimated starts; placeholders are never read', () {
+      final s = NarrationScript.fromText(
+          'Mulut gua terbuka di tebing. Udara dingin! Apa yang ada di dalam? '
+          '[ISI] teks dari papan informasi.');
+      expect(s.sentences, [
+        'Mulut gua terbuka di tebing.',
+        'Udara dingin!',
+        'Apa yang ada di dalam?'
+      ]);
+      expect(s.starts.first, 0);
+      expect(s.starts[1], greaterThan(0));
+      expect(s.length, greaterThan(s.starts.last));
+      expect(s.indexAt(0), 0);
+      expect(s.indexAt(s.starts[2] + 0.1), 2);
+      expect(s.indexAt(999), 2);
+      expect(s.endOf(0), s.starts[1]);
+      expect(s.endOf(2), s.length);
+    });
+
+    test('a placeholder-only text has nothing to read', () {
+      expect(
+          NarrationScript.fromText('[ISI] Teks Gua Jepang (80–150 kata).')
+              .isEmpty,
+          isTrue);
+      expect(NarrationScript.fromText('').isEmpty, isTrue);
+    });
+  });
 }

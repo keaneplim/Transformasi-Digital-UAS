@@ -26,12 +26,10 @@ void forwardNotificationTapToMainIsolate(NotificationResponse response) {
   IsolateNameServer.lookupPortByName(notifyTapPortName)?.send(tap.toMessage());
 }
 
-/// The POI id travels as the notification payload; the button id says what was tapped.
-AlertTap? tapOf(NotificationResponse r) {
-  final poi = r.payload;
-  if (poi == null || poi.isEmpty) return null;
-  return AlertTap(poi, AlertTap.actionFor(r.actionId));
-}
+/// The POI id (or `reminder|kind|destination`) travels as the notification payload; the
+/// button id says what was tapped.
+AlertTap? tapOf(NotificationResponse r) =>
+    AlertTap.fromPayload(r.payload, r.actionId);
 
 /// [AlertNotifier] on Android with flutter_local_notifications + vibration (owned by `notify`,
 /// rule R5). Created once at startup by the composition root.
@@ -42,27 +40,40 @@ class LocalAlertNotifier implements AlertNotifier {
   final StreamController<AlertTap> _taps = StreamController.broadcast();
   final ReceivePort _port = ReceivePort();
   AlertTap? _launchTap;
+  bool _vibrate = true;
 
   static const triggerId = 7001;
   static const approachId = 7002;
   static const nextId = 7003;
+  static const reminderId = 7004;
   static const _icon = 'ic_stat_jelajah';
 
   /// Channel settings are fixed once created on the phone (Android 8+): changing them needs a
-  /// new channel id.
-  static final _triggerChannel = AndroidNotificationChannel(
+  /// new channel id. So every channel that vibrates has a quiet twin, used while Settings →
+  /// "Getar" is off (PB07); the visitor sees both in the phone's notification settings.
+  static final _triggerChannel = _ChannelPair(
     'trigger',
     'Tiba di tempat menarik',
-    description: 'Saat Anda tiba di tempat menarik selama penjelajahan',
+    'Saat Anda tiba di tempat menarik selama penjelajahan',
     importance: Importance.high,
-    vibrationPattern: Int64List.fromList(const [0, 200, 150, 200]),
+    vibration: const [0, 200, 150, 200],
   );
 
-  static final _approachChannel = AndroidNotificationChannel(
+  static final _approachChannel = _ChannelPair(
     'approach',
     'Mendekati tempat menarik',
-    description: 'Getar dan bunyi singkat saat Anda mendekati tempat menarik',
-    vibrationPattern: Int64List.fromList(const [0, 300]),
+    'Bunyi singkat saat Anda mendekati tempat menarik',
+    importance: Importance.defaultImportance,
+    vibration: const [0, 300],
+  );
+
+  /// A03 closing time, F08 hydration (IMPLEMENTATION_PLAN §6.2 `reminder`).
+  static final _reminderChannel = _ChannelPair(
+    'reminder',
+    'Pengingat',
+    'Pengingat jam tutup kawasan dan waktu minum air',
+    importance: Importance.high,
+    vibration: const [0, 400, 200, 400],
   );
 
   static const _nextChannel = AndroidNotificationChannel(
@@ -108,9 +119,14 @@ class LocalAlertNotifier implements AlertNotifier {
     );
     final android = plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
-    await android?.createNotificationChannel(_triggerChannel);
-    await android?.createNotificationChannel(_approachChannel);
-    await android?.createNotificationChannel(_nextChannel);
+    for (final c in [
+      ..._triggerChannel.both,
+      ..._approachChannel.both,
+      ..._reminderChannel.both,
+      _nextChannel,
+    ]) {
+      await android?.createNotificationChannel(c);
+    }
 
     final launch = await plugin.getNotificationAppLaunchDetails();
     final response = launch?.notificationResponse;
@@ -122,8 +138,12 @@ class LocalAlertNotifier implements AlertNotifier {
     await plugin.cancel(id: triggerId);
     await plugin.cancel(id: approachId);
     await plugin.cancel(id: nextId);
+    await plugin.cancel(id: reminderId);
     return n;
   }
+
+  @override
+  void setVibration(bool on) => _vibrate = on;
 
   @override
   Future<bool> requestPermission() async {
@@ -139,26 +159,27 @@ class LocalAlertNotifier implements AlertNotifier {
 
   @override
   Future<void> showApproach(
-          {required String poiId,
-          required String title,
-          required String body}) =>
-      _show(
-        id: approachId,
-        poiId: poiId,
-        title: title,
-        body: body,
-        details: AndroidNotificationDetails(
-          _approachChannel.id,
-          _approachChannel.name,
-          channelDescription: _approachChannel.description,
-          icon: _icon,
-          vibrationPattern: _approachChannel.vibrationPattern,
-          category: AndroidNotificationCategory.navigation,
-          visibility: NotificationVisibility.public,
-          onlyAlertOnce: true,
-          timeoutAfter: const Duration(minutes: 2).inMilliseconds,
-        ),
-      );
+      {required String poiId, required String title, required String body}) {
+    final channel = _approachChannel.pick(vibrate: _vibrate);
+    return _show(
+      id: approachId,
+      payload: poiId,
+      title: title,
+      body: body,
+      details: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        icon: _icon,
+        enableVibration: channel.enableVibration,
+        vibrationPattern: channel.vibrationPattern,
+        category: AndroidNotificationCategory.navigation,
+        visibility: NotificationVisibility.public,
+        onlyAlertOnce: true,
+        timeoutAfter: const Duration(minutes: 2).inMilliseconds,
+      ),
+    );
+  }
 
   @override
   Future<void> cancelApproach() => _cancel(approachId);
@@ -169,34 +190,37 @@ class LocalAlertNotifier implements AlertNotifier {
     required String title,
     required String body,
     required String listenLabel,
-  }) =>
-      _show(
-        id: triggerId,
-        poiId: poiId,
-        title: title,
-        body: body,
-        details: AndroidNotificationDetails(
-          _triggerChannel.id,
-          _triggerChannel.name,
-          channelDescription: _triggerChannel.description,
-          icon: _icon,
-          importance: Importance.high,
-          priority: Priority.high,
-          vibrationPattern: _triggerChannel.vibrationPattern,
-          category: AndroidNotificationCategory.recommendation,
-          // Shown in full on the lock screen: a place name is not private.
-          visibility: NotificationVisibility.public,
-          // Buttons only work while the app runs; don't leave a dead card for hours.
-          timeoutAfter: const Duration(minutes: 10).inMilliseconds,
-          actions: [
-            // Runs in the background engine → forwarded; works without unlocking.
-            AndroidNotificationAction(AlertAction.listen.name, listenLabel),
-            AndroidNotificationAction(AlertAction.detail.name, 'Lihat detail',
-                showsUserInterface: true),
-            AndroidNotificationAction(AlertAction.later.name, 'Nanti'),
-          ],
-        ),
-      );
+  }) {
+    final channel = _triggerChannel.pick(vibrate: _vibrate);
+    return _show(
+      id: triggerId,
+      payload: poiId,
+      title: title,
+      body: body,
+      details: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        icon: _icon,
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: channel.enableVibration,
+        vibrationPattern: channel.vibrationPattern,
+        category: AndroidNotificationCategory.recommendation,
+        // Shown in full on the lock screen: a place name is not private.
+        visibility: NotificationVisibility.public,
+        // Buttons only work while the app runs; don't leave a dead card for hours.
+        timeoutAfter: const Duration(minutes: 10).inMilliseconds,
+        actions: [
+          // Runs in the background engine → forwarded; works without unlocking.
+          AndroidNotificationAction(AlertAction.listen.name, listenLabel),
+          AndroidNotificationAction(AlertAction.detail.name, 'Lihat detail',
+              showsUserInterface: true),
+          AndroidNotificationAction(AlertAction.later.name, 'Nanti'),
+        ],
+      ),
+    );
+  }
 
   @override
   Future<void> cancelTrigger() => _cancel(triggerId);
@@ -208,7 +232,7 @@ class LocalAlertNotifier implements AlertNotifier {
           required String body}) =>
       _show(
         id: nextId,
-        poiId: poiId,
+        payload: poiId,
         title: title,
         body: body,
         details: AndroidNotificationDetails(
@@ -229,6 +253,51 @@ class LocalAlertNotifier implements AlertNotifier {
 
   @override
   Future<void> cancelNext() => _cancel(nextId);
+
+  @override
+  Future<void> showReminder({
+    required ReminderKind kind,
+    required String destinationId,
+    required String title,
+    required String body,
+    required String navigateLabel,
+    required String laterLabel,
+    required bool snoozes,
+  }) {
+    final channel = _reminderChannel.pick(vibrate: _vibrate);
+    return _show(
+      id: reminderId,
+      payload: AlertTap.payloadOf(poiId: destinationId, reminder: kind),
+      title: title,
+      body: body,
+      details: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        icon: _icon,
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: channel.enableVibration,
+        vibrationPattern: channel.vibrationPattern,
+        category: AndroidNotificationCategory.reminder,
+        visibility: NotificationVisibility.public,
+        styleInformation: BigTextStyleInformation(body),
+        // Buttons only work while the app runs (as for the trigger card).
+        timeoutAfter: const Duration(minutes: 30).inMilliseconds,
+        actions: [
+          AndroidNotificationAction(AlertAction.navigate.name, navigateLabel,
+              showsUserInterface: true),
+          // Background engine → forwarded; works without unlocking.
+          AndroidNotificationAction(
+              (snoozes ? AlertAction.snooze : AlertAction.later).name,
+              laterLabel),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Future<void> cancelReminder() => _cancel(reminderId);
 
   @override
   Future<void> vibrate(List<int> pattern) async {
@@ -253,7 +322,7 @@ class LocalAlertNotifier implements AlertNotifier {
 
   Future<void> _show({
     required int id,
-    required String poiId,
+    required String payload,
     required String title,
     required String body,
     required AndroidNotificationDetails details,
@@ -263,7 +332,7 @@ class LocalAlertNotifier implements AlertNotifier {
         id: id,
         title: title,
         body: body,
-        payload: poiId,
+        payload: payload,
         notificationDetails: NotificationDetails(android: details),
       );
     } on Object catch (e) {
@@ -285,4 +354,32 @@ class LocalAlertNotifier implements AlertNotifier {
     _port.close();
     await _taps.close();
   }
+}
+
+/// A channel and its quiet twin (same name + "(tanpa getar)", no vibration).
+class _ChannelPair {
+  _ChannelPair(String id, String name, String description,
+      {required Importance importance, required List<int> vibration})
+      : loud = AndroidNotificationChannel(
+          id,
+          name,
+          description: description,
+          importance: importance,
+          vibrationPattern: Int64List.fromList(vibration),
+        ),
+        quiet = AndroidNotificationChannel(
+          '${id}_quiet',
+          '$name (tanpa getar)',
+          description: description,
+          importance: importance,
+          enableVibration: false,
+        );
+
+  final AndroidNotificationChannel loud;
+  final AndroidNotificationChannel quiet;
+
+  List<AndroidNotificationChannel> get both => [loud, quiet];
+
+  AndroidNotificationChannel pick({required bool vibrate}) =>
+      vibrate ? loud : quiet;
 }

@@ -20,9 +20,11 @@ abstract interface class Speaker {
 /// - a higher [VoicePriority] interrupts the current line, which is spoken again right after
 ///   (navigation first, then the prompt);
 /// - otherwise lines wait, by priority, then in arrival order;
-/// - a line still waiting after [staleAfter] is dropped (an old turn instruction misleads);
+/// - a line still waiting after [staleAfter] is dropped (an old turn instruction misleads),
+///   except narration, which is only late, never wrong;
 /// - the same text already waiting or speaking isn't added twice;
-/// - while speaking, [duck] asks the narration to turn down, or to pause for a safety line.
+/// - while speaking, [duck] asks the narration to turn down, or to pause for a safety line
+///   (not while the narration itself is being read aloud, T07);
 /// A failing engine drops the line and goes on; it never blocks the queue.
 class VoiceArbiter implements TtsService {
   VoiceArbiter(
@@ -101,6 +103,24 @@ class VoiceArbiter implements TtsService {
     }
   }
 
+  @override
+  Future<void> cancel(VoicePriority priority) async {
+    final drop = [
+      for (final l in _queue)
+        if (l.priority == priority) l
+    ];
+    _queue.removeWhere(drop.contains);
+    final cur = _current;
+    if (cur != null && cur.priority == priority) {
+      cur.cancelled = true;
+      await _stopSpeaker();
+    }
+    for (final l in drop) {
+      l.cancelled = true;
+      l.finish();
+    }
+  }
+
   void _insert(_Line line) {
     final i = _queue.indexWhere((q) =>
         q.priority.index > line.priority.index ||
@@ -122,7 +142,8 @@ class VoiceArbiter implements TtsService {
     try {
       while (_queue.isNotEmpty) {
         final line = _queue.removeAt(0);
-        if (_clock.now().difference(line.queuedAt) > staleAfter) {
+        if (line.priority != VoicePriority.narration &&
+            _clock.now().difference(line.queuedAt) > staleAfter) {
           line.finish();
           continue;
         }
@@ -139,11 +160,14 @@ class VoiceArbiter implements TtsService {
           _current = null; // already back in the queue behind the higher line
           continue;
         }
-        // Stays paused until the queue is empty: no pause/resume flapping.
-        _setDuck(line.priority == VoicePriority.safety ||
-                _duckState == VoiceDuck.pause
-            ? VoiceDuck.pause
-            : VoiceDuck.duck);
+        // Stays paused until the queue is empty: no pause/resume flapping. A narration
+        // sentence is the narration: nothing to turn down.
+        _setDuck(switch (line.priority) {
+          VoicePriority.narration => VoiceDuck.none,
+          VoicePriority.safety => VoiceDuck.pause,
+          _ when _duckState == VoiceDuck.pause => VoiceDuck.pause,
+          _ => VoiceDuck.duck,
+        });
         try {
           await _speaker.speak(line.text);
         } on Object catch (e) {

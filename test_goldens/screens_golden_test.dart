@@ -6,6 +6,7 @@
 // The harness drives the app from outside the widget tree.
 // ignore_for_file: use_build_context_synchronously
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,8 +16,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/core.dart';
 import 'package:jelajah_taman/core/providers.dart';
+import 'package:jelajah_taman/modules/content/content.dart';
 import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/shell/shell.dart';
+import 'package:jelajah_taman/modules/shell/src/data/device_permissions.dart';
 import 'package:jelajah_taman/modules/shell/src/state/guide_controller.dart';
 import 'package:jelajah_taman/modules/shell/src/state/search.dart';
 import 'package:jelajah_taman/modules/shell/src/ui/main_shell.dart';
@@ -94,6 +97,46 @@ Future<void> _precache(WidgetTester tester) async {
   });
 }
 
+/// The test content with placeholder key facts on P06 (no real facts exist yet).
+ContentRepository _withSampleFacts() {
+  Map<String, Object?> read(String name) =>
+      jsonDecode(File('assets/content/$name').readAsStringSync())
+          as Map<String, Object?>;
+  final pois = read('pois.json');
+  for (final p in pois['pois']! as List<Object?>) {
+    final m = p! as Map<String, Object?>;
+    if (m['id'] == 'P06') {
+      m['key_facts'] = [
+        'Contoh fakta pertama dari papan informasi resmi.',
+        'Contoh fakta kedua, satu atau dua kalimat pendek.',
+        'Contoh fakta ketiga untuk melihat tata letak daftar.',
+      ];
+    }
+  }
+  return ContentRepository.fromJson(
+    pois: pois,
+    facilities: read('facilities.json'),
+    routes: read('routes.json'),
+    park: read('park.json'),
+    graph: read('trail_graph.json'),
+  );
+}
+
+/// Settings → "Izin ponsel": notifications refused once, physical activity refused for good.
+class _SomePermissionsOff implements DevicePermissions {
+  @override
+  Future<PermissionState> notifications() async => PermissionState.denied;
+  @override
+  Future<PermissionState> requestNotifications() async =>
+      PermissionState.denied;
+  @override
+  Future<PermissionState> activity() async => PermissionState.blocked;
+  @override
+  Future<PermissionState> requestActivity() async => PermissionState.blocked;
+  @override
+  Future<void> openAppSettings() async {}
+}
+
 /// GPS stand-in for real-mode shots: a permission answer and no fixes.
 class _NoFixGps implements LocationService {
   _NoFixGps(this.granted);
@@ -133,6 +176,8 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
     bool returning = false,
     bool realMode = false,
     LocationService? gps,
+    List<Override> extra = const [],
+    ContentRepository? content,
     Size size = _phone}) {
   testWidgets(name, (tester) async {
     tester.view.physicalSize = size * _dpr;
@@ -142,7 +187,7 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
     final container = ProviderContainer(
       overrides: [
         ...buildOverrides(
-          content: loadTestContent(),
+          content: content ?? loadTestContent(),
           basemap: _basemap,
           clock: FakeClock(DateTime(2026, 11, 14, 10, 30)),
         ),
@@ -151,6 +196,7 @@ void _shot(String name, Future<void> Function(_Harness h) setup,
         keyValueStoreProvider.overrideWithValue(
             MemoryKeyValueStore({'app_mode': realMode ? 'real' : 'demo'})),
         if (gps != null) locationServiceProvider.overrideWithValue(gps),
+        ...extra,
       ],
     );
     addTearDown(container.dispose);
@@ -364,6 +410,14 @@ void main() {
     await h.onboarded();
     await h.go('/home', push: ['/poi/P06']);
   });
+  // Layout preview only: the real content has no key facts until the survey (PRD §8.2).
+  _shot('12b_detail_fakta', (h) async {
+    await h.onboarded();
+    await h.go('/home', push: ['/poi/P06']);
+    await h.tester.ensureVisible(find.text('Fakta kunci'));
+    await h.tester.drag(find.byType(CustomScrollView), const Offset(0, 140));
+    await h.frames();
+  }, content: _withSampleFacts());
   _shot('13_detail_ilustrasi', (h) async {
     await h.onboarded();
     await h.go('/home', push: ['/poi/P02']);
@@ -459,6 +513,16 @@ void main() {
     await h.onboarded();
     await h.go('/home', push: ['/settings']);
   });
+  _shot('25b_pengaturan_izin', (h) async {
+    await h.onboarded();
+    await h.go('/home', push: ['/settings']);
+    await h.frames();
+    await h.tester.ensureVisible(find.text('Izin ponsel'.toUpperCase()));
+    await h.tester.drag(find.byType(CustomScrollView), const Offset(0, 60));
+    await h.frames();
+  }, realMode: true, gps: _NoFixGps(LocationAccess.granted), extra: [
+    devicePermissionsProvider.overrideWithValue(_SomePermissionsOff())
+  ]);
   _shot('26_pengaturan_demo', (h) async {
     await h.onboarded();
     await h.go('/home', push: ['/settings']);

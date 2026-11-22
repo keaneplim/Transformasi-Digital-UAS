@@ -12,6 +12,7 @@ import 'package:jelajah_taman/modules/trigger/trigger.dart';
 import 'package:jelajah_taman/modules/wellness/wellness.dart';
 
 import '../data/activity_permissions.dart';
+import '../data/device_permissions.dart';
 
 /// The ONLY place where implementations are bound to interfaces (rule R8).
 ///
@@ -69,5 +70,7 @@ Future<List<Override>> bootstrap({AssetBundle? bundle}) async {
     bindGeolocatorLocationService(),
     bindQrCamera(),
     bindPedometerStepTracker(const ActivityRecognitionPermissions()),
+    devicePermissionsProvider
+        .overrideWithValue(const PermissionHandlerPermissions()),
   ];
 }

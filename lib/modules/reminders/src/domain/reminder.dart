@@ -32,6 +32,10 @@ abstract interface class Reminder {
   /// The reminder to show now, or null. [lastHandledAt] = when this reminder was last shown
   /// or dismissed in this session (null if never).
   ReminderDue? check(ReminderContext ctx, DateTime? lastHandledAt);
+
+  /// The reminder as it reads at [ReminderContext.now], whether or not it is due ([check]
+  /// decides *when*, this decides *what*). Used when a snoozed reminder comes back.
+  ReminderDue due(ReminderContext ctx);
 }
 
 /// A03: "Kawasan tutup pukul 16.00. Waktu jalan ke gerbang sekitar 25 menit." once the clock
@@ -56,6 +60,11 @@ class ClosingReminder implements Reminder {
     if (ctx.now.isBefore(_budget.closingReminderAt(ctx.position, ctx.now))) {
       return null;
     }
+    return due(ctx);
+  }
+
+  @override
+  ReminderDue due(ReminderContext ctx) {
     final close = _budget.closingTime(ctx.now);
     final walk = _budget.walkToGate(ctx.position);
     return ReminderDue(
@@ -69,7 +78,9 @@ class ClosingReminder implements Reminder {
 }
 
 /// F08(d): drink/rest reminder every [ReminderContext.hydrationEvery], counted from the
-/// session start or from the last time it was shown or dismissed (owner C).
+/// session start or from the last time it was shown or dismissed (owner C). The text says how
+/// long the visitor has really been walking ("Sudah 90 menit berjalan" the second time, 55
+/// after a 10-minute snooze), not the interval.
 class HydrationReminder implements Reminder {
   const HydrationReminder();
 
@@ -85,13 +96,25 @@ class HydrationReminder implements Reminder {
     if (every <= Duration.zero) return null;
     final since = lastHandledAt ?? ctx.sessionStart;
     if (ctx.now.difference(since) < every) return null;
-    return ReminderDue(
-      at: ctx.now,
-      kind: kind,
-      text: 'Sudah ${every.inMinutes} menit berjalan. Minum air dulu, yuk.',
-    );
+    return due(ctx);
   }
+
+  @override
+  ReminderDue due(ReminderContext ctx) => ReminderDue(
+        at: ctx.now,
+        kind: kind,
+        text: hydrationText(ctx.now.difference(ctx.sessionStart)),
+      );
 }
+
+/// UI13 / voice / notification copy for the hydration reminder (one wording everywhere).
+String hydrationText(Duration walked) {
+  final m = walked.inMinutes < 1 ? 1 : walked.inMinutes;
+  return 'Sudah $m menit berjalan. Minum air dulu, yuk.';
+}
+
+/// Snoozing a hydration reminder ("Ingatkan 10 menit lagi", UC-F08-3).
+const hydrationSnooze = Duration(minutes: 10);
 
 /// "16.00" (Indonesian time format).
 String clockText(DateTime t) =>

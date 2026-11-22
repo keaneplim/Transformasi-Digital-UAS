@@ -18,6 +18,11 @@ import 'places.dart';
 ///   is posted at that moment.
 /// - Approaching (E3, once per approach): a quiet notification with sound + one short buzz, in
 ///   both states; Android always lets notifications vibrate, a background app often not.
+/// - Reminders (A03 closing, F08 hydration; UI13): one buzz while the app is visible (the card
+///   is on screen); a high-priority notification with Navigasi / Nanti (closing) or Navigasi /
+///   Ingatkan 10 menit lagi (hydration) while it is hidden. Mirrors [GuideController.reminder]
+///   like the trigger card: answered in the app → notification gone, and the other way round.
+/// - Settings "Getar" also decides whether notifications vibrate (PB07).
 /// - Taps come back here from the main isolate or forwarded from the plugin's background
 ///   engine, and go into the guide like the card's own buttons.
 class TriggerAlerts {
@@ -29,6 +34,8 @@ class TriggerAlerts {
   }) {
     _wasActive = guide.sessionActive;
     _recs = guide.recommendationCount;
+    _vibration = guide.vibration;
+    notifier.setVibration(_vibration);
     guide.addListener(_onGuide);
     _subs
       ..add(bus.on<PoiApproached>().listen(_onApproached))
@@ -56,15 +63,26 @@ class TriggerAlerts {
 
   int _recs = 0;
   bool _nextPosted = false;
+  bool _vibration = true;
+
+  /// Last reminder seen on the guide, and whether its notification is posted.
+  GuideReminder? _reminder;
+  bool _reminderPosted = false;
 
   /// Two short pulses (IMPLEMENTATION_PLAN F04 "Vibration patterns").
   static const triggerVibration = [0, 200, 150, 200];
+
+  /// One long pulse: a reminder appeared on screen.
+  static const reminderVibration = [0, 400];
 
   /// The app is on screen (resumed, or only covered by the notification shade).
   void setVisible(bool visible) {
     if (visible == _visible) return;
     _visible = visible;
-    if (!visible) _postPending();
+    if (!visible) {
+      _postPending();
+      _postReminder();
+    }
     // Back on screen: the sheet itself shows the suggestion.
     if (visible) _cancelNext();
   }
@@ -87,12 +105,58 @@ class TriggerAlerts {
       _recs = guide.recommendationCount;
       _postNext();
     }
+    if (guide.reminder != _reminder) {
+      _reminder = guide.reminder;
+      _cancelReminder();
+      if (_reminder != null) {
+        if (!_visible) {
+          _postReminder();
+        } else if (guide.vibration) {
+          unawaited(notifier.vibrate(reminderVibration));
+        }
+      }
+    }
+    if (guide.vibration != _vibration) {
+      _vibration = guide.vibration;
+      notifier.setVibration(_vibration);
+    }
     if (_wasActive && !guide.sessionActive) {
       _cancelTrigger();
       _cancelNext();
+      _cancelReminder();
       unawaited(notifier.cancelApproach());
     }
     _wasActive = guide.sessionActive;
+  }
+
+  /// UI13 on the lock screen, same words as the card and the voice.
+  void _postReminder() {
+    final r = guide.reminder;
+    if (r == null || !guide.sessionActive || _reminderPosted) return;
+    _reminderPosted = true;
+    final to = guide.reminderDestination(r);
+    final closing = r == GuideReminder.closing;
+    unawaited(notifier.showReminder(
+      kind: closing ? ReminderKind.closing : ReminderKind.hydration,
+      destinationId: to.id,
+      title: closing
+          ? 'Kawasan tutup pukul ${clockLabel(guide.closingTime)}'
+          : guide.hydrationLine,
+      body: closing
+          ? 'Jalan kaki ke gerbang sekitar ${minutesLabel(guide.walkToGate)} '
+              'dari posisi Anda. Mulai kembali sekarang.'
+          : 'Tempat istirahat terdekat: ${to.name}, '
+              '${distanceLabel(guide.walkingM(to))}.',
+      navigateLabel: closing ? 'Navigasi ke gerbang' : 'Ke tempat istirahat',
+      laterLabel: closing ? 'Nanti' : 'Ingatkan 10 menit lagi',
+      snoozes: !closing,
+    ));
+  }
+
+  void _cancelReminder() {
+    if (!_reminderPosted) return;
+    _reminderPosted = false;
+    unawaited(notifier.cancelReminder());
   }
 
   void _postPending() {
@@ -156,6 +220,7 @@ class TriggerAlerts {
 
   /// A notification tap, already back in the main isolate.
   void handleTap(AlertTap tap) {
+    if (tap.reminder != null) return _handleReminderTap(tap);
     final p = guide.place(tap.poiId);
     if (p == null || !p.isPoi) return;
     // A button removes its notification itself (cancelNotification).
@@ -175,6 +240,28 @@ class TriggerAlerts {
         if (isPending) guide.resolveTrigger(engaged: false);
       case AlertAction.show:
         break; // the app opens on the trigger card, which is still pending
+      case AlertAction.navigate || AlertAction.snooze:
+        break; // reminder buttons only
+    }
+  }
+
+  void _handleReminderTap(AlertTap tap) {
+    // A button removes its notification itself (cancelNotification).
+    _reminderPosted = false;
+    final r = tap.reminder == ReminderKind.hydration
+        ? GuideReminder.hydration
+        : GuideReminder.closing;
+    final open = guide.reminder == r;
+    switch (tap.action) {
+      case AlertAction.navigate:
+        // Also for a reminder already answered: the visitor asked for the way.
+        if (guide.navigateForReminder(r)) navigate('/navigate');
+      case AlertAction.snooze:
+        if (open) guide.snoozeReminder();
+      case AlertAction.later:
+        if (open) guide.dismissReminder();
+      case AlertAction.show || AlertAction.listen || AlertAction.detail:
+        break; // the app opens on the reminder card, which is still there
     }
   }
 
