@@ -55,6 +55,7 @@ const pluginOwner = <String, String>{
   'flutter_compass': 'location',
   'just_audio': 'audio',
   'audio_service': 'audio',
+  'audio_session': 'audio',
   'flutter_tts': 'audio',
   'flutter_local_notifications': 'notify',
   'vibration': 'notify',

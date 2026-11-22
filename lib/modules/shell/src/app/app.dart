@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/providers.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
+import 'package:jelajah_taman/modules/audio/audio.dart';
 import 'package:jelajah_taman/modules/notify/notify.dart';
 
 import '../state/guide_controller.dart';
 import '../state/trigger_alerts.dart';
+import '../state/voice_alerts.dart';
 import '../ui/overlays.dart';
 import 'app_router.dart';
 
@@ -23,6 +25,7 @@ class JelajahTamanApp extends ConsumerStatefulWidget {
 class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
   late final GoRouter _router = buildAppRouter();
   TriggerAlerts? _alerts;
+  VoiceAlerts? _voice;
   AppLifecycleListener? _lifecycle;
 
   /// A route asked for by a notification tap while the splash was still showing.
@@ -31,6 +34,15 @@ class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
   @override
   void initState() {
     super.initState();
+    // F04: only where a voice is bound (the app; tests and goldens stay silent).
+    final tts = ref.read(ttsServiceProvider);
+    if (tts != null) {
+      _voice = VoiceAlerts(
+        guide: ref.read(guideProvider),
+        tts: tts,
+        bus: ref.read(eventBusProvider),
+      );
+    }
     // PB07: only where the notification plugin is bound (the app; not tests or web preview).
     final notifier = ref.read(alertNotifierProvider);
     if (notifier != null) {
@@ -72,6 +84,7 @@ class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
     _router.routerDelegate.removeListener(_flushDeferred);
     _lifecycle?.dispose();
     _alerts?.dispose();
+    _voice?.dispose();
     _router.dispose();
     super.dispose();
   }

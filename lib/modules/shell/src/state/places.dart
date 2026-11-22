@@ -151,6 +151,11 @@ String minutesLabel(Duration d) {
   return r == 0 ? '$h j' : '$h j $r mnt';
 }
 
+/// UC-F07-2 "Kembali ke gerbang — ±25 mnt"; right next to the gate there is nothing to time.
+String gateWalkLabel(Duration d) => d.inSeconds < 60
+    ? 'Gerbang sudah dekat'
+    : '±${minutesLabel(d)} jalan ke gerbang';
+
 String clockLabel(DateTime t) =>
     '${t.hour.toString().padLeft(2, '0')}.${t.minute.toString().padLeft(2, '0')}';
 

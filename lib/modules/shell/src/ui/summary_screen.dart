@@ -96,7 +96,8 @@ class SummaryScreen extends ConsumerWidget {
                         icon: Icons.directions_walk_rounded,
                         color: JT.forest,
                         value: demo.steps.toDouble(),
-                        format: (v) => thousands(v.round()),
+                        format: (v) =>
+                            demo.stepsKnown ? thousands(v.round()) : '–',
                         label: 'langkah',
                       ),
                       _Stat(
@@ -118,12 +119,20 @@ class SummaryScreen extends ConsumerWidget {
                         icon: Icons.local_fire_department_rounded,
                         color: JT.terracotta,
                         value: demo.kcal,
-                        format: (v) => '${v.round()} kkal',
-                        label: demo.weightKg == null
-                            ? 'perkiraan energi'
-                            : 'energi',
+                        format: (v) => '±${v.round()} kkal',
+                        label: 'estimasi energi',
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Entrance(
+                  delay: JTMotion.stagger,
+                  child: _EffortLine(
+                    total: demo.sessionDuration,
+                    active: demo.activeTime,
+                    climb: demo.climbTime,
+                    weightGiven: demo.weightKg != null,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -266,5 +275,121 @@ class _Stat extends StatelessWidget {
             Text(label, style: JTText.caption),
           ],
         ),
+      );
+}
+
+/// Under the stats: how much of the session was really walking (UC-F08-2 "active time"),
+/// how much of that uphill, and what the kcal estimate is based on (D11).
+class _EffortLine extends StatelessWidget {
+  const _EffortLine(
+      {required this.total,
+      required this.active,
+      required this.climb,
+      required this.weightGiven});
+
+  final Duration total;
+  final Duration active;
+  final Duration climb;
+  final bool weightGiven;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = total.inSeconds <= 0 ? 1 : total.inSeconds;
+    final activeShare = (active.inSeconds / t).clamp(0.0, 1.0);
+    final climbShare = (climb.inSeconds / t).clamp(0.0, activeShare);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: JT.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: JT.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, size: 18, color: JT.terracotta),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Aktif berjalan ${minutesLabel(active)}',
+                    style: JTText.label),
+              ),
+              Text('dari ${minutesLabel(total)}', style: JTText.caption),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Semantics(
+            label: 'Aktif berjalan ${minutesLabel(active)} dari '
+                '${minutesLabel(total)}, menanjak ${minutesLabel(climb)}',
+            excludeSemantics: true,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: SizedBox(
+                height: 8,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const ColoredBox(color: JT.creamDeep),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: activeShare,
+                      child: const ColoredBox(color: JT.leaf),
+                    ),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: climbShare,
+                      child: const ColoredBox(color: JT.terracotta),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 14,
+            runSpacing: 4,
+            children: [
+              _Legend(color: JT.leaf, label: 'Datar & landai'),
+              _Legend(
+                  color: JT.terracotta,
+                  label: climb.inSeconds > 0
+                      ? 'Menanjak ${minutesLabel(climb)}'
+                      : 'Menanjak'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            weightGiven
+                ? 'Energi diperkirakan dari waktu aktif, tanjakan, dan berat badan Anda.'
+                : 'Energi diperkirakan dari waktu aktif dan tanjakan, dengan berat 60 kg. '
+                    'Isi berat badan di Pengaturan agar lebih tepat.',
+            style: JTText.caption,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(label, style: JTText.caption),
+        ],
       );
 }

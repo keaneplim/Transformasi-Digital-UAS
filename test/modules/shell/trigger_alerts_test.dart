@@ -21,6 +21,8 @@ class FakeNotifier implements AlertNotifier {
   AlertTap? launchTap;
 
   void tap(String poi, AlertAction a) => _taps.add(AlertTap(poi, a));
+  void tapReminder(ReminderKind k, String to, AlertAction a) =>
+      _taps.add(AlertTap(to, a, reminder: k));
 
   @override
   Future<bool> requestPermission() async => true;
@@ -47,6 +49,56 @@ class FakeNotifier implements AlertNotifier {
 
   @override
   Future<void> cancelTrigger() async => calls.add('cancelTrigger');
+  @override
+  Future<void> showNext(
+      {required String poiId,
+      required String title,
+      required String body}) async {
+    calls.add('next:$poiId');
+    shown['next'] = (title: title, body: body);
+  }
+
+  @override
+  Future<void> cancelNext() async => calls.add('cancelNext');
+
+  final reminders = <({
+    ReminderKind kind,
+    String to,
+    String title,
+    String body,
+    String navigateLabel,
+    String laterLabel,
+    bool snoozes
+  })>[];
+
+  @override
+  Future<void> showReminder({
+    required ReminderKind kind,
+    required String destinationId,
+    required String title,
+    required String body,
+    required String navigateLabel,
+    required String laterLabel,
+    required bool snoozes,
+  }) async {
+    calls.add('reminder:${kind.name}:$destinationId');
+    reminders.add((
+      kind: kind,
+      to: destinationId,
+      title: title,
+      body: body,
+      navigateLabel: navigateLabel,
+      laterLabel: laterLabel,
+      snoozes: snoozes
+    ));
+  }
+
+  @override
+  Future<void> cancelReminder() async => calls.add('cancelReminder');
+
+  bool? vibrationOn;
+  @override
+  void setVibration(bool on) => vibrationOn = on;
   @override
   Future<void> vibrate(List<int> pattern) async =>
       calls.add('vibrate:${pattern.join(",")}');
@@ -262,5 +314,165 @@ void main() {
     arriveAt('P05');
     n.tap('P05', AlertAction.later);
     expect(g.stateOf(poi('P05')), PoiState.triggered);
+  });
+
+  group('F07 next suggestion with the screen off', () {
+    void visitAndFinish(String id) {
+      arriveAt(id);
+      g
+        ..resolveTrigger(engaged: true)
+        ..detailClosed(poi(id));
+    }
+
+    test('screen off: one silent "Berikutnya" card; back on screen it goes',
+        () {
+      g.startSession();
+      alerts.setVisible(false);
+      visitAndFinish('P06');
+      final main = g.lastRecommendation!.rec.items.first.place;
+      expect(n.calls, contains('next:${main.id}'));
+      expect(n.shown['next']!.title, 'Berikutnya: ${main.name}');
+      g.detailClosed(poi('P06'));
+      expect(n.count('next:'), 1, reason: 'once per visited POI');
+      alerts.setVisible(true);
+      expect(n.calls.last, 'cancelNext');
+    });
+
+    test('app visible: no notification (the sheet shows it)', () {
+      g.startSession();
+      visitAndFinish('P06');
+      expect(g.recommendationCount, 1);
+      expect(n.count('next:'), 0);
+    });
+
+    test('no time left: the card says go back to the gate', () {
+      g
+        ..startSession()
+        ..setDemoTime(15, 30);
+      alerts.setVisible(false);
+      visitAndFinish('P06');
+      expect(n.calls, contains('next:${g.content.gate.id}'));
+      expect(n.shown['next']!.title, 'Waktunya kembali ke gerbang');
+      expect(n.shown['next']!.body, '${gateWalkLabel(g.walkToGate)}.');
+    });
+  });
+
+  group('reminders (A03, F08 d)', () {
+    void closingDue() {
+      // At the gate the walk back is ~0: due at 16.00 − 15 min.
+      g
+        ..update(() => g.hydrationMin = 0)
+        ..startSession()
+        ..setDemoTime(15, 50)
+        ..heartbeat();
+      expect(g.reminder, GuideReminder.closing);
+    }
+
+    void hydrationDue() {
+      g
+        ..update(() => g.hydrationMin = 30)
+        ..startSession();
+      clock.advance(const Duration(minutes: 31));
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.hydration);
+    }
+
+    test('app visible: one buzz, no notification (the card is on screen)', () {
+      closingDue();
+      expect(n.calls,
+          contains('vibrate:${TriggerAlerts.reminderVibration.join(",")}'));
+      expect(n.count('reminder:'), 0);
+    });
+
+    test(
+        'screen off: closing notification with the card\'s words + Navigasi / Nanti',
+        () {
+      alerts.setVisible(false);
+      closingDue();
+      final r = n.reminders.single;
+      expect(r.kind, ReminderKind.closing);
+      expect(r.to, 'P01');
+      expect(r.title, 'Kawasan tutup pukul 16.00');
+      expect(r.body, contains(minutesLabel(g.walkToGate)));
+      expect((r.navigateLabel, r.laterLabel, r.snoozes),
+          ('Navigasi ke gerbang', 'Nanti', false));
+    });
+
+    test('a card still open when the phone is locked is posted then', () {
+      closingDue();
+      expect(n.count('reminder:'), 0);
+      alerts.setVisible(false);
+      expect(n.count('reminder:closing:P01'), 1);
+      alerts
+        ..setVisible(true)
+        ..setVisible(false);
+      expect(n.count('reminder:'), 1, reason: 'posted once');
+    });
+
+    test('answered in the app → the notification goes', () {
+      alerts.setVisible(false);
+      closingDue();
+      g.dismissReminder();
+      expect(n.calls.last, 'cancelReminder');
+    });
+
+    test('hydration: nearest rest point + "Ingatkan 10 menit lagi" snoozes',
+        () {
+      alerts.setVisible(false);
+      hydrationDue();
+      final r = n.reminders.single;
+      expect(r.kind, ReminderKind.hydration);
+      expect(r.to, g.nearestRest.id);
+      expect(r.title, 'Sudah 31 menit berjalan. Minum air dulu, yuk.');
+      expect(r.body,
+          startsWith('Tempat istirahat terdekat: ${g.nearestRest.name}'));
+      expect(r.snoozes, isTrue);
+      n.tapReminder(ReminderKind.hydration, r.to, AlertAction.snooze);
+      expect(g.reminder, isNull);
+      clock.advance(const Duration(minutes: 9));
+      g.heartbeat();
+      expect(g.reminder, isNull);
+      clock.advance(const Duration(minutes: 1));
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.hydration, reason: '10 min, not 30');
+      expect(n.reminders.last.title,
+          'Sudah 41 menit berjalan. Minum air dulu, yuk.');
+    });
+
+    test('Navigasi on the notification: handled, navigating, app opens there',
+        () {
+      alerts.setVisible(false);
+      closingDue();
+      n.tapReminder(ReminderKind.closing, 'P01', AlertAction.navigate);
+      expect(g.reminder, isNull);
+      expect(g.navigation?.to.id, 'P01');
+      expect(routes, ['/navigate']);
+    });
+
+    test('Nanti on the notification dismisses; a body tap leaves the card', () {
+      alerts.setVisible(false);
+      closingDue();
+      n.tapReminder(ReminderKind.closing, 'P01', AlertAction.show);
+      expect(g.reminder, GuideReminder.closing);
+      n.tapReminder(ReminderKind.closing, 'P01', AlertAction.later);
+      expect(g.reminder, isNull);
+      expect(routes, isEmpty);
+    });
+
+    test('session ended: the reminder notification goes', () {
+      alerts.setVisible(false);
+      closingDue();
+      g.endSession();
+      expect(n.calls, contains('cancelReminder'));
+    });
+  });
+
+  test('Settings "Getar" also switches the notification vibration (PB07)', () {
+    expect(n.vibrationOn, isTrue);
+    g.update(() => g.vibration = false);
+    expect(n.vibrationOn, isFalse);
+    g.startSession();
+    arriveAt('P06');
+    expect(n.count('vibrate:'), 0, reason: 'no in-app buzz either');
   });
 }

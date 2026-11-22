@@ -79,32 +79,32 @@ Critical paths: (1) T01 → T08 → T09 → T11/T15 → T22 (the core demo); (2)
 | T03 | Minimal permission request (location, notifications) so testing can start. First slice of the onboarding flow; T18 builds on it. | C | — | 0 | ☐ |
 | T04 | Explore map UI03: offline basemap (ADR-008), POI/facility markers, geofence rings, user dot | B | T01 (or teleport) | 0 | ◐ |
 | T05 | Offline map: generated vector basemap `assets/map/basemap.json` + `hillshade.png` from OSM + elevation (`tools/osm_to_basemap.py`), replacing MBTiles (ADR-008) | B | — | 0 | ☑ |
-| T06 | POI Detail UI06: gallery, text, facts, player widget; publishes `PoiEngaged`/`PoiFinished` | C | content (done) | 0 | ☐ |
-| T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C | — | 0 | ☐ |
+| T06 | POI Detail UI06: gallery, text, facts, player widget; publishes `PoiEngaged`/`PoiFinished` | C | content (done) | 0 | ◐ 22 Nov: key facts (`key_facts`) rendered as "Fakta kunci" (numbered, only when the POI has them; all 11 are empty until official sources fill them); rest of UI06 on the guide (ui-revamp) |
+| T07 | `AudioService`: narration (file or TTS fallback), `TtsService` with Indonesian voice check | C → B (20 Nov) | — | 0 | ◐ 20 Nov: `TtsService` = `VoiceArbiter` over flutter_tts (id-ID, offline-voice check, hint in Settings); narration stays in the guide; 22 Nov: POI text read aloud (`NarrationScript`, priority `narration`) when the file is missing or fails |
 | T08 | `TriggerEngine` (pure): state machine, debounce, hysteresis, cooldown, rules D01–D05, plus the 9 unit tests. Start right after day 1 (A is free once T01–T02 are done). | A | T01 | 0–1 | ☑ |
 | T09 | Trigger controller: fixes → engine → events; approaching banner UI04 | A | T08 | 1 | ◐ |
 | T10 | QR scanner UI12 + payload parsing + printed QR boards (P05/P06) | A | T08 | 1 | ◐ 20 Nov (Keane): real camera (`mobile_scanner`), payload parsing, unknown/foreign message, permission fallback, scan → POI Detail as a QR visit; open: printed boards, phone test TC-04 (offline, 2 phones), deep link UC-A02-4 |
-| T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ◐ built 14 Nov (PB07); phone check pending |
+| T11 | `notify` module: channels, trigger notification with Dengarkan/Lihat/Nanti actions, vibration | C | — | 1 | ◐ built 14 Nov (PB07); 22 Nov: `reminder` channel (UI13 with Navigasi / Nanti / snooze), quiet twin of every vibrating channel for Settings "Getar"; phone check pending |
 | T12 | **Spike (half a day, A+C, by Tue 10 Nov):** can "Dengarkan" start audio from the lock screen without opening the app? | A+C | T07, T11 | 1 | ◐ decided: option (b), see F04; phone check pending |
 | T13 | `tools/gpx_to_graph.py` → real `trail_graph.json` from survey GPX (script + tests done; run on the survey GPX pending) | B | survey | 0–1 | ◐ |
 | T14 | Real `TrailRouter`: snapping, Dijkstra on time cost, ETA with slope (D09) + tests | B | T13 (dummy graph is fine to start) | 1 | ☑ |
-| T15 | Lock-screen/earphone media controls, Auto-Play, voice prompt on trigger, `VoiceArbiter` | C | T07, T11 | 1–2 | ☐ |
+| T15 | Lock-screen/earphone media controls, Auto-Play, voice prompt on trigger, `VoiceArbiter` | C → B (20 Nov) | T07, T11 | 1–2 | ◐ 20 Nov: `VoiceArbiter` (priority, interrupt + resume, 30 s stale drop, duck/pause), trigger prompt, Auto-Play after the prompt (≤ 3 s), spoken navigation and reminders, tests; 21 Nov: media session (audio_service: lock screen, earphones, interruptions); open: phone check (TC-06) |
 | T16 | Session module: start/end/restore, `SessionLog` (triggered vs visited), `visit_events` table. **A's first task in wave 2:** C's T18 needs `SessionController.start()`. | A | T08 | 2 | ◐ 14 Nov (PB06): `SessionRecord`/`SessionStore` in `session` (key-value store, not SQLite), visit log, restore after the app is killed; lifecycle still lives in `GuideController` (shell) |
-| T17 | GPS-weak banner (60 s) + manual POI pick (builds the POI list widget that T20 reuses) | A | T09 | 2 | ☐ |
+| T17 | GPS-weak banner (60 s) + manual POI pick (builds the POI list widget that T20 reuses) | A | T09 | 2 | ☑ (21 Nov, phone check open) |
 | T18 | Onboarding UI01 (permission flow, battery exemption, TTS check) + Home UI02 (interests, route chooser, *Mulai Jelajah*). Until T16 lands, wire the button to a stub `SessionController`. | C | T03; T16 (stub until then) | 2 | ☐ |
 | T19 | Navigation UI10/UI11: route line, remaining distance/ETA, arrival (never triggers, D06), reroute | B | T14, T04 | 2 | ☐ |
 | T20 | Search UI09 + facility finder (A04): matching (D12), filter, sort by walking distance (via B's `TrailRouter`) | A | T17 (list widget), T14 (stub works) | 2 | ☐ |
 | T21 | Explore screen composition: map + banners + bottom sheet (built in the `shell` module) | B | T04, T09 | 2 | ☐ |
 | T22 | W12 end-to-end run on replay + demo video | all | T01–T21 | 2 | ☐ |
-| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ◐ 20 Nov: `TimeBudget`, `ReminderScheduler` + `ClosingReminder`/`HydrationReminder`, once-per-session across restarts, one fit rule for reminder, F07 filter and route chooser, tests; open: system notification when the app is hidden (notify, C) and voice (needs TTS, T07/T15) |
-| T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ☐ |
+| T23 | `TimeBudget` (in `routing`) + `ReminderScheduler` + closing reminder (A03). Do this first in wave 3: T24 and T28 use it. | B | T14, T16 | 3 | ◐ 20 Nov: `TimeBudget`, `ReminderScheduler` + `ClosingReminder`/`HydrationReminder`, once-per-session across restarts, one fit rule for reminder, F07 filter and route chooser, tests; voice added with T15 (closing = safety line); 22 Nov: system notification when the app is hidden (C) |
+| T24 | Recommendation F07 (filter via `TimeBudget` + `ScoreFactor`s + UI08) | A | T14, T16, T23 (`TimeBudget`) | 3 | ◐ 21 Nov (done by B): `recommendation` module to spec, automatic UI08 after E7 (once per visited POI), Explore button, log, voice + silent notification, tests; open: TC-09/TC-10 runs on replay, phone check of the notification |
 | T25 | Battery-aware tracking (A06) | A | T01, T27 | 3 | ☐ |
 | T26 | Voice turn instructions + ETA calibration against survey times | B | T19, survey | 3 | ☐ |
-| T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C | T01, T16 | 3 | ☐ |
-| T28 | Hydration reminder (a `Reminder` strategy plugged into T23's scheduler) | C | T23 | 3 | ☐ |
+| T27 | Wellness: pedometer, GPS distance, kcal, stats strip | C → B (21 Nov) | T01, T16 | 3 | ◐ 21 Nov: step counter (sensor, permission, reboot/restore, "–" without sensor), tests; 22 Nov (C): `ActivityMeter` = distance filter (≤ 20 m, > max(3 m, acc/2)), active time, kcal per D11 (MET 3,5 / 6,0 on > 8 % from graph heights), ask again from Settings; open: TC-12 on phones |
+| T28 | Hydration reminder (a `Reminder` strategy plugged into T23's scheduler) | C | T23 | 3 | ◐ 22 Nov: real 10-min snooze (#33), text with the walked minutes, nearest rest point on the card + *Navigasi*, timer restarts at a rest point, system notification when hidden; open: device check with a short interval (AC3) |
 | T29 | Session summary UI14, composed in `shell` from `session` + `wellness` data, with the walked route on the map | B | T16, T27 | 3 | ☐ |
 | T30 | Accessibility pass (A07), contrast fix #19 | C | screens | 3 | ☐ |
-| T31 | Settings UI15 (Auto-Play, voice navigation, hydration interval, text size, body weight, version, hidden debug menu) | C | T15, T28 | 3 | ☐ |
+| T31 | Settings UI15 (Auto-Play, voice navigation, hydration interval, text size, body weight, version, hidden debug menu) | C | T15, T28 | 3 | ◐ 22 Nov: every preference + onboarding saved on the phone (#32), "Izin ponsel" group (status, allow again, open phone settings); open: version/content info, debug menu |
 
 **Real map and GPS (2026-11-12, branch `real-map`).** `DemoController` became `GuideController` in `lib/modules/shell/src/state/` (ADR-009): real mode (default) takes fixes from `LocationService` (T01, geolocator + compass); demo mode keeps the simulated walk; both feed the pure `GeofenceEngine` in `trigger` (T08, all F02 rules and tests 1–9). Navigation in real mode snaps to the route, reroutes after 2 readings > 30 m off and arrives at ≤ 15 m. The map runs on a bundled vector basemap (T05, ADR-008, replaces the MBTiles plan in F01/A01 below). Content coordinates are real (`coord_source` SURVEY_EXIF / OSM / GMAPS, a few ESTIMATE). T01/T04/T09 stay ◐ until checked on an Android phone in the park; SQLite persistence (T16) and the QR scanner (T10) are not done.
 
@@ -774,6 +774,29 @@ Only one voice at a time. Priority: **safety (closing reminder) > navigation > t
 #### Done when
 TC-06 passes on replay with the screen locked on both phones; spike decision recorded; arbiter unit tests (priority, duck, queue drop) pass.
 
+#### As built (T07/T15 voice, 2026-11-20, owner moved from C to B)
+- `audio`: `VoiceArbiter implements TtsService` over a `Speaker` port; the flutter_tts adapter (`FlutterTtsSpeaker`, `id-ID`) is in `src/data/`. Rules: one voice at a time; a higher priority interrupts and the interrupted line is said right after; otherwise by priority, then FIFO; a line waiting > 30 s is dropped; the same text isn't queued twice; a failing engine drops the line. `duck` stream: `duck` (narration to 20 %) for normal lines, `pause` for a safety line, held until the queue is empty. Completion comes from the plugin's complete/cancel/error callbacks plus a timeout per line, because with `awaitSpeakCompletion` the Android plugin (4.2.5) never completes an utterance cut off by `stop()`.
+- No Indonesian voice at all → silent (never another language's voice). id-ID known but not downloaded → still speaks (works online) and Settings shows how to install the offline voice. Pre-recorded fallback prompts (`assets/audio/prompts/`) not built: prompts are dynamic; build them only if the phone check finds no id-ID voice (R3).
+- `shell/state/voice_alerts.dart` owns the spoken copy (mirrors `TriggerAlerts`): trigger prompt "Anda tiba di {nama}. Ingin mendengar ceritanya?" (Auto-Play: "Anda tiba di {nama}."); navigation start "Menuju {tujuan}, sekitar N menit.", each turn ≤ 20 m before it (once; turns already passed are skipped), "Rute diperbarui.", arrival "Anda tiba di {tujuan}." (not when that POI's own prompt is already showing); closing reminder text as a safety line, hydration as a reminder; "Selesai. Berikutnya: {rekomendasi}." after a narration plays to the end. Navigation lines follow the "Arahan suara" setting; the prompt and reminders always speak. Silent outside a session; the queue is cleared when the session ends.
+- Auto-Play now starts the narration when the short prompt has been said, or at 3 s (AC2), and only if the card is still open (not after *Nanti*). Without a voice (tests, web preview) it starts at once as before.
+- The narration pauses for a safety line and resumes after it, unless the visitor paused it meanwhile.
+- Not built in PR 1: lock-screen/earphone media controls (built 21 Nov, below).
+
+#### As built (T07 text read aloud, 2026-11-22, C)
+- When a POI has no recording, or the file fails to open/play this run, the guide reads `Poi.displayText` aloud. `NarrationScript` (`audio`, pure) splits it into sentences (placeholders `[ISI]`/`[VERIFIKASI]` are never read) and estimates each start at 2,4 words/s, so the player shows a length, moves, and seeks to a sentence.
+- Each sentence is one `VoiceArbiter` line at the new lowest priority `narration`: a trigger prompt, a turn or a reminder cuts in and the sentence is read again after; a waiting narration sentence is never dropped as stale; it doesn't duck itself. `TtsService.cancel(priority)` stops only the narration (pause, seek, switch POI, stop). Reaching the end = E7 `narrationDone`, like a file.
+- Without an Indonesian voice (`VoiceSupport.missing`) the progress stays simulated rather than racing through silent lines. The audio card says "Dibacakan suara pemandu" while the voice reads, "Narasi audio" for a recording (`GuideController.narrationSource`). No lock-screen controls for the read-aloud path (the media session is for files).
+- Tests: arbiter (priority, stale exemption, `cancel`), `NarrationScript`, guide (sentence order, pause/resume from the sentence, end = done, no voice = simulated).
+
+#### As built (T15 media session, 2026-11-21, B)
+- `audio`: `MediaSessionNarrationPlayer` (`src/data/`) replaces the plain just_audio adapter: just_audio published through `audio_service` 0.18.19 as an Android media session (lock screen + media notification with ⏪ 10 s / ⏯ / ⏩ 10 s, earphone and Bluetooth buttons). `MainActivity` extends `AudioServiceActivity`; manifest has the `AudioService` (`mediaPlayback`) service, `MediaButtonReceiver`, `WAKE_LOCK`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`. The session starts at app launch so earphone buttons reach the app.
+- Buttons outside the app don't touch the player: they become `MediaCommand`s on `NarrationPlayer.commands`, and `GuideController.onMediaCommand` answers them with the same methods as the in-app buttons (one source of truth). Play with a trigger card waiting = *Dengarkan* (UC-F04-1 step 3, visited/listened); otherwise resume. Stop = end the narration.
+- Interruptions: just_audio's own handling is off; `audio_session` (speech configuration) events go through the pure `InterruptionPolicy`: call/transient loss pauses and resumes after (`MediaCommand.resume`: only the interrupted narration, never a new trigger); earphones unplugged or another app taking the audio pauses without resume; ducking is left to Android; the visitor pressing play/pause during a call cancels the auto-resume. Our own TTS doesn't request audio focus (flutter_tts `focus: false`), so it never counts as an interruption.
+- Foreground service: `androidStopForegroundOnPause: false`, because Android 12+ can refuse to restart a foreground service from the background (lock screen). The service goes idle (notification gone) only on `stop()` (session end / Stop); switching POI uses `open()` on the same session, and a narration that ended shows as paused. Open risk for the phone check: the very first narration started by Auto-Play while the phone is locked (first foreground-service start from the background; the running location service may or may not exempt it).
+- If `AudioService.init` fails, narration still plays, without lock-screen controls (logged).
+- Side effect to check on a phone: with `AudioServiceActivity` the Flutter engine is cached and outlives the activity, so backing out and reopening continues the running app instead of a cold start (notification cold-start path PB07).
+- Tests: `InterruptionPolicy` rules; guide answers lock-screen pause/play, ⏪/⏩, stop, earphone play on a waiting trigger, resume after a call with a new trigger waiting; switching POI never calls `stop()`; the lock screen gets the POI name. Real lock-screen behaviour is a phone check (DEVICE_CHECK §1.6).
+
 ---
 
 ### A05 — Data-Driven Content
@@ -822,13 +845,13 @@ candidates = pois where
      and router.walkingTime(pos, poi) + poi.visit_minutes + router.walkingTimeBetween(poi, gate) ≤ budget   // = timeBudget.fits(...) from T23
 if candidates empty → BackToGate(router.walkingTime(pos, gate))
 for c in candidates:
-     dist       = 1 − walkingDistance(c) / max(walkingDistance over candidates)      // 0..1, nearest = 1
+     dist       = 1 − walkingDistance(c) / max(walkingDistance over candidates)      // 0..1, farthest = 0
      interest   = 1 if c.category ∈ user.interests else 0
      route      = 1 if activeRoute != null and c.id ∈ activeRoute.poi_sequence else 0
      difficulty = 1 if c.difficulty ≤ activeRoute.difficulty (or 1 if no route) else 0
      score = 0.50·dist + 0.25·interest + 0.15·route + 0.10·difficulty            // D10, weights in park.json
 sort by score desc, tie → shorter walk
-return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "Terdekat" if dist == 1)
+return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "Terdekat" for the shortest walk)
 ```
 
 #### Acceptance criteria ↔ tests
@@ -844,6 +867,14 @@ return main = top1, alternatives = top2..3, reasons = factors with value 1 (+ "T
 
 #### Done when
 Unit tests for filter, scoring, back-to-gate, interest re-rank pass; TC-09/TC-10 pass on replay + fake clock.
+
+#### As built (T24 recommendation, 2026-11-21, B for A)
+- `recommendation` (was empty): pure `Recommender` with the four `ScoreFactor`s (`DistanceFactor`, `InterestFactor`, `RouteFactor` = in the active route's `poi_sequence`, `DifficultyFactor` = POI difficulty ≤ route difficulty), weights from `park.json` `rec_weights` (D10 defaults for a missing key), tie → shorter walk (scores equal within 1e-9). Candidates: not visited (D05), not the gate, P11 only on Trekking (same rule as its geofence), `TimeBudget.fits` (T23). Distance is normalised over the **candidates**. Result: up to 3 items with `RecReason`s, or back to the gate with "all visited" vs "no time".
+- **Spec fix:** the algorithm said `dist … nearest = 1` and "Terdekat if dist == 1", but `1 − d/max` gives the nearest less than 1 (only the farthest is exact: 0), so "Terdekat" would never show. Kept the formula (min-max scaling would turn a 10 m difference into half the score), "Terdekat" = the shortest walk among the candidates.
+- Guide: E7 from all three sources (engine `leftArea`, narration played to the end, detail closed via `PopScope`) → the first finish of a **visited** POI (D05) computes the recommendation, logs it in the session record (`recommendations`: time, POI, reason, E7 time, ids → TC-09 evidence and AC2) and sets a cue; the overlay host opens UI08 once no trigger card or reminder is showing. A new trigger drops a waiting cue. While navigating it is only logged (the visitor already chose). Opening the sheet by hand (detail "Selesai, lihat berikutnya", arrival "Lihat tujuan berikutnya") counts as that POI's recommendation. After an app restart, POIs already asked about stay quiet.
+- UC-F07-5: round "Ke mana selanjutnya?" button on the map (session only). UC-F07-2/3: sheet shows the walk to the gate ("±25 mnt jalan ke gerbang", "Gerbang sudah dekat" under 1 min), *Navigasi ke gerbang*, and *Akhiri Jelajah* when everything is visited. Reason chips: "Terdekat", "Sesuai minat Sejarah", "Ada di rute Santai", "Jalur mudah"/"Sesuai tingkat rute"; "Belum dikunjungi" dropped (every candidate is).
+- Screen off: voice "Selesai. Berikutnya: …" (narration end) or "Berikutnya: …" (walked away), nothing after closing the detail; silent notification on a new `next` channel (low importance, no sound/vibration), cancelled when the app is back on screen.
+- Not done: TC-09/TC-10 on GPX replay (unit tests cover them with a fixed position + fake clock).
 
 ---
 
@@ -870,7 +901,15 @@ TC-10 (fake clock, fixed position) — reminder fires at the computed minute, no
 - `TimeBudget` (`routing`): `deadline` = close − buffer, `walkToGate`, `remaining`, `tripVia`/`fits` (F07 filter: equal to the deadline still fits), `routeFits` (routes are gate → gate, so the whole duration must end by the deadline), `closingReminderAt`. `timeBudgetProvider`. The recommendation filter and both route-fit checks (Home start card, route chooser; before: one with the 15 min buffer, one without) now call it.
 - `reminders`: `Reminder` strategies `ClosingReminder` (text "Kawasan tutup pukul 16.00. Waktu jalan ke gerbang sekitar N menit.", minutes rounded up, action P01) and `HydrationReminder` (moved unchanged from `GuideController`, owner C); `ReminderScheduler` (list order = priority, closing first; once-per-session dedupe; `toJson`/`restore`); `ReminderStore` owns key `reminders.session` (R6), so a restored session doesn't repeat the closing reminder (bug before T23).
 - `GuideController` checks the scheduler on every fix, every 5 s (heartbeat) and on demo ticks, and publishes E10 `ReminderDue`; UI13 unchanged.
-- Not built: UC-A03-2 final call, system notification when the app is hidden (needs a reminder channel in `notify`, owner C), voice (needs `TtsService`, T07/T15). Until then A03 AC ("suara + notifikasi") is partial.
+- Not built: UC-A03-2 final call, system notification when the app is hidden (needs a reminder channel in `notify`, owner C), voice (needs `TtsService`, T07/T15). Until then A03 AC ("suara + notifikasi") is partial. *Update 22 Nov: voice built with T15, notification built (below); final call still open.*
+
+#### As built (reminder notifications + snooze, 2026-11-22, C)
+- `notify`: channel `reminder` (high, sound, 400-200-400 ms) and `AlertNotifier.showReminder`/`cancelReminder`; payload `reminder|<kind>|<destination>`, buttons `navigate` (opens the app) and `later` (closing) / `snooze` (hydration, background engine, works without unlocking). `AlertTap` carries the `ReminderKind`.
+- `TriggerAlerts` mirrors `GuideController.reminder` like the trigger card: app visible → one 400 ms buzz (if "Getar" is on), hidden or locked → the notification with the card's words; answered on either side → the other goes; session end clears it. *Navigasi* = `GuideController.navigateForReminder` (handled + navigation to the gate / nearest rest point, app opens on `/navigate`).
+- `ReminderScheduler.snooze(kind, now, 10 min)` (#33): a snoozed reminder comes back at that time whatever its own interval, then counts again from there; acknowledged = snooze cancelled; persisted with the session (`snoozed`). `Reminder.due(ctx)` gives the wording without the timing rule. Hydration text = walked minutes since the session start ("Sudah 55 menit berjalan. …"), same in card, voice and notification.
+- UC-F08-3: arriving at a rest point (`istirahat`) by navigation restarts the hydration timer.
+- UI13 polished (DESIGN.md §7): closing shows "Ke gerbang ±N mnt" and "Kawasan tutup 16.00" tiles; hydration shows the nearest rest point as a tappable tile, *Navigasi ke tempat istirahat*, *Ingatkan 10 menit lagi* (snooze icon).
+- Tests: scheduler snooze/restart, `TriggerAlerts` reminder group (visible buzz, locked notification, cancel on answer, snooze/navigate/later taps, session end, vibration switch), guide snooze + rest point, UI13 snooze tap.
 - Tests: `test/modules/routing/time_budget_test.dart`, `test/modules/reminders/reminder_scheduler_test.dart`, T23 group in `test/modules/shell/guide_controller_test.dart` (TC-10 at P06; restart; route rule). The restart test was checked by mutation (removing the restore makes it fail).
 
 ---
@@ -914,6 +953,19 @@ TC-10 (fake clock, fixed position) — reminder fires at the computed minute, no
 - Sensor counter resets on reboot mid-session → detect negative delta, re-baseline, keep accumulated steps.
 - App killed mid-session → session restored from SQLite on reopen with "Lanjutkan jelajah?".
 
+#### As built (T27 step counter, 2026-11-21, B)
+- `wellness` (was empty): `StepCounter` (pure: first reading after start = baseline; a lower reading = reboot, the new count is added; `toJson`/`restore`), `StepTracker` (permission check → sensor stream → `StepStatus` off/starting/counting/denied/noSensor), `PedometerStepSource` on `pedometer` 4.2.0 (Android TYPE_STEP_COUNTER, counts since boot, keeps counting with the screen off; the plugin errors on a phone without the sensor). Bound in the composition root.
+- Permission: `StepPermissions` interface in `wellness`, implemented in `shell` with `permission_handler` 12.0.3 (13.x needs compileSdk 37); `ACTIVITY_RECOGNITION` in the manifest (the plugin doesn't declare it). Onboarding's "Aktivitas fisik" toggle now asks the OS (real mode only); the module never prompts by itself.
+- Guide: real mode + session → steps from the sensor (`GuideController.steps`); demo mode, tests and web preview keep the estimate (distance ÷ 0,72 m). No sensor or not allowed → `stepsKnown` false → "–" in the stats strip and summary, no steps pill on arrival; distance and duration still count. The counter snapshot is saved in the session record (`steps`) and restored after an app restart; steps taken while the app was closed are counted at the next reading.
+- Not done: kcal per D11 (still flat MET 4,0), "active time", distance accuracy filter (≤ 20 m), asking again from Settings after a denial. TC-12 needs the phones (DEVICE_CHECK §1.3). *Done 22 Nov, below.*
+
+#### As built (T27 distance + kcal, T28 hydration, 2026-11-22, C)
+- `wellness`: `ActivityMeter` (pure). A position counts when accuracy ≤ 20 m and it is > max(3 m, accuracy/2) from the last counted one; jumps > 3,5 m/s move the anchor without counting. Active time per step = min(time since the last counted position, step ÷ 0,3 m/s). kcal = (3,5 × flat h + 6,0 × climb h) × kg (default 60), climb = grade > 8 % between the two positions, heights from the trail graph (`TrailRouter.elevationAt`: nearest trail point, between its edge's node heights; null > 25 m off-trail = flat). Snapshot saved in the session record (`activity`); an older record restores its distance as flat walking at 3 km/h.
+- Guide: real fixes and the demo walk both go through the meter (demo positions = accuracy 0); weak fixes still move the dot. `walkedM`, `activeTime`, `climbTime`, `kcal` come from it.
+- UI14: kcal always "±N kkal · estimasi energi" (D11); below the stats "Aktif berjalan N mnt dari M mnt" with a bar (flat vs climb) and what the estimate is based on (weight or the 60 kg default).
+- Settings → "Izin ponsel" → *Aktivitas fisik*: *Izinkan* asks again, *Buka pengaturan ponsel* when refused for good; allowed during a session → the step counter starts at once (`GuideController.refreshAccess`).
+- Tests: `test/modules/wellness/activity_test.dart` (filter, jitter, glitch, active time cap, MET by slope, graph heights, restore), `test/modules/shell/guide_wellness_test.dart`.
+
 #### Done when
 TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values; session survives app restart.
 
@@ -942,6 +994,8 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 
 **UC-SH-5 Settings (UI15).** Auto-Play (default off), voice navigation on/off, hydration interval, text size, body weight (optional, on-device), content/version info ("Data offline: tersedia · versi 1"), debug menu hidden behind 7 taps on the version (debug builds only).
 
+**As built (T31, 2026-11-22, C).** `GuidePrefs` (`shell/state/guide_prefs.dart`) keeps onboarding done, Auto-Play, Arahan suara, Getar, hydration interval, text size, body weight, interests and route as one JSON value under `guide.prefs` (shell owns the `guide.*` keys, R6); loaded when the guide starts, saved on every change (`GuideController.update`, interest/route/onboarding calls). Each value is checked alone: an unknown or broken value falls back to its default (#32 fixed: onboarding no longer shows on every launch). "Izin ponsel" group: Lokasi (from `LocationService`), Notifikasi and Aktivitas fisik (`DevicePermissions` on permission_handler, bound in the composition root); each row shows Aktif/Nonaktif, what still works without it, and *Izinkan* (system dialog) or *Buka pengaturan ponsel* (refused for good / GPS off); statuses are re-read when the app resumes. "Getar" now also switches notification vibration (quiet channel twins, §6.2). Not built: version/content info, debug menu.
+
 ---
 
 ## 6. Cross-cutting concerns
@@ -962,9 +1016,11 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 | `session` | low, ongoing | foreground service "sedang memandu" |
 | `trigger` | high, sound, 2 × 200 ms vibration | F02 trigger with actions; only while the app is not visible (in-app card + vibration otherwise) |
 | `approach` | default (no pop-up), sound, 1 × 300 ms vibration | F02/F04 approaching, during a session, also while the app is visible (added in PB07: the `vibration` plugin alone is not reliable from the background, notifications are) |
-| `reminder` | high, sound | A03 closing, F08 hydration |
+| `reminder` | high, sound, 400-200-400 ms | A03 closing, F08 hydration, only while the app is not visible (built 22 Nov) |
 | `recommendation` | default, silent | F07 when screen off |
 | media | (audio_service) | narration controls |
+
+Android fixes a channel's vibration when it is created, so `trigger`, `approach` and `reminder` each have a quiet twin (`<id>_quiet`, "… (tanpa getar)") used while Settings → "Getar" is off (PB07, 22 Nov). The F07 channel is called `next` in code.
 
 ### 6.3 Timing budget (from PRD ACs)
 Position ≤10 s · trigger notification ≤10 s after entry · QR ≤3 s · POI Detail from notification ≤2 s · Auto-Play ≤3 s · route ≤3 s · reroute ≤5 s · search ≤1 s · recommendation ≤2 s.

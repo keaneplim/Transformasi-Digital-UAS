@@ -1,5 +1,7 @@
 package id.ac.itb.kel5.jelajah_taman
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+// F04: audio_service's activity shares one Flutter engine with the media service, so the
+// lock-screen / earphone controls reach the running app (audio module, ARCHITECTURE §5).
+class MainActivity : AudioServiceActivity()

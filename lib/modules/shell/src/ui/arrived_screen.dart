@@ -127,11 +127,12 @@ class _ArrivedScreenState extends ConsumerState<ArrivedScreen> {
                               runSpacing: 8,
                               alignment: WrapAlignment.center,
                               children: [
-                                Pill(
-                                  icon: Icons.directions_walk_rounded,
-                                  label: '${thousands(demo.steps)} langkah',
-                                  background: JT.surface,
-                                ),
+                                if (demo.stepsKnown)
+                                  Pill(
+                                    icon: Icons.directions_walk_rounded,
+                                    label: '${thousands(demo.steps)} langkah',
+                                    background: JT.surface,
+                                  ),
                                 Pill(
                                   icon: Icons.route_rounded,
                                   label: '${km(demo.walkedM)} km',
@@ -268,7 +269,9 @@ class _Actions extends ConsumerWidget {
           label: 'Lihat tujuan berikutnya',
           icon: Icons.explore_rounded,
           onTap: () {
-            demo.markVisited(place);
+            demo
+              ..markVisited(place)
+              ..recommendationOpened(place);
             onClose();
             WidgetsBinding.instance.addPostFrameCallback((_) {
               final ctx = rootNavigatorContext;

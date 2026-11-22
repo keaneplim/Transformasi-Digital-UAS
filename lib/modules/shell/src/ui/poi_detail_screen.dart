@@ -13,7 +13,8 @@ import 'overlays.dart';
 import 'widgets.dart';
 
 /// UI06 POI Detail: parallax photo gallery (Hero from the card you tapped), audio card,
-/// safety callout, observations, quick facts, then "Selesai, lihat berikutnya" (F07).
+/// safety callout, observations, key facts from the content (F03, only when the POI has
+/// them), quick facts, then "Selesai, lihat berikutnya" (F07).
 class PoiDetailScreen extends ConsumerStatefulWidget {
   const PoiDetailScreen({super.key, required this.id, this.heroSuffix = ''});
 
@@ -69,282 +70,299 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
         demo.router.walkingDistanceM(demo.content.gate.position, place.node);
     final collapsed = _offset > headerH - pad.top - 70;
 
-    return Scaffold(
-      backgroundColor: JT.cream,
-      body: Stack(
-        children: [
-          // parallax header
-          Positioned(
-            top: -_offset.clamp(0, double.infinity) * 0.45,
-            left: 0,
-            right: 0,
-            height: headerH + math.max(0, -_offset),
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(34)),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  PageView.builder(
-                    controller: _gallery,
-                    itemCount: images.length,
-                    itemBuilder: (context, i) => i == 0
-                        ? PlacePhoto(
-                            place: place,
-                            radius: 0,
-                            heroSuffix: widget.heroSuffix)
-                        : PlacePhoto(
-                            place: place, radius: 0, hero: false, index: i),
-                  ),
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const [0, 0.25, 0.7, 1],
-                          colors: [
-                            JT.ink.withValues(alpha: 0.45),
-                            Colors.transparent,
-                            Colors.transparent,
-                            JT.ink.withValues(alpha: 0.35),
-                          ],
+    // UC-F03-4: closing the detail finishes the POI → recommendation (F07, ≤ 2 s).
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) demo.detailClosed(place);
+      },
+      child: Scaffold(
+        backgroundColor: JT.cream,
+        body: Stack(
+          children: [
+            // parallax header
+            Positioned(
+              top: -_offset.clamp(0, double.infinity) * 0.45,
+              left: 0,
+              right: 0,
+              height: headerH + math.max(0, -_offset),
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(34)),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    PageView.builder(
+                      controller: _gallery,
+                      itemCount: images.length,
+                      itemBuilder: (context, i) => i == 0
+                          ? PlacePhoto(
+                              place: place,
+                              radius: 0,
+                              heroSuffix: widget.heroSuffix)
+                          : PlacePhoto(
+                              place: place, radius: 0, hero: false, index: i),
+                    ),
+                    IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0, 0.25, 0.7, 1],
+                            colors: [
+                              JT.ink.withValues(alpha: 0.45),
+                              Colors.transparent,
+                              Colors.transparent,
+                              JT.ink.withValues(alpha: 0.35),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (images.length > 1)
-                    Positioned(
-                      bottom: 18,
-                      left: 0,
-                      right: 0,
-                      child: Center(
-                          child: PageDots(
-                              count: images.length,
-                              page: _page,
-                              color: Colors.white)),
-                    ),
-                ],
+                    if (images.length > 1)
+                      Positioned(
+                        bottom: 18,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                            child: PageDots(
+                                count: images.length,
+                                page: _page,
+                                color: Colors.white)),
+                      ),
+                  ],
+                ),
               ),
             ),
-          ),
-          // content
-          CustomScrollView(
-            controller: _scroll,
-            physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics()),
-            slivers: [
-              SliverToBoxAdapter(
-                  child: IgnorePointer(child: SizedBox(height: headerH - 8))),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(JT.gutter, 20, JT.gutter, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Entrance(
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            Pill(
-                                label: place.groupLabel,
-                                icon: place.icon,
-                                color: place.tint),
-                            if (visited)
-                              const Pill(
-                                  label: 'Dikunjungi',
-                                  icon: Icons.check_rounded,
-                                  color: JT.leaf),
-                            if (poi.hasQr)
-                              const Pill(
-                                  label: 'Ada kode QR',
-                                  icon: Icons.qr_code_rounded,
-                                  color: JT.forest),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Entrance(
-                        delay: const Duration(milliseconds: 60),
-                        child: Text(place.name, style: JTText.hero),
-                      ),
-                      const SizedBox(height: 10),
-                      Entrance(
-                        delay: const Duration(milliseconds: 120),
-                        child: Wrap(
-                          spacing: 14,
-                          runSpacing: 6,
-                          children: [
-                            _Meta(Icons.schedule_rounded,
-                                '±${poi.visitMinutes} mnt di lokasi'),
-                            _Meta(Icons.directions_walk_rounded,
-                                '${distanceLabel(demo.walkingM(place))} dari Anda'),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Entrance(
-                        delay: const Duration(milliseconds: 180),
-                        child: _AudioCard(place: place),
-                      ),
-                      if (poi.safetyNote != null) ...[
-                        const SizedBox(height: 14),
+            // content
+            CustomScrollView(
+              controller: _scroll,
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverToBoxAdapter(
+                    child: IgnorePointer(child: SizedBox(height: headerH - 8))),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.fromLTRB(JT.gutter, 20, JT.gutter, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Entrance(
-                          delay: const Duration(milliseconds: 220),
-                          child: _Safety(text: poi.safetyNote!),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              Pill(
+                                  label: place.groupLabel,
+                                  icon: place.icon,
+                                  color: place.tint),
+                              if (visited)
+                                const Pill(
+                                    label: 'Dikunjungi',
+                                    icon: Icons.check_rounded,
+                                    color: JT.leaf),
+                              if (poi.hasQr)
+                                const Pill(
+                                    label: 'Ada kode QR',
+                                    icon: Icons.qr_code_rounded,
+                                    color: JT.forest),
+                            ],
+                          ),
                         ),
-                      ],
-                      const SizedBox(height: 26),
-                      Text('Yang akan Anda temui', style: JTText.h2),
-                      const SizedBox(height: 10),
-                      Text(poi.displayText, style: JTText.body),
-                      const SizedBox(height: 26),
-                      Text('Sekilas', style: JTText.h2),
-                      const SizedBox(height: 12),
-                      _Facts(items: [
-                        (Icons.category_rounded, 'Kategori', place.groupLabel),
-                        (
-                          Icons.timer_rounded,
-                          'Lama kunjungan',
-                          '±${poi.visitMinutes} menit'
+                        const SizedBox(height: 10),
+                        Entrance(
+                          delay: const Duration(milliseconds: 60),
+                          child: Text(place.name, style: JTText.hero),
                         ),
-                        (
-                          Icons.door_front_door_rounded,
-                          'Dari gerbang',
-                          place.isGate ? 'Titik awal' : distanceLabel(gateM)
+                        const SizedBox(height: 10),
+                        Entrance(
+                          delay: const Duration(milliseconds: 120),
+                          child: Wrap(
+                            spacing: 14,
+                            runSpacing: 6,
+                            children: [
+                              _Meta(Icons.schedule_rounded,
+                                  '±${poi.visitMinutes} mnt di lokasi'),
+                              _Meta(Icons.directions_walk_rounded,
+                                  '${distanceLabel(demo.walkingM(place))} dari Anda'),
+                            ],
+                          ),
                         ),
-                        (
-                          Icons.terrain_rounded,
-                          'Jalur',
-                          difficultyLabel(poi.difficulty)
+                        const SizedBox(height: 20),
+                        Entrance(
+                          delay: const Duration(milliseconds: 180),
+                          child: _AudioCard(place: place),
                         ),
-                      ]),
-                      if (place.images.length > 1) ...[
+                        if (poi.safetyNote != null) ...[
+                          const SizedBox(height: 14),
+                          Entrance(
+                            delay: const Duration(milliseconds: 220),
+                            child: _Safety(text: poi.safetyNote!),
+                          ),
+                        ],
                         const SizedBox(height: 26),
-                        Text('Foto', style: JTText.h2),
+                        Text('Yang akan Anda temui', style: JTText.h2),
+                        const SizedBox(height: 10),
+                        Text(poi.displayText, style: JTText.body),
+                        if (poi.keyFacts.isNotEmpty) ...[
+                          const SizedBox(height: 26),
+                          _KeyFacts(facts: poi.keyFacts, tint: place.tint),
+                        ],
+                        const SizedBox(height: 26),
+                        Text('Sekilas', style: JTText.h2),
                         const SizedBox(height: 12),
-                        SizedBox(
-                          height: 150,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: place.images.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 10),
-                            itemBuilder: (context, i) => Pressable(
-                              onTap: () {
-                                _gallery.animateToPage(i,
-                                    duration: JTMotion.slow,
-                                    curve: JTMotion.emphasized);
-                                _scroll.animateTo(0,
-                                    duration: JTMotion.lazy,
-                                    curve: JTMotion.emphasized);
-                              },
-                              child: AspectRatio(
-                                aspectRatio: 3 / 4,
-                                child: PlacePhoto(
-                                    place: place, hero: false, index: i),
+                        _Facts(items: [
+                          (
+                            Icons.category_rounded,
+                            'Kategori',
+                            place.groupLabel
+                          ),
+                          (
+                            Icons.timer_rounded,
+                            'Lama kunjungan',
+                            '±${poi.visitMinutes} menit'
+                          ),
+                          (
+                            Icons.door_front_door_rounded,
+                            'Dari gerbang',
+                            place.isGate ? 'Titik awal' : distanceLabel(gateM)
+                          ),
+                          (
+                            Icons.terrain_rounded,
+                            'Jalur',
+                            difficultyLabel(poi.difficulty)
+                          ),
+                        ]),
+                        if (place.images.length > 1) ...[
+                          const SizedBox(height: 26),
+                          Text('Foto', style: JTText.h2),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 150,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: place.images.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 10),
+                              itemBuilder: (context, i) => Pressable(
+                                onTap: () {
+                                  _gallery.animateToPage(i,
+                                      duration: JTMotion.slow,
+                                      curve: JTMotion.emphasized);
+                                  _scroll.animateTo(0,
+                                      duration: JTMotion.lazy,
+                                      curve: JTMotion.emphasized);
+                                },
+                                child: AspectRatio(
+                                  aspectRatio: 3 / 4,
+                                  child: PlacePhoto(
+                                      place: place, hero: false, index: i),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                      if (place.images.isNotEmpty) ...[
-                        const SizedBox(height: 22),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              credits[place.images[_page
-                                          .round()
-                                          .clamp(0, place.images.length - 1)]]
-                                      ?.caption ??
-                                  'Foto: dokumentasi tim Jelajah Taman',
-                              textAlign: TextAlign.center,
-                              style: JTText.caption.copyWith(color: JT.faint),
+                        ],
+                        if (place.images.isNotEmpty) ...[
+                          const SizedBox(height: 22),
+                          Center(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                credits[place.images[_page
+                                            .round()
+                                            .clamp(0, place.images.length - 1)]]
+                                        ?.caption ??
+                                    'Foto: dokumentasi tim Jelajah Taman',
+                                textAlign: TextAlign.center,
+                                style: JTText.caption.copyWith(color: JT.faint),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
+                        SizedBox(height: 120 + pad.bottom),
                       ],
-                      SizedBox(height: 120 + pad.bottom),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // top bar: back (+ name once the header has scrolled away)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedContainer(
-              duration: JTMotion.base,
-              padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, 8),
-              decoration: BoxDecoration(
-                color: collapsed
-                    ? JT.cream.withValues(alpha: 0.97)
-                    : Colors.transparent,
-              ),
-              child: Row(
-                children: [
-                  CircleIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    tooltip: 'Kembali',
-                    onTap: () => context.pop(),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AnimatedOpacity(
-                      opacity: collapsed ? 1 : 0,
-                      duration: JTMotion.base,
-                      child: Text(place.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: JTText.h3),
                     ),
                   ),
-                  CircleIconButton(
-                    icon: Icons.map_rounded,
-                    tooltip: 'Navigasi ke sini',
-                    onTap: () {
-                      if (demo.startNavigation(place)) {
-                        context.push('/navigate');
-                      }
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-          // sticky CTA
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              padding: EdgeInsets.fromLTRB(
-                  JT.gutter, 14, JT.gutter, 14 + pad.bottom),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [JT.cream.withValues(alpha: 0), JT.cream, JT.cream],
-                  stops: const [0, 0.35, 1],
+            // top bar: back (+ name once the header has scrolled away)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AnimatedContainer(
+                duration: JTMotion.base,
+                padding: EdgeInsets.fromLTRB(12, pad.top + 8, 12, 8),
+                decoration: BoxDecoration(
+                  color: collapsed
+                      ? JT.cream.withValues(alpha: 0.97)
+                      : Colors.transparent,
+                ),
+                child: Row(
+                  children: [
+                    CircleIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Kembali',
+                      onTap: () => context.pop(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AnimatedOpacity(
+                        opacity: collapsed ? 1 : 0,
+                        duration: JTMotion.base,
+                        child: Text(place.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: JTText.h3),
+                      ),
+                    ),
+                    CircleIconButton(
+                      icon: Icons.map_rounded,
+                      tooltip: 'Navigasi ke sini',
+                      onTap: () {
+                        if (demo.startNavigation(place)) {
+                          context.push('/navigate');
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
-              child: PrimaryPill(
-                label: 'Selesai, lihat berikutnya',
-                trailingIcon: Icons.arrow_forward_rounded,
-                onTap: () {
-                  demo.engage(place, EngagementKind.opened);
-                  showRecommendations(context);
-                },
+            ),
+            // sticky CTA
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                    JT.gutter, 14, JT.gutter, 14 + pad.bottom),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [JT.cream.withValues(alpha: 0), JT.cream, JT.cream],
+                    stops: const [0, 0.35, 1],
+                  ),
+                ),
+                child: PrimaryPill(
+                  label: 'Selesai, lihat berikutnya',
+                  trailingIcon: Icons.arrow_forward_rounded,
+                  onTap: () {
+                    demo
+                      ..engage(place, EngagementKind.opened)
+                      ..recommendationOpened(place);
+                    showRecommendations(context);
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -405,11 +423,13 @@ class _AudioCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Cerita tempat ini', style: JTText.title),
-                    Text(
-                        place.poi?.audio == null
-                            ? 'Dibacakan suara otomatis'
-                            : 'Narasi audio',
-                        style: JTText.caption),
+                    _SourceLine(
+                      voice: switch (demo.narrationSource(place)) {
+                        NarrationSource.recording => false,
+                        NarrationSource.voice => true,
+                        NarrationSource.simulated => place.poi?.audio == null,
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -497,6 +517,146 @@ class _AudioCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Under "Cerita tempat ini": a recording, or the text read by the guide's voice (T07).
+class _SourceLine extends StatelessWidget {
+  const _SourceLine({required this.voice});
+
+  final bool voice;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+        duration: JTMotion.base,
+        layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.centerLeft,
+            children: [...previous, if (current != null) current]),
+        child: Row(
+          key: ValueKey(voice),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+                voice
+                    ? Icons.record_voice_over_rounded
+                    : Icons.graphic_eq_rounded,
+                size: 13,
+                color: JT.muted),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(voice ? 'Dibacakan suara pemandu' : 'Narasi audio',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JTText.caption),
+            ),
+          ],
+        ),
+      );
+}
+
+/// F03 "fakta kunci" (`key_facts` in pois.json): numbered, from official sources only.
+/// Nothing is drawn for a POI without facts.
+class _KeyFacts extends StatelessWidget {
+  const _KeyFacts({required this.facts, required this.tint});
+
+  final List<String> facts;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Fakta kunci', style: JTText.h2)),
+              Pill(
+                label: '${facts.length} fakta',
+                icon: Icons.auto_stories_rounded,
+                color: tint,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: JT.surface,
+              borderRadius: BorderRadius.circular(JT.rCard),
+              border: Border.all(color: JT.line),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -14,
+                  top: -10,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: DoodleIcon(Doodle.sparkle,
+                        size: 74, color: tint.withValues(alpha: 0.12)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 6, 16, 6),
+                  child: Column(
+                    children: [
+                      for (final (i, fact) in facts.indexed) ...[
+                        if (i > 0)
+                          const Divider(height: 1, indent: 46, color: JT.line),
+                        Entrance(
+                          delay: JTMotion.stagger * (i + 1),
+                          child:
+                              _KeyFact(number: i + 1, text: fact, tint: tint),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+class _KeyFact extends StatelessWidget {
+  const _KeyFact(
+      {required this.number, required this.text, required this.tint});
+
+  final int number;
+  final String text;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: 'Fakta $number: $text',
+        excludeSemantics: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.lerp(tint, JT.cream, 0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: Text('$number',
+                    style: JTText.number(15,
+                        color: Color.lerp(tint, JT.ink, 0.3)!)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(text, style: JTText.bodySm),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _Safety extends StatelessWidget {

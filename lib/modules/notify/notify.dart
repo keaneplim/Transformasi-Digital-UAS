@@ -1,9 +1,11 @@
 /// Module `notify` (level 1, owner C) — public front door.
 ///
-/// System notifications (trigger UI05 with Dengarkan / Lihat detail / Nanti, approach UI04),
-/// taps forwarded from the plugin's background engine to the main isolate, vibration.
+/// System notifications (trigger UI05 with Dengarkan / Lihat detail / Nanti, approach UI04,
+/// reminders UI13 with Navigasi / Nanti / Ingatkan 10 menit lagi), taps forwarded from the
+/// plugin's background engine to the main isolate, vibration. Every vibrating channel has a
+/// quiet twin used while Settings "Getar" is off (`setVibration`).
 /// Owns plugins flutter_local_notifications and vibration (src/data/ only, rule R5).
-/// Spec: IMPLEMENTATION_PLAN.md §6.2, F02, F04 (PB07).
+/// Spec: IMPLEMENTATION_PLAN.md §6.2, F02, F04 (PB07), A03, F08.
 library;
 
 export 'src/domain/alert_contracts.dart';

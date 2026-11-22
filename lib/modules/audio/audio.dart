@@ -1,4 +1,4 @@
-/// Module `audio` (level 1, owner C) — public front door.
+/// Module `audio` (level 1, owner C; F04 voice built by B) — public front door.
 ///
 /// Narration playback (recorded file or TTS fallback), TTS prompts, VoiceArbiter
 /// (priority / duck / queue), media session for lock-screen and earphone controls.
@@ -10,3 +10,5 @@ library;
 export 'src/audio_providers.dart';
 export 'src/domain/audio_contracts.dart';
 export 'src/domain/narration_player.dart';
+export 'src/domain/narration_script.dart';
+export 'src/domain/voice_arbiter.dart';

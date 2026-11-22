@@ -9,6 +9,10 @@ import 'package:jelajah_taman/modules/location/location.dart';
 import 'package:jelajah_taman/modules/map/map.dart';
 import 'package:jelajah_taman/modules/notify/notify.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
+import 'package:jelajah_taman/modules/wellness/wellness.dart';
+
+import '../data/activity_permissions.dart';
+import '../data/device_permissions.dart';
 
 /// The ONLY place where implementations are bound to interfaces (rule R8).
 ///
@@ -61,8 +65,12 @@ Future<List<Override>> bootstrap({AssetBundle? bundle}) async {
     if (prefs != null) keyValueStoreProvider.overrideWithValue(prefs),
     if (alerts != null) alerts,
     // Real audio and GPS only in the app; tests keep the silent/no-GPS fallbacks (no plugins).
-    bindJustAudioNarrationPlayer(),
+    bindNarrationPlayer(),
+    bindFlutterTts(),
     bindGeolocatorLocationService(),
     bindQrCamera(),
+    bindPedometerStepTracker(const ActivityRecognitionPermissions()),
+    devicePermissionsProvider
+        .overrideWithValue(const PermissionHandlerPermissions()),
   ];
 }

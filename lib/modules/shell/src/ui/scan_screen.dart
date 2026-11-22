@@ -10,7 +10,7 @@ import 'package:jelajah_taman/modules/trigger/trigger.dart';
 
 import '../state/guide_controller.dart';
 import '../state/places.dart';
-import 'main_shell.dart';
+import 'manual_pick_sheet.dart';
 import 'widgets.dart';
 
 /// UI12 QR fallback (A02). Dark viewfinder with breathing corners and a scan line over the
@@ -253,9 +253,12 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                   ),
                 const SizedBox(height: 12),
                 TextButton.icon(
-                  onPressed: () {
-                    ref.read(tabProvider.notifier).state = 2;
-                    context.pop();
+                  // UC-A02-3: no readable board → the visitor names the place.
+                  onPressed: () async {
+                    final p = await showManualPick(context, ref);
+                    if (p != null && context.mounted) {
+                      context.pushReplacement('/poi/${p.id}');
+                    }
                   },
                   style: TextButton.styleFrom(foregroundColor: Colors.white70),
                   icon: const Icon(Icons.list_rounded, size: 20),

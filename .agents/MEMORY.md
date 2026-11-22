@@ -14,9 +14,9 @@ How to update (see `rules.md` §9):
 
 **Git**
 - `origin/main` = `fc34738` (CI APK commit for `66ecdac`). Since the 20 Nov handoff, `main` gained T23 `TimeBudget` + reminders (`17702cd`), PB10 real QR scanner (PR #10, `ee87c2b`) and an updated Sprint 1–2 progress deck (`66ecdac`).
-- Pushed but **not merged** (all by Keane, 21 Nov, stacked on each other): `feat/voice` (F04 voice + media session, D08/T17 weak-GPS card, manual pick, #31 session gate) → `feat/pedometer` (+ F08 step counter, TC-12) → `feat/recommendation` (+ F07 to spec, T24, #34). No PRs open for them yet.
-- Branch `docs/agent-context` = PR #11 (docs restructure + APK distribution change), open, not merged.
-- After PR #11 merges, CI publishes the APK only on the `apk-latest` GitHub Release (no more bot commits on `main`); the root `jelajah-taman.apk` is deleted by that PR.
+- PR #11 (docs restructure, APK only on the release) is in `main`.
+- 22 Nov: `feat/wellness-notify-settings` (Khalfani: key facts, saved Settings #32, reminder notifications + snooze #33, kcal D11, "Izin ponsel", Getar channels, TTS fallback) merged into `feat/recommendation` (PR #12); then `feat/recommendation` (with Keane's `feat/voice` → `feat/pedometer` → F07, 21 Nov) merged with `main` and sent to `main` as one PR. After it lands, pull and delete the merged branches.
+- CI publishes the APK only on the `apk-latest` GitHub Release (no more bot commits on `main`); the root `jelajah-taman.apk` is deleted by that PR.
 - Untracked on purpose: `web/`, `ios/` (local only, ADR 0011).
 
 **Sprint status** — Sprint 4 (16–22 Nov) ends today; feature freeze end of W13. Sprint 5 (23–29 Nov) is field test, usability, fixes.
@@ -25,29 +25,37 @@ How to update (see `rules.md` §9):
 |---|---|---|
 | Sprint 1 PB01–PB05 | code ◐ | No phone test yet (DEVICE_CHECK §3 empty); 5 ESTIMATE coordinates (#28) |
 | PB06 geofence + visit log | ☑ code | Evidence video; phone check of restore |
-| PB07 notifications | ◐ built | Phone test (lock screen, Dengarkan/Lihat/Nanti, Android 12L+); denied-permission hint |
+| PB07 notifications | ◐ built; permission rows + Getar ↔ quiet channels 22 Nov | Phone test (lock screen, Dengarkan/Lihat/Nanti, reminder buttons, Getar off, Android 12L+) |
 | PB08 content | ◐ | Final POI texts (all `[ISI]`), photos P03/P09 |
 | PB10 QR | ☑ code on `main` | Printed QR P05/P06; TC-04 on 2 phones in airplane mode |
-| PB11 eyes-free (F04) | ◐ on `feat/voice` | Review + merge; phone test TC-06 |
+| PB11 eyes-free (F04) | ◐ code (incl. TTS reading of POI text when the MP3 fails) | Phone test TC-06 |
 | PB12 graph | ⚠ | Built from OSM, not survey GPX: Change Log or validate with `tahura-f.gpx` |
 | PB13 search | ☑ code | TC-07 run |
 | PB14 navigation | ◐ | Logic in `GuideController`; voice depends on F04; demo arrival 3 m vs 15 m; TC-08 |
-| PB15 recommendation (F07) | ◐ on `feat/recommendation` | Review + merge; TC-09/TC-10 |
-| PB16 wellness pedometer (F08) | ◐ on `feat/pedometer` | Review + merge; TC-11/TC-12 on a phone |
-| PB17 reminders | ◐ on `main` (closing) | System notification + voice for reminders; hydration |
+| PB15 recommendation (F07) | ◐ code | TC-09/TC-10 |
+| PB16 wellness (F08) | ◐ code: steps, distance filter, active time, kcal D11, hydration snooze | TC-11/TC-12 on a phone |
+| PB17 reminders | ◐ code: closing + hydration, voice, system notification when hidden | UC-A03-2 final call; phone check |
+| PB18 Settings | ◐ saved on the phone, "Izin ponsel" | Version/content info, debug menu |
 
 **Next steps, in order**
-1. Review and merge `feat/voice` → `feat/pedometer` → `feat/recommendation` (stacked; merge in that order), then pull.
+1. Pull `main` after the merge PR; delete `feat/voice`, `feat/pedometer`, `feat/recommendation`, `feat/wellness-notify-settings`.
 2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `docs/qa/DEVICE_CHECK.md` §3.
 3. Sourced POI texts (F03) and printed QR codes for P05/P06 before the field test.
 4. Sprint 5: run `docs/qa/scenario/` in the field (TC-01…TC-13), usability test (≥5 respondents, SUS), record results.
-5. Merge PR #11; then decide PB12 (OSM vs GPX), #33, branch protection on `main`.
+5. Decide PB12 (OSM vs GPX); branch protection on `main`.
 
-**Last known check results** (20 Nov, `feat/reminders-timebudget`): content 0 errors (33 warnings) · Python tests pass · analyze clean · architecture pass · 167 Flutter tests. Goldens: compare against a render of unchanged `HEAD` on the same machine, not the committed PNGs.
+**Last known check results** (22 Nov, `feat/recommendation` merged with `main`): content 0 errors (33 warnings) · Python tests pass · analyze clean · architecture pass · 312 Flutter tests. Goldens: compare against a render of unchanged `HEAD` on the same machine, not the committed PNGs.
 
 ---
 
 ## Sessions
+
+### 2026-11-22 — Wellness, reminders, Settings batch (branch `feat/wellness-notify-settings`, Khalfani, Claude Code)
+- **Objective:** seven open tasks: key facts on UI06, saved Settings (#32), reminder notifications, hydration snooze (#33), kcal D11 + active time + accuracy filter + re-ask "Aktivitas fisik", PB07 permission hint + Getar ↔ channels, TTS fallback (T07).
+- **Decisions (user):** stacked PR on `feat/recommendation` (PR #12, merged), then merge everything to `main`. AI decisions to confirm: hydration text = walked minutes; arriving at a rest point counts as drinking; no lock-screen controls for the read-aloud path; key facts stay empty until sourced.
+- **Checks:** format, analyze, architecture, validator, Python tests, 312 Flutter tests; goldens regenerated and looked at, baselines **not committed** (on Khalfani's laptop).
+- **Open:** phone check (reminder buttons on the lock screen, quiet channels, permission rows, id-ID voice reading), TC-12.
+- **Next action:** pull `main`, install the APK from `apk-latest` on a phone.
 
 ### 2026-11-22 — Agent context restructure (branch `docs/agent-context`, Khalfani, Claude Code)
 - **Objective:** tidy the agent-facing docs into one folder, following the `.agent/` + `docs/adr/` layout of another project the user maintains, and give the remaining project docs a clear home.

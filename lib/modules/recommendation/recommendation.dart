@@ -1,6 +1,10 @@
-/// Module `recommendation` (level 4, owner A) — public front door. NOT STARTED.
+/// Module `recommendation` (level 4, owner A) — public front door.
 ///
-/// Candidate filter (closing time − 15 min), ScoreFactor strategies (D10), UI08. Listens to E7 PoiFinished.
+/// F07: candidate filter (unvisited, closing time − 15 min via routing's `TimeBudget`, passed
+/// in), `ScoreFactor` strategies with D10 weights from `park.json`, 1 main + 2 alternatives
+/// with reasons, or back to the gate. Pure domain; the guide (shell) runs it after E7
+/// PoiFinished and shows UI08.
 /// Spec: IMPLEMENTATION_PLAN.md F07. Template: docs/engineering/ARCHITECTURE.md §7.
-/// Export only what other modules need; keep everything else in src/.
 library;
+
+export 'src/domain/recommender.dart';

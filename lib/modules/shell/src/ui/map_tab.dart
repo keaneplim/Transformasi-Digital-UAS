@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,8 @@ import 'package:jelajah_taman/modules/map/map.dart';
 import '../state/guide_controller.dart';
 import '../state/places.dart';
 import 'main_shell.dart';
+import 'manual_pick_sheet.dart';
+import 'overlays.dart';
 import 'park_map.dart';
 import 'tab_stage.dart';
 import 'widgets.dart';
@@ -73,6 +77,12 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
     } else if (a != LocationAccess.granted) {
       _toast('Izin lokasi dibutuhkan agar pemandu tahu posisi Anda.');
     }
+  }
+
+  /// UC-A02-3: the visitor names the place; it opens as a manual visit.
+  Future<void> _manualPick() async {
+    final p = await showManualPick(context, ref);
+    if (p != null && mounted) unawaited(context.push('/poi/${p.id}'));
   }
 
   void _toast(String text) {
@@ -242,7 +252,11 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
                 at: 0.26,
                 from: const Offset(0, -14),
                 child: _StatusChip(
-                    demo: demo, onAskLocation: () => _askLocation(demo)),
+                  demo: demo,
+                  onAskLocation: () => _askLocation(demo),
+                  onScan: () => context.push('/scan'),
+                  onManual: _manualPick,
+                ),
               ),
             ],
           ),
@@ -258,6 +272,16 @@ class _MapTabState extends ConsumerState<MapTab> with TickerProviderStateMixin {
             from: const Offset(24, 0),
             child: Column(
               children: [
+                // UC-F07-5: the same recommendation any time during a session.
+                if (demo.sessionActive) ...[
+                  CircleIconButton(
+                    icon: Icons.explore_rounded,
+                    tooltip: 'Ke mana selanjutnya?',
+                    foreground: JT.forest,
+                    onTap: () => showRecommendations(context),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 CircleIconButton(
                   icon: _satellite
                       ? Icons.satellite_alt_rounded
@@ -595,62 +619,206 @@ class _Preview extends ConsumerWidget {
   }
 }
 
-/// One line under the route pill about the position itself: location off, outside the park,
-/// or weak GPS. Hidden when all is well (and always in demo mode).
+/// Under the route pill, about the position itself. Hidden when all is well (and always in
+/// demo mode). Two states need a way forward, so they get a card with actions instead of a
+/// pill:
+/// - location not allowed (F01 AC4): *Aktifkan lokasi* / *Pilih manual*;
+/// - weak or no GPS for 60 s in a session (D08, UI12): *Pindai QR* / *Pilih manual*.
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.demo, required this.onAskLocation});
+  const _StatusChip({
+    required this.demo,
+    required this.onAskLocation,
+    required this.onScan,
+    required this.onManual,
+  });
 
   final GuideController demo;
   final VoidCallback onAskLocation;
+  final VoidCallback onScan;
+  final VoidCallback onManual;
 
   @override
   Widget build(BuildContext context) {
-    final (String, IconData, Color, VoidCallback?)? s = demo.isDemo
+    final denied = demo.access != null && demo.access != LocationAccess.granted;
+    final Widget? s = demo.isDemo
         ? null
-        : demo.noPosition
-            ? (
-                demo.locationSupported
-                    ? 'Aktifkan lokasi untuk memandu Anda'
-                    : 'Lokasi tidak tersedia',
-                Icons.location_off_rounded,
-                JT.doodle,
-                demo.locationSupported ? onAskLocation : null,
-              )
-            : demo.outsideZone
-                ? (
-                    'Anda di luar kawasan · ${distanceLabel(demo.distanceToGateM)} ke gerbang',
-                    Icons.wrong_location_rounded,
-                    JT.forest,
-                    null,
+        : !demo.locationSupported
+            ? const _StatusPill(
+                label: 'Lokasi tidak tersedia',
+                icon: Icons.location_off_rounded,
+                color: JT.doodle)
+            : denied
+                ? _HelpCard(
+                    title: 'Lokasi belum diizinkan',
+                    body:
+                        'Anda tetap bisa menjelajah: pilih tempat Anda, atau pindai QR di papan informasi.',
+                    icon: Icons.location_off_rounded,
+                    actions: [
+                      (
+                        'Izinkan lokasi',
+                        Icons.my_location_rounded,
+                        onAskLocation
+                      ),
+                      ('Pilih manual', Icons.list_rounded, onManual),
+                    ],
                   )
                 : demo.gpsWeakBanner
-                    ? (
-                        'GPS lemah, posisi kurang akurat',
-                        Icons.gps_not_fixed_rounded,
-                        JT.muted,
-                        null
+                    ? _HelpCard(
+                        title: 'GPS lemah, posisi kurang akurat',
+                        body:
+                            'Di dalam gua? Pindai QR di papan informasi, atau pilih tempat Anda.',
+                        icon: Icons.gps_not_fixed_rounded,
+                        actions: [
+                          ('Pindai QR', Icons.qr_code_scanner_rounded, onScan),
+                          ('Pilih manual', Icons.list_rounded, onManual),
+                        ],
                       )
-                    : null;
+                    : demo.noPosition
+                        ? demo.access == LocationAccess.granted
+                            ? const _StatusPill(
+                                label: 'Mencari posisi Anda…',
+                                icon: Icons.location_searching_rounded,
+                                color: JT.muted)
+                            : _StatusPill(
+                                label: 'Aktifkan lokasi untuk memandu Anda',
+                                icon: Icons.location_off_rounded,
+                                color: JT.doodle,
+                                onTap: onAskLocation)
+                        : demo.outsideZone
+                            ? _StatusPill(
+                                label:
+                                    'Anda di luar kawasan · ${distanceLabel(demo.distanceToGateM)} ke gerbang',
+                                icon: Icons.wrong_location_rounded,
+                                color: JT.forest)
+                            : null;
     return AnimatedSwitcher(
       duration: JTMotion.base,
       child: s == null
           ? const SizedBox.shrink()
           : Padding(
-              key: ValueKey(s.$1),
+              key: ValueKey(switch (s) {
+                _StatusPill(:final label) => label,
+                _HelpCard(:final title) => title,
+                _ => '',
+              }),
               padding: const EdgeInsets.only(top: 8),
-              child: Pressable(
-                onTap: s.$4,
-                scale: 0.97,
-                semanticLabel: s.$1,
-                child: Pill(
-                    label: s.$1,
-                    icon: s.$2,
-                    color: s.$3,
-                    background: Colors.white),
-              ),
+              child: s,
             ),
     );
   }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill(
+      {required this.label,
+      required this.icon,
+      required this.color,
+      this.onTap});
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Pressable(
+        onTap: onTap,
+        scale: 0.97,
+        semanticLabel: label,
+        child: Pill(
+            label: label, icon: icon, color: color, background: Colors.white),
+      );
+}
+
+/// A status that needs a way forward: a short line and up to two actions.
+class _HelpCard extends StatelessWidget {
+  const _HelpCard({
+    required this.title,
+    required this.body,
+    required this.icon,
+    required this.actions,
+  });
+
+  final String title;
+  final String body;
+  final IconData icon;
+  final List<(String, IconData, VoidCallback)> actions;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        liveRegion: true, // TalkBack reads it out when it appears (A07)
+        container: true,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            color: JT.surface,
+            borderRadius: BorderRadius.circular(JT.rCard),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 22, color: JT.doodle),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: JTText.label),
+                        const SizedBox(height: 2),
+                        Text(body, style: JTText.caption),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  for (final (i, (label, icon, onTap)) in actions.indexed) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    Expanded(
+                      // compact: two actions side by side must fit a 360 dp phone
+                      child: Pressable(
+                        onTap: onTap,
+                        semanticLabel: label,
+                        child: Container(
+                          height: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: i == 0 ? JT.forest : JT.mint,
+                            borderRadius: BorderRadius.circular(JT.rChip),
+                          ),
+                          child: ExcludeSemantics(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(icon,
+                                    size: 18,
+                                    color: i == 0 ? Colors.white : JT.ink),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(label,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: JTText.label.copyWith(
+                                          color:
+                                              i == 0 ? Colors.white : JT.ink)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 /// Layers: map style (Peta / Satelit), facilities, and a small legend.
