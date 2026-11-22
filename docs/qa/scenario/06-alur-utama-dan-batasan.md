@@ -88,7 +88,7 @@ Bersumber dari `docs/design/DESIGN.md` §8 dan konvensi tim. Aturan ini bukan ac
 | SK-TKS-01 | Tanpa detail operasional | Baca seluruh teks pada setiap layar pengunjung (kecuali panel Mode demo di Setelan). | Tidak ada angka radius, akurasi GPS, koordinat, label data contoh, atau teks debug. | DESIGN.md §8 |
 | SK-TKS-02 | Sapaan dan gaya bahasa | Baca teks antarmuka dan konten POI. | Pengguna disapa "Anda"; gaya bahasa konsisten. | DESIGN.md §8 |
 | SK-TKS-03 | Format angka | Periksa jarak, waktu, langkah, dan jam di seluruh layar. | Format Indonesia konsisten, mis. 1.722 langkah · 1,2 km · 16.00 · 37 mnt. | DESIGN.md §8 |
-| SK-TKS-04 | Penanda yang tertinggal | Cari teks `[ISI]`, `[VERIFIKASI]`, atau "DUMMY" pada layar pengunjung. | Tidak ada penanda yang tampil pada build rilis. | DESIGN.md §8, CLAUDE.md |
+| SK-TKS-04 | Penanda yang tertinggal | Cari teks `[ISI]`, `[VERIFIKASI]`, atau "DUMMY" pada layar pengunjung. | Tidak ada penanda yang tampil pada build rilis. | DESIGN.md §8, `.agents/rules.md` §8 |
 
 ## Ketahanan
 

@@ -19,7 +19,7 @@ Options, in order of recommendation:
 | B. Also build for iOS | A **Mac with Xcode** (Flutter can't build iOS on Windows); a free Apple ID can install on your own iPhone but the install expires after 7 days; extra iOS work: background-location mode, `Info.plist` permission texts, a different notification/audio setup; every test case run twice | Don't, unless someone has a Mac **and** the team accepts the extra testing. It is not in the PRD scope; adding it is a Change Log item. *Note 2026-11-12:* the app builds for the iOS Simulator on a team Mac (`ios/` kept local, not committed), useful for UI demos only; this does not change the verdict. |
 | C. Use the iPhone for what it's good at | Nothing | **Yes, in addition to A:** survey GPX recording, photos, barometric elevation, reference readings, the stopwatch for ETA tests. |
 
-**Decision needed today:** whose Android phones are the two test devices? If none exist in the team, borrowing two is now the most urgent blocker. Record the decision in PROGRESS.md.
+**Decision needed today:** whose Android phones are the two test devices? If none exist in the team, borrowing two is now the most urgent blocker. Record the decision in `.agents/PROGRESS.md`.
 
 ---
 
@@ -30,7 +30,7 @@ Do every step and fill in the table in §3.
 ### 1.1 Basics
 - **Settings → About phone:** brand, model, Android version, free storage (need ≥1 GB).
 - **Developer options:** tap *Build number* 7×, then enable **USB debugging**. Plug into a coder's laptop and run `flutter devices`; the phone must be listed.
-- **Installing without a laptop:** download `jelajah-taman.apk` from the repo root or the `apk-latest` GitHub Release (README → *Download the APK*), allow *Install unknown apps* for the browser/file manager. arm64 phones only; uninstall the previous build first if Android reports a conflict.
+- **Installing without a laptop:** download `jelajah-taman.apk` from the `apk-latest` GitHub Release (README → *Download the APK*), allow *Install unknown apps* for the browser/file manager. arm64 phones only; uninstall the previous build first if Android reports a conflict.
 - **Android 14+?** Fine, but note it: the manifest needs `FOREGROUND_SERVICE_LOCATION` (already planned).
 - **Android 13+?** The notification permission is asked at runtime (planned in onboarding).
 

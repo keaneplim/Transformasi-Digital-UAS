@@ -1,61 +1,29 @@
-# LLM History — Jelajah Taman (Kelompok 5)
+# AI Disclosure Log — Jelajah Taman (Kelompok 5)
 
-The record of AI-assisted work on this project. It has two jobs:
+The record of AI-assisted work on this project and the source of the **AI & Tools Disclosure** deliverable (QA: Khalfani). Every AI-assisted change is listed with date, tool, purpose, what the human decided, and how the output was verified, including the mistakes the AI made. PRD §8.2 requires that a team member can explain and has verified anything AI produced.
 
-1. **AI & Tools Disclosure source** (QA: Khalfani). Every AI-assisted change is listed with date, tool, purpose, what the human decided, and how the output was verified, including the mistakes the AI made. PRD §8.2 requires that a team member can explain and has verified anything AI produced.
-2. **Session handoff.** §1 says where the work stands, so the next session (human or AI) starts from the facts instead of re-reading everything.
+Formerly `LLM_History.md` at the repo root (renamed and moved on 2026-11-22). Its old §1 *Current state (handoff)* now lives in `.agents/MEMORY.md`.
 
 **Rules**
-- Append a session to §2 at the end of every AI session (newest first), and update §1.
+- Add a session to §1 at the end of every AI session (newest first). Update the handoff in `.agents/MEMORY.md` too.
 - Record what the **human decided**, not only what the AI produced. If a human rejected or corrected the AI, write it down; it shows the verification is real.
-- AI mistakes go in §3, even when they were caught and fixed.
+- AI mistakes go in §2, even when they were caught and fixed. Add a row to §3 per session or task group.
 - Don't paste secrets, personal data beyond names/roles already in the PRD, or long chat transcripts. Summaries only.
-- Related files: `CLAUDE.md` (stable context for AI tools), `PROGRESS.md` (project status, issues, decisions). This file doesn't repeat them; it links to them.
+- Related files: `.agents/AGENTS.md` (stable context for AI tools), `.agents/PROGRESS.md` (status, issues, decisions). Paths inside older entries are as they were at the time.
 
 ---
 
-## 1. Current state (handoff) — as of 2026-11-20, session 7
+## 1. Session log (newest first)
 
-**Git** (2026-11-20)
-- `origin/main` = `origin/keane` = `7fe9455` (fast-forwarded in session 7): PB06, PB07, PB03 GPX, PR #6 tab transitions, PR #7 APK CI, PR #8 test scenarios (`docs/scenario/`), Jacob's 17 Nov progress deck. Every other remote branch is fully in `main`.
-- Branch `feat/reminders-timebudget` (from `main`) = T23, **uncommitted**, to be committed by Keane and opened as a PR (review: Coder A, who uses `TimeBudget`).
-- CI on push to `main` commits a release APK (`jelajah-taman.apk`, ~46 MB each, issue #35). After it runs, `git pull` before new work.
-- Untracked on purpose: `web/` (local preview).
+### Session 8 — 2026-11-22
+**Tool:** Claude Code (desktop app), model Claude Opus 5.5. **Human:** Khalfani.
 
-**Team roles for the build** (IMPLEMENTATION_PLAN §0.1)
-- Coder A = Ballard, Coder B = **Keane** (+ integrator), Coder C = Khalfani. In session 6 Keane also did A's PB06 and C's PB07 (agreed with the team? — tell Ballard about `trigger`/`session` edits, Khalfani about `notify` + onboarding).
-
-**Sprint status** (details: PROGRESS.md timeline + issues)
-| Item | Status | What's left |
-|---|---|---|
-| Sprint 1 PB01–PB05 | code ◐ | No phone test yet (PB01/02/05, DEVICE_CHECK §3 empty); GPX committed (PB03, `survey/raw/2026-11-07/`); 5 ESTIMATE coordinates (#28) |
-| PB06 geofence + visit log | ☑ code | Evidence video; phone check of restore |
-| PB07 notifications | ◐ built | **Phone test** (lock screen, Dengarkan/Lihat/Nanti, Android 12L+ no crash) + screenshots; denied-permission hint; "Getar" setting vs channel vibration |
-| PB08 content | ◐ | Final POI text (all `[ISI]`), photos P03/P09 |
-| PB10 QR | ◐ scanner built 20 Nov (`feat/qr-scanner`) | Printed QR P05/P06, TC-04 on 2 phones in airplane mode, deep link (optional) |
-| PB11 eyes-free | ☐ | TTS prompt, `audio_service` lock-screen/earphone controls |
-| PB12 graph | ⚠ | Built from OSM, not survey GPX: Change Log or validate with `tahura-f.gpx` |
-| PB13 search | ☑ code | TC-07 run |
-| PB14 navigation | ◐ | Logic in `GuideController` (not `navigation` module); no voice; demo arrival at 3 m instead of 15 m; TC-08 + video |
-| B: T23 closing reminder | ◐ built 20 Nov | System notification when hidden (notify, C), voice (needs TTS); commit + PR |
-
-**Next steps, in order** (priority plan of session 7: Musts first, by risk)
-1. Commit T23 (`feat/reminders-timebudget`) and open the PR; agree with C on a reminder notification channel in `notify`.
-2. Team Musts with no implementation yet: F04 TTS + media controls (C), A02 real QR scanner + printed QR P05/P06 (A), F08 pedometer (C), F03 POI texts from sourced facts (content).
-3. F07 to spec (A, issue #34), using `TimeBudget`.
-4. Keane: demo arrival 3 m → 15 m; voice turn instructions after TTS; decide PB12 (OSM vs GPX).
-5. First phone install now, not in field week: PB01/02/05/07, offline; fill DEVICE_CHECK §3.
-6. Decide #31, fix #32, #33; drop the APK commit from CI (#35); branch protection on `main`.
-
-**How to resume an AI session**
-- Read `CLAUDE.md`, `PROGRESS.md` and this §1 first. Don't re-parse the PRD docx: read `docs/prd/PRD.md` (generated).
-- Flutter 3.47.9 is at `C:\Users\mitba\dev\flutter` (not on PATH). PowerShell: `$env:Path = "C:\Users\mitba\dev\flutter\bin;" + $env:Path`.
-- Full local check (same as CI): `python tools/validate_content.py` · `python -m unittest discover -s tools/tests` · `dart format --output=none --set-exit-if-changed lib test tools` · `flutter analyze` · `dart run tools/check_architecture.dart` · `flutter test`.
-- Last known result (20 Nov, `feat/reminders-timebudget`): content 0 errors (33 warnings) · Python tests pass · analyze clean · architecture pass · 167 Flutter tests. APK not rebuilt locally (CI builds it on `main`). Goldens: baselines were made on another OS; compare against a render of unchanged HEAD on the same machine, not against the committed PNGs.
-
----
-
-## 2. Session log (newest first)
+| # | Human request | AI output | Human decision / correction | Verified by | Result |
+|---|---|---|---|---|---|
+| 1 | Start the iOS simulator; confirm the branch | Built a debug simulator build of `main` and launched it on the iPhone 17 simulator; reverted Flutter's `analysis_options.yaml`/`.metadata` rewrites; shut the simulator down on request | — | Screenshot of the welcome screen; `git status` clean | No code change |
+| 2 | Deep analysis of the agent context docs, restructure them like another project's `.agent/` folder (PRD, rules, handoff → MEMORY, CLAUDE), add `docs/ADR`; plan fully, ask questions | Inventory of all docs and path references; four questions (status/log split, ADR scope and language, depth of the docs reorganisation, delivery) | Khalfani chose: split by function, ADR 1–9 + new ones in English, group the other docs by function, branch + PR. Mid-task corrections: folder is `.agents/` with `AGENTS.md`; root `CLAUDE.md` stays as a short loader; **PRD stays in `docs/prd/` unchanged** (AI had first moved the generated PRD.md into the agent folder and repointed the generator and CI; reverted); `AGENTS.md` must be complete context that refers to the PRD | `tools/prd_to_md.py` regenerated with zero diff; grep of every moved path; CI-equivalent checks before commit | branch `docs/agent-context`, PR |
+| 3 | Explain what "team to confirm" means for ADR 0010 and 0012, then apply the decisions | Explained the open points (APK commits bloating history, #35; design v2 merged without review). Removed the CI step that committed the APK, deleted the root APK, gitignored `*.apk`, amended ADR 0010 and 0012, updated README/DEVICE_CHECK/AGENTS/rules/PROGRESS | Khalfani decided: APK only on the `apk-latest` release, not in the repo; keep the CI debug key; v2 is official | Workflow YAML parsed; full CI-equivalent checks; hosted CI on PR #11 | PR #11 |
+| 4 | Merge to main; also rename `CLAUDE.local.md` to `AGENTS.local.md` | Hosted APK job failed on a Gradle plugin-portal download error (unrelated to the PR, no `android/` change); re-ran it instead of merging. Moved the per-machine notes to gitignored `.agents/AGENTS.local.md`, imported from `CLAUDE.md`, references updated | Khalfani asked for the rename; merge waits for green CI | `git check-ignore`; hosted CI | PR #11 |
 
 ### Session 7 — 2026-11-20
 **Tool:** Claude Code (VS Code extension), model Claude Opus 5.5. **Human:** Keane.
@@ -136,7 +104,7 @@ The PRD, deck and speaker script (commit `414c626`) predate this log. **QA to fi
 
 ---
 
-## 3. AI mistakes and corrections
+## 2. AI mistakes and corrections
 
 Listed for honest disclosure. All are fixed unless marked open.
 
@@ -154,11 +122,12 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-20 | First draft of `ClosingReminder` put the gate's graph node id into `ReminderDue.actionDestinationId`, which is documented as a POI id | AI, re-reading the event contract | Passes `gatePoiId` (P01) |
 | 2026-11-20 | Scan-screen widget test first used a semantics-label finder (semantics is off in tests) and the phone-size view, where the wide test font overflows the code list by 35 px | AI's own test run; golden with real fonts showed no overflow | Tap the visible name; taller test view, layout covered by golden 21 |
 | 2026-11-20 | Two new controller tests failed at first: jumping the fake clock from 10.00 to 15.xx also made the 45 min hydration reminder due, which correctly took the slot | AI's own test run | Hydration off in those tests; the scheduler's priority is tested separately |
+| 2026-11-22 | While restructuring the agent docs, AI moved the generated `PRD.md` + figures into the agent folder (copying the reference project, where the PRD lives there) and repointed `tools/prd_to_md.py` and CI; the user wanted the PRD left in `docs/prd/` | Khalfani | Moves and tool/CI edits reverted; generator rerun with zero diff |
 | 2026-11-06 | Minor tooling slips: Python escaping in shell heredocs, a `sed` edit that silently didn't apply, CRLF line endings from the PRD generator on Windows | AI | Switched to the edit tools; `newline="\n"` + `.gitattributes` |
 
 ---
 
-## 4. Disclosure summary (for the AI & Tools Disclosure section)
+## 3. Disclosure summary (for the AI & Tools Disclosure section)
 
 | Date | Tool | Purpose | Human decision / verification |
 |---|---|---|---|
@@ -169,5 +138,7 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-06 | Claude Code (Claude Opus 5.5) | Coder workload split and rebalancing | Keane approved each change |
 | 2026-11-06 | Claude Code (Claude Opus 5.5) | Code: Explore map (T04), GPX → graph tool (T13), router (T14) | Unit/widget tests (44 Flutter + 13 Python), end-to-end checks; Coder B (Keane) must be able to explain the code; phone test of T04 and real-GPX run of T13 still pending |
 | 2026-11-10 | Claude Code (Claude Opus 5.5) | Repo review; Sprint 1–2 progress report deck | Status facts supplied by Keane or checked against the repo; slides rendered and checked; team to review before presenting |
+| 2026-11-12 – 2026-11-20 | Claude Code (Claude Opus 5.5) | Sessions 5–7: merges, PB06 geofence + visit log, PB07 notifications, T23 reminders, PB10 QR scanner | Keane chose and approved each task; unit tests per change; phone tests still pending (see session log) |
+| 2026-11-22 | Claude Code (Claude Opus 5.5) | Restructure of agent context docs (`.agents/`, `docs/adr/`, `docs/qa/`) | Khalfani decided layout and scope, corrected the PRD location; PRD unchanged (generator diff empty) |
 
 No facts about Tahura (history, coordinates, hours, routes) were taken from AI. All such values in the app are DUMMY or marked `[VERIFIKASI]` until the survey and the park manager confirm them (PRD §8.2).

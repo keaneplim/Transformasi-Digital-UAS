@@ -5,8 +5,6 @@ on:
     branches: [main]
   push:
     branches: [main]
-    paths-ignore:
-      - jelajah-taman.apk   # the APK commit made by build-apk below must not start another run
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -62,7 +60,7 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # push the APK commit to main and update the apk-latest release
+      contents: write   # move the apk-latest tag and update its GitHub Release
     env:
       APK_NAME: jelajah-taman.apk
     steps:
@@ -81,17 +79,17 @@ jobs:
 
       - run: flutter pub get
 
-      # Release build for arm64 phones only: a debug APK is ~110 MB, over GitHub's 100 MB file limit.
-      # No upload keystore yet, so android/app/build.gradle.kts signs release with the runner's debug key.
+      # Release build for arm64 phones only (a debug APK is ~110 MB).
+      # Signed with the runner's debug key on purpose (ADR 0010): no upload keystore.
       - name: Build release APK (arm64-v8a)
         run: flutter build apk --release --target-platform android-arm64
 
-      - name: Check APK size (GitHub rejects files over 100 MB)
+      - name: Check APK size (A01 size budget)
         run: |
           size=$(stat -c %s build/app/outputs/flutter-apk/app-release.apk)
           echo "APK size: $((size / 1024 / 1024)) MB"
           if [ "$size" -gt $((95 * 1024 * 1024)) ]; then
-            echo "::error::APK is over 95 MB, too close to GitHub's 100 MB file limit"
+            echo "::error::APK is over the 95 MB size budget"
             exit 1
           fi
 
@@ -114,28 +112,16 @@ jobs:
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit APK to the repository root
-        id: commit
-        if: steps.fresh.outputs.publish == 'true'
-        run: |
-          version=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
-          git add "$APK_NAME"
-          git commit -m "apk: release build of ${GITHUB_SHA::7} (v$version, arm64) [skip ci]"
-          git push origin HEAD:main
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
+      # The APK is published only on the apk-latest release; it is not committed to the repository.
       - name: Update the apk-latest GitHub Release
-        if: steps.commit.outcome == 'success'
+        if: steps.fresh.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.commit.outputs.version }}
         run: |
+          VERSION=$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')
+          cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
           notes="Jelajah Taman v$VERSION, release build (arm64-v8a) of commit ${GITHUB_SHA::7}, built $(date -u '+%Y-%m-%d %H:%M UTC').
-          Rebuilt on every commit to main; the same file is in the repository root as $APK_NAME.
+          Rebuilt on every commit to main.
           Signed with a CI debug key: uninstall the previous version before installing if Android reports a conflict."
           git tag -f apk-latest
           git push -f origin refs/tags/apk-latest

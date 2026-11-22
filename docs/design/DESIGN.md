@@ -1,6 +1,6 @@
 # Design System v2: Jelajah Taman — "Sunlit Field Guide"
 
-> **v2, 2026-11-12.** Replaces v1 ("field journal", amber CTA, no mascot). The app in `lib/` follows this file. Source of truth for tokens: `lib/core/theme/app_theme.dart` (`JT`, `JTText`) and the widgets in `lib/core/ui/`. Visual baselines of every screen: `test_goldens/baselines/*.png` (see §10). The v1 Stitch prompts and `screens/` mock-ups are kept for history only.
+> **v2, 2026-11-12.** Replaces v1 ("field journal", amber CTA, no mascot). The app in `lib/` follows this file. Source of truth for tokens: `lib/core/theme/app_theme.dart` (`JT`, `JTText`) and the widgets in `lib/core/ui/`. Visual baselines of every screen: `test_goldens/baselines/*.png` (see §10). The v1 Stitch prompts and `screens/` mock-ups are kept in `archive-v1/` for history only.
 
 ## 1. Visual Theme & Atmosphere
 **"A sunny, friendly field guide that still behaves like a safety instrument."** The mood is late-morning sun over the Dago Pakar pines: a warm yellow band at the top of the screen, a cream page below, forest-green actions. It is playful in the chrome (mascot, doodles, one coloured word per headline) and calm in the information (big readable numbers, short copy, nothing operational).

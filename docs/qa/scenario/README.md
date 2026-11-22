@@ -4,7 +4,7 @@ Kumpulan skenario uji untuk membuktikan pemenuhan PRD Jelajah Taman (v0.9.2). Do
 
 **Kedudukan dokumen.** PRD (`docs/prd/PRD.md`, dibangkitkan dari docx) tetap menjadi acuan persyaratan; bila skenario di sini berbeda dari PRD, PRD yang berlaku dan skenario diperbaiki. Skenario yang bersumber dari rencana implementasi atau panduan desain, bukan dari PRD, diberi keterangan pada kolom Acuan ("rencana implementasi", `DESIGN.md`) dan tidak menentukan status kelulusan requirement.
 
-**Sumber.** `docs/prd/PRD.md` · `docs/engineering/IMPLEMENTATION_PLAN.md` (use case, kasus tepi) · `docs/engineering/DEVICE_CHECK.md` · `docs/engineering/SURVEY_CHECKLIST.md` · `docs/design/DESIGN.md` · `PROGRESS.md` (isu terbuka) · `assets/content/*.json`.
+**Sumber.** `docs/prd/PRD.md` · `docs/engineering/IMPLEMENTATION_PLAN.md` (use case, kasus tepi) · `docs/qa/DEVICE_CHECK.md` · `docs/survey/SURVEY_CHECKLIST.md` · `docs/design/DESIGN.md` · `.agents/PROGRESS.md` (isu terbuka) · `assets/content/*.json`.
 
 ## Daftar berkas
 
@@ -38,7 +38,7 @@ Bila kolom Metode memuat dua kode (mis. "L, O"), kode pertama adalah cara utama 
 
 ## Lingkungan uji
 
-- Minimal dua ponsel Android berbeda merek yang lulus `docs/engineering/DEVICE_CHECK.md` (sensor penghitung langkah, suara TTS Indonesia luring, pengaturan baterai). iPhone tidak dapat menjalankan APK.
+- Minimal dua ponsel Android berbeda merek yang lulus `docs/qa/DEVICE_CHECK.md` (sensor penghitung langkah, suara TTS Indonesia luring, pengaturan baterai). iPhone tidak dapat menjalankan APK.
 - Perlengkapan: earphone kabel dan Bluetooth, stopwatch, meteran atau roda ukur, power bank, senter, papan QR tercetak (P05, P06, satu ID tidak dikenal, satu QR asing), lembar catat.
 - Setiap sesi uji mencatat: tanggal, penguji, versi build (hash commit atau nomor versi APK), perangkat (merek, model, versi Android), cuaca dan kondisi sinyal untuk uji lapangan.
 
