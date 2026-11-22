@@ -216,7 +216,7 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 - **Golden screens** in `test_goldens/` (not in CI; regenerate after UI changes and inspect).
 - **Python tool tests** in `tools/tests/`.
 - **CI** (`.github/workflows/ci.yml`): content validation → PRD.md sync → Python tests → `dart format` → `flutter analyze` → architecture check → `flutter test`; then a release arm64 APK on every PR (workflow artifact) and push. On push to `main` the APK is published as `jelajah-taman.apk` on the **`apk-latest` GitHub Release**, signed with the CI debug key; it is never committed to the repository (ADR 0010).
-- **Field testing:** `docs/qa/scenario/` (conventions, result log, traceability), `docs/qa/DEVICE_CHECK.md` (≥2 Android test phones; iPhone can't run the APK).
+- **QA:** two testers, Jacob (location, trigger, QR, search, navigation, offline, battery, install, main flow) and Michael Dimas (content, eyes-free, recommendation, reminders, wellness, data, accessibility, Settings, non-goals, usability). Scenarios `docs/qa/scenario/`; status per feature `docs/qa/REKAP_QA.md` (on `main`); plans, logs per round and mock-location GPX on branch `qa` (`rules.md` §9.1); `docs/qa/DEVICE_CHECK.md` (≥2 Android phones; iPhone can't run the APK).
 - **Platforms:** Android only is in scope and committed; `web/` (browser preview) and `ios/` (personal simulator/device runs) stay local (ADR 0011).
 
 ## 9. Tech stack (PRD §8.1)
@@ -242,6 +242,8 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 | `docs/qa/scenario/` | Test scenarios SK-* (Bahasa Indonesia) with AC/TC traceability. |
 | `docs/qa/DEVICE_CHECK.md` | Test-phone checklist. |
 | `docs/qa/AI_DISCLOSURE_LOG.md` | AI-assisted work log: source of the AI & Tools Disclosure deliverable. |
+| `docs/qa/REKAP_QA.md` | QA verdict per feature/PB after each test round (Jacob); feeds the "Status QA" section of `PROGRESS.md`. |
+| branch `qa`, folder `qa/` | QA working area, not on `main`: test plan, per-tester logs per round (`qa/jacob/`, `qa/dimas/`), mock-location guide + GPX files (`rules.md` §9.1). |
 | `docs/survey/SURVEY_CHECKLIST.md` | Survey trip checklist and post-survey data steps. |
 | `docs/content/narration/` | Narration scripts P01–P11 + `manifest.json`. |
 | `README.md` | Repo layout, setup, daily commands, definition of done. |

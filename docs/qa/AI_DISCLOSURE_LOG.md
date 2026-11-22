@@ -15,6 +15,16 @@ Formerly `LLM_History.md` at the repo root (renamed and moved on 2026-11-22). It
 
 ## 1. Session log (newest first)
 
+### Session 12 — 2026-11-14 to 2026-11-22 (one long session)
+**Tool:** Claude Code (VS Code extension), model Claude Opus 5.5. **Human:** Jacob.
+
+| # | Human request | AI output | Human decision / correction | Verified by | Result |
+|---|---|---|---|---|---|
+| 1 | 14 Nov: summarize the project for Jacob as QA; where a status-table photo came from; how to document PB01/02/05 | Project summary; photo not found in any file or branch (likely an AI chat answer); demo-based documentation plan | Jacob: demo on a phone now, field test at the end; private notes kept local (not committed) | `git log -S` on all branches | Local notes only |
+| 2 | 17 Nov: add progress to the Sprint 1–2 progress deck, same design | Slides 5–6 (progress 12–17 Nov, PB01–PB10 status), cover and footer to Sprint 1–3 | Jacob chose branch `keane`, 2 slides, new cover title | Validator, opened and rendered in PowerPoint | `7fe9455` |
+| 3 | 21 Nov: Sprint 1–3 comparison, focus Sprint 3, plan Sprint 4–5, for a written report; formal speaker script | Slides 7–10, slides 1/5/6 updated to 21 Nov; script for slides 7–10 | Jacob: add to the existing deck (not a new one), work on `main`; flagged "uneven workload" on slide 9 for team review | Validator, rendered in PowerPoint | Committed by Jacob (`66ecdac`) |
+| 4 | 22 Nov: QA test plan for two testers on the features in `main`, labels "outside / must be at Tahura", a way to test Tahura scenarios elsewhere, documentation plan, AI-readable results; ask questions first | Questions in four rounds; `docs/qa/REKAP_QA.md`; `.agents/rules.md` §2/§3/§9.1, `AGENTS.md` §8/§10, `PROGRESS.md` *Status QA*; scenario README build readiness to 22 Nov; branch `qa`: README, RENCANA_QA, per-tester HASIL/CACAT for 219 scenarios, mock-location guide + 11 GPX tracks from the app's trail graph | Jacob decided: testers Jacob + Michael Dimas, split by feature area, Tahura only once at the end, mock-location GPX as the fallback (demo mode only as support), detailed QA on branch `qa` with only the rekap on `main`, Jacob writes the rekap, no git tags; approved each `.agents/` line before it was written | GPX distance profiles checked against POI radii (approach, exit, re-entry, edge-zone, deviation); every scenario assigned exactly once; generator re-run gives identical files | `main` files uncommitted (Jacob commits); branch `qa` prepared |
+
 ### Session 11 — 2026-11-22
 **Tool:** Devin (T3 Code), model Gemini 4 Neon High (Ubuntu). **Human:** Khalfani.
 
@@ -142,6 +152,9 @@ Listed for honest disclosure. All are fixed unless marked open.
 
 | Date | What went wrong | Caught by | Fix |
 |---|---|---|---|
+| 2026-11-17 | Copied speaker-notes XML lacked `<a:bodyPr/>`, so PowerPoint could not open the progress deck | AI, by opening the file in PowerPoint before handing it over | Notes rebuilt with the full text body |
+| 2026-11-22 | AI read "PR" as pull request; Jacob meant progress report (`.agents/PROGRESS.md`) | Jacob | Plan and agent-rule text rewritten for the progress report |
+| 2026-11-22 | Mock GPX track 04 (edge of the approaching zone) first walked into the P05 radius, which would have triggered the POI | AI, distance-profile check of every track | Approach now stops at 62 m; profile 47–57 m verified |
 | 2026-11-06 | AI wrote a literal `\n` instead of a line continuation in the CI "PRD.md in sync" step; it only worked by accident (bash read it as an extra path `n`) | AI, later in the same session | Fixed in `2642cf6` |
 | 2026-11-06 | AI's draft plan named Ballard as Coder A before the team decided | Keane | Names set to _TBD_ |
 | 2026-11-06 | AI treated the iPhone 14 as a possible test device problem; the team has Android phones | Keane | DEVICE_CHECK keeps the iPhone for survey use only |
@@ -182,5 +195,6 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-12 – 2026-11-20 | Claude Code (Claude Opus 5.5) | Sessions 5–7: merges, PB06 geofence + visit log, PB07 notifications, T23 reminders, PB10 QR scanner | Keane chose and approved each task; unit tests per change; phone tests still pending (see session log) |
 | 2026-11-22 | Claude Code (Claude Opus 5.5) | Restructure of agent context docs (`.agents/`, `docs/adr/`, `docs/qa/`) | Khalfani decided layout and scope, corrected the PRD location; PRD unchanged (generator diff empty) |
 | 2026-11-22 | Devin (Gemini 4 Neon High) + reviews by Claude Opus 5.5 & Codex GPT-6.2 Sol | T25 battery-aware tracking (A06), T23 final-call reminder (UC-A03-2), T31 Settings offline version + 7-tap hidden debug menu & Explore map debug overlay + PR #15 review hardening | Khalfani reviewed plan, decided all 4 options, requested cross-model review & fixes; full local CI parity + 347 Flutter tests passed; phone checks pending |
+| 2026-11-14 – 2026-11-22 | Claude Code (Claude Opus 5.5) | Jacob: QA orientation, progress deck updates (17 and 21 Nov), QA plan for two testers, mock-location GPX tracks, QA rekap and agent rules | Jacob decided scope, split and branch layout and approved each agent-rule line; the AI produced no test results |
 
 No facts about Tahura (history, coordinates, hours, routes) were taken from AI. All such values in the app are DUMMY or marked `[VERIFIKASI]` until the survey and the park manager confirm them (PRD §8.2).

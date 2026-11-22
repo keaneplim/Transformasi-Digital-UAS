@@ -13,8 +13,7 @@ How to update (see `rules.md` §9):
 ## Current state — as of 2026-11-22
 
 **Git**
-- `origin/main` = `4df5118` (PR #11 docs/APK release-only, PR #12/#13 F04 voice + F08 pedometer + F07 recommendation + wellness/notify/Settings batch, PR #14 goldens baselines all merged).
-- New branch `feat/t25-t23-t31-tracking-finalcall-settings` (Khalfani): implements T25 battery-aware tracking (A06), T23 `FinalCallReminder` (UC-A03-2), and T31 Settings offline version + 7-tap hidden debug menu + Explore debug overlay; PR opened to `main`.
+- `origin/main` = `86ba11a` (PR #11–#15 merged, incl. T25 battery-aware tracking, T23 final call, T31 version + 7-tap debug menu). All feature branches are in `main`.
 - CI publishes the APK only on the `apk-latest` GitHub Release (no bot commits on `main`, ADR 0010).
 - Untracked on purpose on dev Macs: `web/`, `ios/` (local only, ADR 0011).
 
@@ -38,17 +37,27 @@ How to update (see `rules.md` §9):
 | A06 battery-aware tracking (T25) | ◐ code: `TrackingPolicy` (3 s ↔ 10 s), pedometer wake-up, approaching/nav keep-fast | 60-min battery test on ≥2 Android phones (SK-A06-01/02) |
 
 **Next steps, in order**
-1. Merge `feat/t25-t23-t31-tracking-finalcall-settings` after CI passes; prune old merged remote branches.
+1. Prune old merged remote branches.
 2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `docs/qa/DEVICE_CHECK.md` §3.
 3. Sourced POI texts + `key_facts` (F03), P03/P09 photos, 5 ESTIMATE coords (#28), and printed QR codes for P05/P06 before the field test.
-4. Sprint 5: run `docs/qa/scenario/` in the field (TC-01…TC-13), usability test (≥5 respondents, SUS), record results.
+4. QA round 01 outside Tahura (branch `qa`, `rules.md` §9.1); Tahura once at the end of Sprint 5 (TC-01…TC-13 confirmation + demo); usability (≥5 respondents, SUS).
 5. Decide PB12 (OSM vs GPX), #13/#25/#26/#27; branch protection on `main`.
 
 **Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **347 Flutter tests pass**.
 
+**QA (22 Nov):** two testers, Jacob and Michael Dimas. Verdicts in `docs/qa/REKAP_QA.md` (all `Belum diuji`); plans, per-tester logs and mock-location GPX on branch `qa` (`rules.md` §9.1). Round 01 (outside Tahura, `apk-latest` after PR #15) is next; Tahura only once at the end of Sprint 5, together with the demo.
+
 ---
 
 ## Sessions
+
+### 2026-11-22 — QA plan for two testers (main + branch `qa`, Jacob, Claude Code)
+- **Objective:** test plan for the features already on `main`, split between Jacob and Michael Dimas, with each scenario labelled "outside Tahura / should be at Tahura", a way to run Tahura scenarios elsewhere, and QA results the agents can read when the progress report is updated.
+- **Decisions (Jacob):** split by feature area (Jacob 107 scenarios, Dimas 112); Tahura once at the end with the demo; fallback for field scenarios = mock location replaying GPX tracks inside the park (demo mode/debug menu only as support); detailed QA lives on branch `qa`, folder `qa/` (never merged into `main`, merge direction `main` → `qa`); only `docs/qa/REKAP_QA.md` (written by Jacob after each round) and a *Status QA* section in `PROGRESS.md` are on `main`; no git tags.
+- **Changed on `main`:** `docs/qa/REKAP_QA.md` (new), `.agents/rules.md` (§2 item 9, §3 row, §9.1), `.agents/AGENTS.md` (§8 QA line, §10 rows), `.agents/PROGRESS.md` (*Status QA*), `docs/qa/scenario/README.md` (build readiness to 22 Nov), `docs/qa/AI_DISCLOSURE_LOG.md` (session 12).
+- **Branch `qa`:** `qa/README.md`, `qa/RENCANA_QA.md`, `qa/mock-location/` (guide, `make_gpx.py`, 11 GPX tracks generated from `trail_graph.json`/`pois.json`/`routes.json`, distance profiles checked against radii), `qa/jacob/putaran-01/` and `qa/dimas/putaran-01/` (`HASIL.md` for every assigned scenario, `CACAT.md`).
+- **Checks:** every one of the 219 scenarios assigned once; all 64 field scenarios have an outside-Tahura method. No app code touched; nothing tested on a phone yet.
+- **Next action:** Jacob commits `main`, creates branch `qa`; both testers install `apk-latest` on two phones, fill `DEVICE_CHECK.md` §3, set up mock location, start round 01.
 
 ### 2026-11-22 — T25 battery-aware tracking, T23 final call, T31 version & debug menu (branch `feat/t25-t23-t31-tracking-finalcall-settings`, Khalfani, Ubuntu / Devin)
 - **Objective:** complete the remaining code items for T25 (A06 battery-aware GPS interval), T23 (UC-A03-2 final call reminder), and T31 (Settings offline content/app version + 7-tap hidden debug menu & Explore map debug overlay), then address all findings from independent PR reviews (Claude Opus 5.5 + Codex GPT-6.2 Sol medium).

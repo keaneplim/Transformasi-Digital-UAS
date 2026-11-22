@@ -28,7 +28,8 @@ Then, only as the task needs:
 6. `docs/prd/PRD.md` (requirements, generated from the docx; never parse the docx)
 7. `docs/engineering/ARCHITECTURE.md` and `IMPLEMENTATION_PLAN.md` (how to build it)
 8. relevant ADRs in `docs/adr/`
-9. `docs/design/DESIGN.md` for any UI work; `docs/qa/scenario/` for test work
+9. `docs/design/DESIGN.md` for any UI work; `docs/qa/scenario/` for test work;
+   `docs/qa/REKAP_QA.md` before reporting a feature's status or updating `PROGRESS.md`
 
 ## 3. Sources of truth
 
@@ -41,6 +42,7 @@ Then, only as the task needs:
 | Status, issues, team decisions | `.agents/PROGRESS.md` | Issue numbers like "#25" refer to its *Known issues* table. |
 | Where the work stands | `.agents/MEMORY.md` | |
 | AI use | `docs/qa/AI_DISCLOSURE_LOG.md` | Deliverable for QA. |
+| QA verdict per feature | `docs/qa/REKAP_QA.md` | Written by Jacob (PM/QA) after each test round, from both testers' logs on branch `qa`. Agents may draft it, marked `Draf AI`, until Jacob confirms. |
 
 If code and docs disagree, do not silently pick one: inspect the repo, name the mismatch, and update the relevant doc in the same change when the change is intentional. When the agent finds that the PRD could be improved, it proposes the change; the PRD is edited only once the team agrees.
 
@@ -108,6 +110,14 @@ After every substantive session, update:
 Also update, when the meaning changed: `.agents/AGENTS.md` (file map, cheat-sheet), `IMPLEMENTATION_PLAN.md` (task status, as-built notes), `ARCHITECTURE.md`, `DESIGN.md`, `README.md`.
 
 Small local edits only need the docs whose meaning actually changed.
+
+### 9.1 QA results and the progress report
+
+- Detailed QA work lives only on branch `qa`, folder `qa/` (plan, per-tester logs per round, mock-location guide and GPX files). Read it without switching branch: `git fetch origin qa`, `git ls-tree -r --name-only origin/qa qa/`, `git show origin/qa:qa/<path>`.
+- When updating `PROGRESS.md`, take QA status from `docs/qa/REKAP_QA.md`; keep "code done" separate from "QA approved", and cite the scenario IDs and the build that was tested.
+- If a change on `main` alters a feature that QA already approved, say in `PROGRESS.md` that it needs a retest; the rekap itself is updated only by Jacob.
+- Merge direction is `main` → `qa` only; never merge `qa` into `main`.
+- Never invent results, measurements or a "Lulus"; write only what a tester reported.
 
 ## 10. ADR rules
 

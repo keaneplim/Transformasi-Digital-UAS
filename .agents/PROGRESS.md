@@ -17,6 +17,11 @@ Moved from the repo root to `.agents/` on 2026-11-22. Paths inside older issue r
 | Sprint 5 — field test, usability, fixes (PB19–PB21) | W14 | 23 – 29 Nov | |
 | Final deliverables | W15 | | APK, Testing Report, Compliance Matrix, video ≤3 min, AI Disclosure |
 
+## Status QA
+QA verdict per feature lives in `docs/qa/REKAP_QA.md` (written by Jacob after each test round from the logs of both testers, Jacob and Michael Dimas, on branch `qa`). "Code done" in the timeline above is not "QA approved".
+- Last closed round: none yet. Round 1 (build `apk-latest` of 22 Nov, scenarios that can run outside Tahura) is being prepared.
+- Field confirmation at Tahura: once, at the end of Sprint 5, together with the demo.
+
 ## Open questions (need team/lecturer input)
 - [ ] Was the PRD baseline approved? Record PMO decision + any revisions in PRD §9 and Change Log §10.
 - [x] Where does the app code live? **This repo** (decided 2026-11-06). Survey data goes to `survey/raw/` (small files) + team Drive (photos).

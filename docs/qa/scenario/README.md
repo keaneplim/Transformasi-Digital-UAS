@@ -146,20 +146,23 @@ Uji lapangan dijadwalkan di awal Sprint 5 dengan tanggal cadangan karena musim h
 | TC-12 | F08 | SK-F08-03 |
 | TC-13 | A01 | SK-A01-01 |
 
-## Kesiapan build per 16 November 2026
+## Kesiapan build per 22 November 2026
 
-Disusun dari `pubspec.yaml` dan `PROGRESS.md` pada cabang `main` (commit `1a3d59c`), tanpa menjalankan aplikasi. Periksa ulang sebelum setiap putaran uji; skenario yang fiturnya belum ada dicatat `Terblokir`, bukan `Gagal`.
+Disusun dari `pubspec.yaml`, `.agents/MEMORY.md` dan `.agents/PROGRESS.md` pada cabang `main` (commit `86ba11a`, setelah PR #15), tanpa menjalankan aplikasi. Seluruh kemampuan di bawah sudah ada dalam kode tetapi **belum pernah diuji pada ponsel Android**. Periksa ulang sebelum setiap putaran uji; skenario yang fiturnya ternyata tidak berfungsi atau tidak ditemukan dicatat `Terblokir` atau `Gagal` sesuai keadaan.
 
-| Kemampuan | Keadaan pada build | Skenario yang terdampak |
+| Kemampuan | Keadaan pada build | Skenario yang paling terdampak |
 |---|---|---|
-| Notifikasi sistem dan aksi di layar kunci | Paket notifikasi belum ada; pemicu tampil sebagai kartu di dalam aplikasi | SK-F02-20, SK-F03-08, SK-F04-01, SK-F04-06, SK-F07-15 |
-| Kontrol media layar kunci/earphone | Layanan media belum ada | SK-F04-07, SK-F04-08 |
-| Suara TTS (prompt, arahan navigasi, pengingat) | Paket TTS belum ada | SK-F03-09, SK-F04-03, SK-F04-09 s.d. SK-F04-13, SK-F06-11 |
-| Pemindai QR dengan kamera | Paket pemindai belum ada; layar pindai memakai kamera tiruan (kode dipilih dari daftar), sehingga hanya alur setelah kode terbaca yang dapat dicoba | SK-A02-01 s.d. SK-A02-09 |
-| Penghitung langkah dari sensor | Paket pedometer belum ada; langkah diperkirakan dari jarak | SK-F08-03, SK-F08-15 |
-| Penyimpanan dan ekspor log sesi | Basis data lokal belum ada | SK-F02-21, SK-F08-11 (bagian log), SK-F08-18 |
-| Penyesuaian interval GPS (A06) | Belum dikerjakan | SK-A06-02 |
-| GPS nyata di ponsel Android | Sudah dibangun, belum pernah diuji di perangkat | Seluruh skenario berkode L |
+| GPS nyata, layar mati (foreground service), indikator GPS lemah | Ada (`geolocator`); interval adaptif 3 s ↔ 10 s (A06, `TrackingPolicy`) | SK-F01-*, SK-A06-* |
+| Mesin pemicu + log kunjungan + pemulihan sesi | Ada (PB06); log tersimpan di perangkat | SK-F02-*, SK-F02-21, SK-F08-11, SK-F08-18, SK-KTH-* |
+| Notifikasi sistem dan aksi di layar kunci | Ada (`flutter_local_notifications`, kanal pemicu/mendekati/pengingat, kanal senyap bila Getar dimatikan) | SK-F02-20, SK-F03-08, SK-F04-01, SK-F04-06, SK-F07-15 |
+| Kontrol media layar kunci/earphone | Ada untuk narasi MP3 (`audio_service`); tidak ada untuk pembacaan teks TTS cadangan | SK-F04-07, SK-F04-08 |
+| Suara TTS (prompt, arahan navigasi, pengingat, cadangan narasi) | Ada (`flutter_tts`); butuh suara Indonesia luring di ponsel (DEVICE_CHECK §1.4) | SK-F03-09, SK-F04-03, SK-F04-09 s.d. SK-F04-13, SK-F06-11 |
+| Pemindai QR dengan kamera | Ada (`mobile_scanner`, model luring); papan QR cetak P05/P06 belum ada; tautan dalam (deep link) belum dibuat | SK-A02-* |
+| Penghitung langkah dari sensor | Ada (`pedometer`), kalori D11, waktu aktif, pengingat hidrasi dengan tunda | SK-F08-03, SK-F08-08 s.d. SK-F08-10, SK-F08-15 |
+| Rekomendasi kontekstual | Ada; periksa bobot dan aturan terhadap rencana F07 (PROGRESS #34) | SK-F07-* |
+| Pengingat jam tutup + panggilan akhir + hidrasi | Ada (bersuara, notifikasi saat aplikasi di latar) | SK-A03-*, SK-F08-08 |
+| Setelan tersimpan, izin ponsel, versi/data luring, menu debug tersembunyi (7 ketukan) | Ada | SK-SET-* |
+| Teks POI final bersumber, fakta kunci | Belum ada (masih `[ISI]`) | SK-F03-02, SK-F03-12 |
 
 ## Hal terbuka yang memengaruhi pengujian
 
