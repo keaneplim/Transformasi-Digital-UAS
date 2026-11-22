@@ -18,7 +18,7 @@ Usage:
   python3 tools/photos.py enhance [--force]      retouch (Gemini), guard, write assets/images
   python3 tools/photos.py apply                  write image lists + image_credits.json
   python3 tools/photos.py sheet OUT.html         before/after contact sheet
-Auth: gcloud ADC (see CLAUDE.local.md). Needs Pillow and macOS `sips`.
+Auth: gcloud ADC (see .agents/AGENTS.local.md). Needs Pillow and macOS `sips`.
 """
 
 from __future__ import annotations

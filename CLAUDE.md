@@ -5,12 +5,14 @@ Agent context lives in `.agents/`. This file only loads it and states the few ru
 @.agents/AGENTS.md
 @.agents/rules.md
 @.agents/MEMORY.md
+@.agents/AGENTS.local.md
 
 ## Read on demand
 - `.agents/PROGRESS.md`: sprint timeline, open questions, known issues (#n), team decisions.
 - `docs/prd/PRD.md`: requirements (generated from the canonical docx; never parse the docx).
 - `docs/engineering/ARCHITECTURE.md`, `docs/engineering/IMPLEMENTATION_PLAN.md`, `docs/adr/`: how to build it.
-- `docs/design/DESIGN.md` for UI work; `docs/qa/` for testing; `CLAUDE.local.md` for this machine's paths and tools.
+- `docs/design/DESIGN.md` for UI work; `docs/qa/` for testing.
+- `.agents/AGENTS.local.md` (gitignored, per laptop): this machine's paths, tools and local commands. Create it from scratch if missing; never commit it.
 
 ## Always
 - The PRD wins over every other doc. Don't invent facts, coordinates or hours: keep `[VERIFIKASI]` / `[ISI]`.

@@ -20,7 +20,7 @@ At the start of a session:
 1. `.agents/AGENTS.md` (project context, file map, spec cheat-sheet)
 2. `.agents/rules.md` (this file)
 3. `.agents/MEMORY.md` (latest handoff: current state and next steps)
-4. `CLAUDE.local.md` if present (machine-specific paths and tools)
+4. `.agents/AGENTS.local.md` if present (machine-specific paths and tools)
 
 Then, only as the task needs:
 
@@ -48,7 +48,7 @@ If code and docs disagree, do not silently pick one: inspect the repo, name the 
 
 A content change to the PRD propagates docx → pdf → `docs/prd/PRD.md` (run `python tools/prd_to_md.py`), and, if it is presented, pptx slide + pptx notes. Commit the docx, pdf and regenerated `PRD.md` together; CI fails when `docs/prd/PRD.md` or `docs/prd/figures/` is stale. List every touched file when reporting.
 
-Reading binaries: `pdftotext -layout file.pdf -`; Python packages `python-docx`, `python-pptx`, `pypdf`, `PIL` (`tools/prd_to_md.py` needs `python-docx`). Not every laptop has all of them; check `CLAUDE.local.md`. On Windows set `PYTHONIOENCODING=utf-8`. Put scratch scripts in the session scratchpad, never in the repo.
+Reading binaries: `pdftotext -layout file.pdf -`; Python packages `python-docx`, `python-pptx`, `pypdf`, `PIL` (`tools/prd_to_md.py` needs `python-docx`). Not every laptop has all of them; check `.agents/AGENTS.local.md`. On Windows set `PYTHONIOENCODING=utf-8`. Put scratch scripts in the session scratchpad, never in the repo.
 
 ## 5. Code rules
 
@@ -87,7 +87,7 @@ Gotchas:
 - Team members commit and push themselves. Agents commit, push or open PRs **only when explicitly asked**, on a branch (never directly on `main`).
 - **No `Co-Authored-By` trailers and no "Generated with …" footers** in commits or PRs. AI use is disclosed in `docs/qa/AI_DISCLOSURE_LOG.md` instead.
 - Commit subjects describe behaviour and may carry the backlog/task id (`PB10: real QR scanner …`, `T23: …`) or a conventional prefix (`docs:`, `fix:`, `ci:`). Avoid subjects that only name a sprint or phase.
-- Never commit secrets (`.env.local`, keystores), `tmp/`, or `CLAUDE.local.md`.
+- Never commit secrets (`.env.local`, keystores), `tmp/`, or `.agents/AGENTS.local.md`.
 
 ## 8. Content and copy rules
 
@@ -121,4 +121,4 @@ Write an ADR in `docs/adr/` for durable technical decisions: architecture and mo
 
 ## 11. Adding files to `.agents/`
 
-Keep `.agents/` to the four files listed in `AGENTS.md`. Long-lived topic docs belong under `docs/` (`engineering/`, `qa/`, `design/`, `survey/`), decisions under `docs/adr/`. No scratch files, no duplicated content.
+Keep `.agents/` to the four committed files listed in `AGENTS.md` plus the gitignored `AGENTS.local.md`. Long-lived topic docs belong under `docs/` (`engineering/`, `qa/`, `design/`, `survey/`), decisions under `docs/adr/`. No scratch files, no duplicated content.

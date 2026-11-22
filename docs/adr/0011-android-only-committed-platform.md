@@ -27,7 +27,7 @@ The product and its acceptance tests are Android-only. Keeping other platforms l
 
 - `.git/info/exclude` lists `web/` and `ios/` on machines that create them.
 - `flutter create` and `flutter analyze` may rewrite `analysis_options.yaml` and `.metadata`; those changes are reverted before committing.
-- Local commands for web preview and iOS runs are kept per machine in `CLAUDE.local.md`.
+- Local commands for web preview and iOS runs are kept per machine in `.agents/AGENTS.local.md`.
 
 ## Consequences
 

@@ -11,8 +11,9 @@ Purpose: complete, stable project context for AI coding agents (Claude Code, Cod
 | `rules.md` | How agents work here: read order, sources of truth, PRD sync rule, verification, git, copy rules, end-of-session updates, ADR rules. | Rarely |
 | `MEMORY.md` | Session handoff: where the work stands now, open threads, next steps, newest session first. | Every session |
 | `PROGRESS.md` | Project status: sprint timeline, open questions, known issues #1–#n, team decisions, change log. | Every session that changes status |
+| `AGENTS.local.md` | **Not committed** (gitignored), one per laptop: Flutter path, installed tools, local build/run commands, credentials locations. Replaces the old root `CLAUDE.local.md`. | Per machine |
 
-Machine-specific paths and tools (Flutter location, Python packages, local signing) live in the uncommitted root `CLAUDE.local.md` on each laptop. The root `CLAUDE.md` only points here.
+Machine-specific paths and tools (Flutter location, Python packages, local signing) live in the uncommitted `.agents/AGENTS.local.md` on each laptop (gitignored; loaded by the root `CLAUDE.md`). The root `CLAUDE.md` only loads these files.
 
 ---
 
