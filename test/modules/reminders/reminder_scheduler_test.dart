@@ -16,8 +16,8 @@ void main() {
   final start = DateTime(2026, 11, 20, 13);
 
   ReminderScheduler scheduler() => ReminderScheduler([
-        ClosingReminder(budget, gatePoiId: content.gate.id),
         FinalCallReminder(budget, gatePoiId: content.gate.id),
+        ClosingReminder(budget, gatePoiId: content.gate.id),
         const HydrationReminder(),
       ]);
 
@@ -70,9 +70,22 @@ void main() {
 
     test('a session started after the threshold is reminded at once (UC-A03-3)',
         () {
-      final late = threshold.add(const Duration(minutes: 20));
+      // Past closingReminderAt, still before finalCallAt → regular closing reminder.
+      final late = threshold.add(const Duration(minutes: 5));
       final due = scheduler().check(ctx(late, sessionStart: late));
       expect(due?.kind, ReminderKind.closing);
+
+      // Past finalCallAt (> 200 m from gate) → only finalCall fires, covering closing.
+      final veryLate =
+          budget.finalCallAt(p06, start).add(const Duration(minutes: 1));
+      final s = scheduler();
+      expect(s.check(ctx(veryLate, sessionStart: veryLate))?.kind,
+          ReminderKind.finalCall);
+      expect(
+          s.check(ctx(veryLate.add(const Duration(seconds: 5)),
+              sessionStart: veryLate)),
+          isNull,
+          reason: 'closing is covered by finalCall (no double alarm)');
     });
 
     test('follows the position: due at P06, not yet at the gate', () {

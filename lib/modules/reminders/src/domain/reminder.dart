@@ -33,6 +33,10 @@ abstract interface class Reminder {
   /// True: shown at most once per session (the scheduler remembers it, also across a restart).
   bool get oncePerSession;
 
+  /// Softer reminder kinds already covered when this reminder fires (e.g. final call covers
+  /// the regular closing reminder so a very late start never plays two alarms in a row).
+  Set<ReminderKind> get supersedes => const {};
+
   /// The reminder to show now, or null. [lastHandledAt] = when this reminder was last shown
   /// or dismissed in this session (null if never).
   ReminderDue? check(ReminderContext ctx, DateTime? lastHandledAt);
@@ -58,6 +62,9 @@ class ClosingReminder implements Reminder {
 
   @override
   bool get oncePerSession => true;
+
+  @override
+  Set<ReminderKind> get supersedes => const {};
 
   @override
   ReminderDue? check(ReminderContext ctx, DateTime? lastHandledAt) {
@@ -106,6 +113,9 @@ class FinalCallReminder implements Reminder {
   bool get oncePerSession => true;
 
   @override
+  Set<ReminderKind> get supersedes => const {ReminderKind.closing};
+
+  @override
   ReminderDue? check(ReminderContext ctx, DateTime? lastHandledAt) {
     if (ctx.navigatingToGate) return null;
     if (_budget.distanceToGateM(ctx.position) <= minDistanceM) return null;
@@ -141,6 +151,9 @@ class HydrationReminder implements Reminder {
 
   @override
   bool get oncePerSession => false;
+
+  @override
+  Set<ReminderKind> get supersedes => const {};
 
   @override
   ReminderDue? check(ReminderContext ctx, DateTime? lastHandledAt) {

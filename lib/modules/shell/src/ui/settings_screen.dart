@@ -1103,16 +1103,8 @@ class _VersionRowState extends ConsumerState<_VersionRow> {
           backgroundColor: JT.dusk,
         ));
     } else if (_taps >= 4) {
+      // Keep pre-unlock feedback nonverbal so ordinary visitors never see debug copy.
       unawaited(HapticFeedback.selectionClick());
-      messenger
-        ?..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          content: Text('$left ketukan lagi untuk membuka menu debug',
-              style: JTText.body.copyWith(color: Colors.white)),
-          duration: const Duration(milliseconds: 900),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: JT.ink,
-        ));
     }
   }
 

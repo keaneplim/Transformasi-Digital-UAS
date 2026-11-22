@@ -68,7 +68,7 @@ Look up the brand on **dontkillmyapp.com** and note its score. Prepare these set
 | Samsung (One UI) | Remove from "Sleeping/Deep sleeping apps"; add to **"Never sleeping apps"** |
 | Huawei/Honor | App launch → Manage manually: all three toggles on |
 
-**Real test (once the location module exists, S3):** start a session, lock the screen, put the phone in a pocket for 15 min while walking, then check the location log has fixes every ~3 s with no gap. Record the result per phone. This is the test that decides whether TC-06 can pass on that phone.
+**Real test (once the location module exists, S3):** start a session, lock the screen, put the phone in a pocket for 15 min while walking, then check the location log has fixes every ~3 s with no gap. Record the result per phone. This is the test that decides whether TC-06 can pass on that phone. *(Note A06 / T25: because `geolocator` restarts its foreground service on stream interval changes and Android 12+ forbids starting a foreground service while backgrounded, adaptive 3 s ↔ 10 s interval switching is applied only while the app is resumed; verify battery drain in SK-A06-01/02.)*
 
 ### 1.6 Audio & notifications
 - Earphones available (wired or Bluetooth) and the play/pause button works with any music app on the lock screen.

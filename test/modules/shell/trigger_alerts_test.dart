@@ -497,6 +497,32 @@ void main() {
       expect(g.navigation?.to.id, 'P01');
       expect(routes, ['/navigate']);
     });
+
+    test(
+        'stale tap from replaced closing notification does not break finalCall cancel',
+        () {
+      final p06 = poi('P06');
+      g
+        ..update(() => g.hydrationMin = 0)
+        ..teleportTo(p06)
+        ..startSession();
+      alerts.setVisible(false);
+      clock.setNow(g.closingReminderAt);
+      g.heartbeat();
+      clock.setNow(g.finalCallAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.finalCall);
+
+      // Delayed tap from the superseded closing notification must be ignored and keep
+      // the active final-call posted state intact.
+      n.tapReminder(ReminderKind.closing, 'P01', AlertAction.later);
+      expect(g.reminder, GuideReminder.finalCall);
+
+      // Later dismissing finalCall in the app still cancels the lock-screen notification.
+      final cancelsBefore = n.count('cancelReminder');
+      g.dismissReminder(GuideReminder.finalCall);
+      expect(n.count('cancelReminder'), cancelsBefore + 1);
+    });
   });
 
   test('Settings "Getar" also switches the notification vibration (PB07)', () {

@@ -44,21 +44,21 @@ How to update (see `rules.md` §9):
 4. Sprint 5: run `docs/qa/scenario/` in the field (TC-01…TC-13), usability test (≥5 respondents, SUS), record results.
 5. Decide PB12 (OSM vs GPX), #13/#25/#26/#27; branch protection on `main`.
 
-**Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **336 Flutter tests pass**.
+**Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **347 Flutter tests pass**.
 
 ---
 
 ## Sessions
 
 ### 2026-11-22 — T25 battery-aware tracking, T23 final call, T31 version & debug menu (branch `feat/t25-t23-t31-tracking-finalcall-settings`, Khalfani, Ubuntu / Devin)
-- **Objective:** complete the remaining code items for T25 (A06 battery-aware GPS interval), T23 (UC-A03-2 final call reminder), and T31 (Settings offline content/app version + 7-tap hidden debug menu & Explore map debug overlay).
+- **Objective:** complete the remaining code items for T25 (A06 battery-aware GPS interval), T23 (UC-A03-2 final call reminder), and T31 (Settings offline content/app version + 7-tap hidden debug menu & Explore map debug overlay), then address all findings from independent PR reviews (Claude Opus 5.5 + Codex GPT-6.2 Sol medium).
 - **What changed:**
-  - **T25 (A06):** pure Dart `TrackingPolicy` + `TrackingPolicyParams` (`location/src/domain/tracking_policy.dart`, `park.json` params), `LocationService.setInterval`/`currentInterval` + adaptive `noFixAfter` timeout (`LocationServiceImpl`), wired in `GuideController` to GPS fixes, `StepTracker` wake-up, and `keepFast` while approaching any POI or actively navigating.
-  - **T23 (UC-A03-2):** `TimeBudget.finalCallAt` + `distanceToGateM`, `FinalCallReminder` (`reminders`, Open/Closed strategy > 200 m from gate at `close − walk`, quiet when already navigating to gate, persisted via `ReminderStore`), `ReminderScheduler.checkOnly` so final call supersedes an open softer card, `GuideReminder.finalCall` with urgent vibration/notification (`TriggerAlerts`), safety voice (`VoiceAlerts`), and urgent terracotta UI13 card (`overlays.dart`).
-  - **T31 (UI15):** `ContentRepository.contentVersion`, `GeofenceEngine.debugSnapshot()` + `setWeakBannerForDebug`, *Data offline* & *Versi aplikasi* rows in *Tentang*, 7-tap unlock for `_DebugPanel` (Explore map `_DebugOverlay`, simulated weak-GPS toggle, fine fake-clock stepper/picker, final-call preview, copy session log summary).
-- **Decisions (user):** install Flutter 3.47.9 on Ubuntu for local CI parity; 7-tap debug menu unlockable in all builds (including CI release APKs for Sprint 5 QA); final call stays quiet when already navigating to the gate and supersedes an open closing card; T25 keeps 3 s both while approaching POIs and while actively navigating.
-- **Checks:** `validate_content.py` 0 errors (33 warnings), 19 Python tests, `dart format`, `flutter analyze`, `check_architecture.dart`, 336 Flutter tests (+24 new tests). Not tested on a physical Android phone yet.
-- **Next action:** monitor PR CI (`check` + `build-apk`), merge, then start Android phone checks (`DEVICE_CHECK.md` §3).
+  - **T25 (A06):** pure Dart `TrackingPolicy` + `TrackingPolicyParams` (`location/src/domain/tracking_policy.dart`, `park.json` params: continuous fresh low-motion window, deadband & outage safety), serialized `LocationServiceImpl` with generation guard + accurate `currentInterval` + adaptive `noFixAfter` timeout, Android 11/12+ foreground-only interval switching (`GuideController.setAppVisible` via `AppLifecycleListener`), and `GeofenceEngine.hasNearbyActivity` safeguard (independent of UI banner visibility).
+  - **T23 (UC-A03-2):** `TimeBudget.finalCallAt` + `distanceToGateM`, `FinalCallReminder` ordered before `ClosingReminder` with `supersedes = {closing}` (no double alarm on very late start), immediate reminder check on `startSession()` (UC-A03-3), stale-safe card/notification dismiss & snooze (`dismissReminder(expected)`, `TriggerAlerts._postedReminder`), dedicated `final_call` + `final_call_quiet` Android notification channels (3-pulse vibration), safety voice, formal UI13 card.
+  - **T31 (UI15):** `ContentRepository.contentVersion`, `GeofenceEngine.debugSnapshot()`, *Data offline* & *Versi aplikasi* rows in *Tentang* (pubspec version parity test), nonverbal pre-unlock taps + 7-tap `_DebugPanel` (Explore map `_DebugOverlay` with 48 dp close target, simulated weak-GPS toggle, debug clock isolation restoring live time & real reminder state on reset/close, final-call preview, copy session log summary).
+- **Decisions (user):** install Flutter 3.47.9 on Ubuntu for local CI parity; 7-tap debug menu unlockable in all builds (including CI release APKs for Sprint 5 QA); final call stays quiet when already navigating to the gate and supersedes an open closing card; T25 keeps 3 s both while approaching POIs and while actively navigating; review findings fixed on PR #15.
+- **Checks:** `validate_content.py` 0 errors (33 warnings), 19 Python tests, `dart format`, `flutter analyze`, `check_architecture.dart`, 347 Flutter tests (+35 new tests). Not tested on a physical Android phone yet.
+- **Next action:** monitor PR #15 CI (`check` + `build-apk`), merge, then start Android phone checks (`DEVICE_CHECK.md` §3).
 
 ### 2026-11-22 — Wellness, reminders, Settings batch (branch `feat/wellness-notify-settings`, Khalfani, Claude Code)
 - **Objective:** seven open tasks: key facts on UI06, saved Settings (#32), reminder notifications, hydration snooze (#33), kcal D11 + active time + accuracy filter + re-ask "Aktivitas fisik", PB07 permission hint + Getar ↔ channels, TTS fallback (T07).

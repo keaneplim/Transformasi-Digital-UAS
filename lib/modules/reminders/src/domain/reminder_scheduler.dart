@@ -46,7 +46,9 @@ class ReminderScheduler {
     final due = until != null ? r.due(ctx) : r.check(ctx, _handled[r.kind]);
     if (due == null) return null;
     _snoozed.remove(r.kind);
-    _fired.add(r.kind);
+    _fired
+      ..add(r.kind)
+      ..addAll(r.supersedes);
     _handled[r.kind] = ctx.now;
     return due;
   }

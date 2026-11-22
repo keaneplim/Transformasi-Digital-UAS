@@ -65,9 +65,9 @@ class TriggerAlerts {
   bool _nextPosted = false;
   bool _vibration = true;
 
-  /// Last reminder seen on the guide, and whether its notification is posted.
+  /// Last reminder seen on the guide, and which reminder kind is currently posted.
   GuideReminder? _reminder;
-  bool _reminderPosted = false;
+  GuideReminder? _postedReminder;
 
   /// Two short pulses (IMPLEMENTATION_PLAN F04 "Vibration patterns").
   static const triggerVibration = [0, 200, 150, 200];
@@ -137,8 +137,8 @@ class TriggerAlerts {
   /// UI13 on the lock screen, same words as the card and the voice.
   void _postReminder() {
     final r = guide.reminder;
-    if (r == null || !guide.sessionActive || _reminderPosted) return;
-    _reminderPosted = true;
+    if (r == null || !guide.sessionActive || _postedReminder == r) return;
+    _postedReminder = r;
     final to = guide.reminderDestination(r);
     switch (r) {
       case GuideReminder.closing:
@@ -179,8 +179,8 @@ class TriggerAlerts {
   }
 
   void _cancelReminder() {
-    if (!_reminderPosted) return;
-    _reminderPosted = false;
+    if (_postedReminder == null) return;
+    _postedReminder = null;
     unawaited(notifier.cancelReminder());
   }
 
@@ -271,22 +271,23 @@ class TriggerAlerts {
   }
 
   void _handleReminderTap(AlertTap tap) {
-    // A button removes its notification itself (cancelNotification).
-    _reminderPosted = false;
     final r = switch (tap.reminder!) {
       ReminderKind.hydration => GuideReminder.hydration,
       ReminderKind.closing => GuideReminder.closing,
       ReminderKind.finalCall => GuideReminder.finalCall,
     };
+    // Only clear posted state when the tap matches the currently posted reminder; a delayed
+    // tap from a superseded closing notification must not clear an active final-call alert.
+    if (_postedReminder == r) _postedReminder = null;
     final open = guide.reminder == r;
     switch (tap.action) {
       case AlertAction.navigate:
         // Also for a reminder already answered: the visitor asked for the way.
         if (guide.navigateForReminder(r)) navigate('/navigate');
       case AlertAction.snooze:
-        if (open) guide.snoozeReminder();
+        if (open) guide.snoozeReminder(r);
       case AlertAction.later:
-        if (open) guide.dismissReminder();
+        if (open) guide.dismissReminder(r);
       case AlertAction.show || AlertAction.listen || AlertAction.detail:
         break; // the app opens on the reminder card, which is still there
     }

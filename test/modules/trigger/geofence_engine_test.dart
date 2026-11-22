@@ -338,9 +338,13 @@ void main() {
     expect(on(santai, 'P05'), isTrue);
   });
 
-  test('debugSnapshot exposes per-POI state, distance and debounce (T31)', () {
+  test(
+      'debugSnapshot exposes per-POI state and hasNearbyActivity tracks approach/debounce',
+      () {
     final w = Walk(engine());
+    expect(w.e.hasNearbyActivity, isFalse);
     w.fix(10); // inside A (r=20) once → debounce 1, approaching B (40 m away)
+    expect(w.e.hasNearbyActivity, isTrue);
     final snap = w.e.debugSnapshot();
     expect(snap.first.poiId, 'A');
     expect(snap.first.debounce, 1);
@@ -348,9 +352,8 @@ void main() {
     expect(snap.last.poiId, 'B');
     expect(snap.last.state, PoiState.approaching);
 
-    w.e.setWeakBannerForDebug(true);
-    expect(w.e.weakBanner, isTrue);
-    w.e.setWeakBannerForDebug(false);
-    expect(w.e.weakBanner, isFalse);
+    // Far away from all POIs: no nearby activity.
+    w.fix(200);
+    expect(w.e.hasNearbyActivity, isFalse);
   });
 }

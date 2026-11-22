@@ -126,8 +126,8 @@ class DemoOverlayHost extends ConsumerWidget {
                           _push('/navigate');
                         }
                       },
-                      onLater: demo.dismissReminder,
-                      onSnooze: demo.snoozeReminder,
+                      onLater: () => demo.dismissReminder(reminder),
+                      onSnooze: () => demo.snoozeReminder(reminder),
                     ),
                   )
                 : const SizedBox.shrink(key: ValueKey('none')),
@@ -421,7 +421,7 @@ class _ReminderCard extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Text(
                       finalCall
-                          ? 'Waktu jalan ke gerbang sudah mepet dengan jam tutup kawasan.'
+                          ? 'Waktu yang tersisa hampir sama dengan perkiraan waktu jalan ke gerbang.'
                           : closing
                               ? 'Mulai kembali sekarang agar tidak terburu-buru.'
                               : 'Istirahat sebentar di tempat teduh terdekat.',

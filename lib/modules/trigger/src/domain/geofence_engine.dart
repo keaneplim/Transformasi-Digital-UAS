@@ -155,10 +155,14 @@ class GeofenceEngine implements TriggerEngine {
   /// GPS has been weak or absent for ≥ 60 s (UI12 banner, D08).
   bool get weakBanner => _weakBanner;
 
-  /// Debug simulation (T31): force the weak-GPS banner state on or off.
-  void setWeakBannerForDebug(bool active) {
-    _weakBanner = active;
-  }
+  /// True when any enabled POI is currently approaching or accumulating trigger debounce
+  /// (independent of UI banner visibility; keeps 3 s GPS cadence in T25 / A06).
+  bool get hasNearbyActivity => _targets.values.any((t) {
+        if (!t.enabled) return false;
+        final tr = _tracks[t.id];
+        return tr != null &&
+            (tr.state == PoiState.approaching || tr.debounce > 0);
+      });
 
   /// Per-POI diagnostics sorted by nearest known distance (for the Explore debug overlay).
   List<GeofenceDebugEntry> debugSnapshot() {

@@ -52,12 +52,16 @@ class _JelajahTamanAppState extends ConsumerState<JelajahTamanApp> {
         bus: ref.read(eventBusProvider),
         navigate: _navigate,
       );
-      _lifecycle = AppLifecycleListener(
-        onStateChange: (s) => _alerts?.setVisible(
-            s == AppLifecycleState.resumed || s == AppLifecycleState.inactive),
-      );
       _router.routerDelegate.addListener(_flushDeferred);
     }
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (s) {
+        _alerts?.setVisible(
+            s == AppLifecycleState.resumed || s == AppLifecycleState.inactive);
+        // B1 (T25 / Android 12+): only recreate the GPS stream while truly resumed.
+        ref.read(guideProvider).setAppVisible(s == AppLifecycleState.resumed);
+      },
+    );
   }
 
   String get _location => _router.routerDelegate.currentConfiguration.uri.path;

@@ -577,9 +577,9 @@ Both cave QRs printed and opening the right POI offline on 2 phones; manual pick
 Battery test: full-charge phone, 60-min session with screen off, record % drop on both test phones (TC log entry, PB21). Keep the screen-off rate in the testing report.
 
 #### As built (T25, 2026-11-22)
-- `location/src/domain/tracking_policy.dart` (pure Dart, R4/R7): `TrackingMode` (`moving` / `stationary`), `TrackingPolicyParams.fromPark(park)` (`gps_interval_s` 3 s, `gps_stationary_interval_s` 10 s, `gps_stationary_after_s` 60 s in `park.json`), and `TrackingPolicy`. Keeps 3 s whenever `keepFast` is true (approaching any POI or active navigation); drops to 10 s after 60 s with no steps and speed < 0.3 m/s; wakes immediately on first new step, speed > 0.5 m/s, or ≥ 5 m displacement (fallback without pedometer/GPS speed).
-- `LocationService` (`location_contracts.dart` / `LocationServiceImpl`): `currentInterval` + `setInterval(Duration)` re-subscribing only on change; adaptive `noFixAfter` (`max(10 s, interval × 2 + 4 s)`) so 10 s polling never flaps `GpsQuality.none`; `stopSession()`/`stop()` reset back to 3 s.
-- `GuideController`: bridges `StepTracker`, `LocationService`, `GeofenceEngine.approaching`, and `navigation` during real-mode sessions (keeps `location` at Level 1, R2).
+- `location/src/domain/tracking_policy.dart` (pure Dart, R4/R7): `TrackingMode` (`moving` / `stationary`), `TrackingPolicyParams.fromPark(park)` (`gps_interval_s` 3 s, `gps_stationary_interval_s` 10 s, `gps_stationary_after_s` 60 s in `park.json`), and `TrackingPolicy`. Requires a continuous window of fresh low-motion fixes (no steps, speed < 0.3 m/s, max 15 s fix gap) before entering stationary mode; deadband speed (0.3–0.5 m/s) resets a partial still timer while moving and keeps hysteresis once stationary; GPS outages never throttle down; wakes immediately on first new step, speed > 0.5 m/s, or ≥ 5 m displacement.
+- `LocationService` (`location_contracts.dart` / `LocationServiceImpl`): `currentInterval` + `setInterval(Duration)` serialized with a generation guard (prevents overlapping restarts or leaked foreground subscriptions); updates `currentInterval` only after the new subscription is installed; adaptive `noFixAfter` (`max(10 s, interval × 2 + 4 s)`); `stopSession()`/`stop()` reset back to 3 s.
+- **Android 11/12+ foreground-service guard:** `geolocator` stops and restarts its foreground service when recreating the position stream; Android 12+ forbids starting a foreground service from the background. `GuideController.setAppVisible` (wired to `AppLifecycleListener` in `app.dart`) therefore applies interval switches only while `AppLifecycleState.resumed`, keeping the current rate while the screen is locked and applying any deferred change on resume. `_keepFastGps` reads `GeofenceEngine.hasNearbyActivity` (approaching or debounce > 0, independent of UI banner visibility) and `navigation != null`.
 - Tests: `test/modules/location/tracking_policy_test.dart`, `location_service_test.dart`, and T25 group in `guide_controller_test.dart`. **Phone battery check open** (SK-A06-01, SK-A06-02).
 
 ---
@@ -911,10 +911,10 @@ TC-10 (fake clock, fixed position) — reminder fires at the computed minute, no
 
 #### As built (UC-A03-2 final call, 2026-11-22)
 - `TimeBudget` (`routing`): `finalCallAt(from, now)` (`close − walkToGate`) and `distanceToGateM(from)`.
-- `FinalCallReminder` (`reminders/src/domain/reminder.dart`): Open/Closed strategy plugged into `ReminderScheduler` after `ClosingReminder`; fires once per session when `distanceToGateM > 200 m` (`final_call_min_distance_m` in `park.json`), `now ≥ finalCallAt`, and visitor is not already navigating to the gate (`ReminderContext.navigatingToGate`). Persisted via `ReminderStore`.
-- `GuideController` + `ReminderScheduler.checkOnly`: final call supersedes an open softer reminder card (e.g. un-dismissed `ClosingReminder`).
-- `TriggerAlerts` + `VoiceAlerts` + UI13 (`overlays.dart`): urgent 3-pulse vibration (`finalCallVibration`), `VoicePriority.safety`, lock-screen notification (`ReminderKind.finalCall`, "Segera menuju gerbang sekarang"), terracotta UI13 card with "Panggilan terakhir" badge and *Navigasi ke gerbang*.
-- Tests: `time_budget_test.dart`, `reminder_scheduler_test.dart`, `trigger_alerts_test.dart`, `guide_controller_test.dart`, `detail_settings_test.dart`. **Phone check open.**
+- `FinalCallReminder` (`reminders/src/domain/reminder.dart`): Open/Closed strategy ordered before `ClosingReminder` with `supersedes = {ReminderKind.closing}` (so a very late start past `finalCallAt` fires only `finalCall`, never two alarms in a row); fires once per session when `distanceToGateM > 200 m` (`final_call_min_distance_m` in `park.json`), `now ≥ finalCallAt`, and visitor is not already navigating to the gate (`ReminderContext.navigatingToGate`). Persisted via `ReminderStore`.
+- `GuideController`: checks reminders immediately on `startSession()` (UC-A03-3); `ReminderScheduler.checkOnly` lets `finalCall` supersede an open softer card; `dismissReminder(expected)`/`snoozeReminder(expected)` and `TriggerAlerts._postedReminder` ignore stale actions from replaced cards/notifications.
+- `notify` + `TriggerAlerts` + `VoiceAlerts` + UI13 (`overlays.dart`): dedicated `final_call` Android channel (3-pulse `0-400-150-400-150-400` + `final_call_quiet` twin), `VoicePriority.safety`, lock-screen notification ("Segera menuju gerbang sekarang"), terracotta UI13 card with "Panggilan terakhir" badge and *Navigasi ke gerbang*.
+- Tests: `time_budget_test.dart`, `reminder_scheduler_test.dart`, `alert_contracts_test.dart`, `trigger_alerts_test.dart`, `guide_controller_test.dart`, `detail_settings_test.dart`. **Phone check open.**
 
 #### As built (reminder notifications + snooze, 2026-11-22, C)
 - `notify`: channel `reminder` (high, sound, 400-200-400 ms) and `AlertNotifier.showReminder`/`cancelReminder`; payload `reminder|<kind>|<destination>`, buttons `navigate` (opens the app) and `later` (closing) / `snooze` (hydration, background engine, works without unlocking). `AlertTap` carries the `ReminderKind`.
@@ -1005,7 +1005,7 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 
 **UC-SH-4 End session.** stop reminders → stop location service → final metrics → UI14 summary.
 
-**UC-SH-5 Settings (UI15).** Auto-Play (default off), voice navigation on/off, hydration interval, text size, body weight (optional, on-device), content/version info ("Data offline: tersedia · versi 1"), debug menu hidden behind 7 taps on the version (debug builds only).
+**UC-SH-5 Settings (UI15).** Auto-Play (default off), voice navigation on/off, hydration interval, text size, body weight (optional, on-device), content/version info ("Data offline: tersedia · versi 1"), debug menu hidden behind 7 taps on the version (all builds, including CI release APKs for Sprint 5 QA; nonverbal until the 7th tap; resets simulated clock and restores real reminder state when closed).
 
 **As built (T31, 2026-11-22, C).** `GuidePrefs` (`shell/state/guide_prefs.dart`) keeps onboarding done, Auto-Play, Arahan suara, Getar, hydration interval, text size, body weight, interests and route as one JSON value under `guide.prefs` (shell owns the `guide.*` keys, R6); loaded when the guide starts, saved on every change (`GuideController.update`, interest/route/onboarding calls). Each value is checked alone: an unknown or broken value falls back to its default (#32 fixed: onboarding no longer shows on every launch). "Izin ponsel" group: Lokasi (from `LocationService`), Notifikasi and Aktivitas fisik (`DevicePermissions` on permission_handler, bound in the composition root); each row shows Aktif/Nonaktif, what still works without it, and *Izinkan* (system dialog) or *Buka pengaturan ponsel* (refused for good / GPS off); statuses are re-read when the app resumes. "Getar" now also switches notification vibration (quiet channel twins, §6.2). *Update 22 Nov (T31 completion):* `ContentRepository.contentVersion` (from `pois.json`), "Data offline · Tersedia · versi 1" and "Versi aplikasi · 0.1.0" rows in *Tentang*; 7 taps on the version row unlock the hidden *Menu debug* panel in all builds (usable by QA on CI release APKs): Explore map debug overlay (`GeofenceEngine.debugSnapshot()`, GPS accuracy + adaptive interval/motion mode from T25, per-POI distance/state/debounce), simulated weak-GPS banner toggle (UI12), fine fake-clock stepper/time picker, final-call preview, and copy session log summary to clipboard. Tests in `content_repository_test.dart`, `geofence_engine_test.dart`, `detail_settings_test.dart`, `map_status_test.dart`, `guide_controller_test.dart`.
 
@@ -1030,10 +1030,11 @@ TC-11/TC-12 pass; hydration fires on fake clock; summary numbers equal DB values
 | `trigger` | high, sound, 2 × 200 ms vibration | F02 trigger with actions; only while the app is not visible (in-app card + vibration otherwise) |
 | `approach` | default (no pop-up), sound, 1 × 300 ms vibration | F02/F04 approaching, during a session, also while the app is visible (added in PB07: the `vibration` plugin alone is not reliable from the background, notifications are) |
 | `reminder` | high, sound, 400-200-400 ms | A03 closing, F08 hydration, only while the app is not visible (built 22 Nov) |
+| `final_call` | high, sound, 400-150-400-150-400 ms | UC-A03-2 final call when > 200 m from gate at `close − walk`, only while hidden (built 22 Nov) |
 | `recommendation` | default, silent | F07 when screen off |
 | media | (audio_service) | narration controls |
 
-Android fixes a channel's vibration when it is created, so `trigger`, `approach` and `reminder` each have a quiet twin (`<id>_quiet`, "… (tanpa getar)") used while Settings → "Getar" is off (PB07, 22 Nov). The F07 channel is called `next` in code.
+Android fixes a channel's vibration when it is created, so `trigger`, `approach`, `reminder` and `final_call` each have a quiet twin (`<id>_quiet`, "… (tanpa getar)") used while Settings → "Getar" is off (PB07, 22 Nov). The F07 channel is called `next` in code.
 
 ### 6.3 Timing budget (from PRD ACs)
 Position ≤10 s · trigger notification ≤10 s after entry · QR ≤3 s · POI Detail from notification ≤2 s · Auto-Play ≤3 s · route ≤3 s · reroute ≤5 s · search ≤1 s · recommendation ≤2 s.
@@ -1041,7 +1042,7 @@ Position ≤10 s · trigger notification ≤10 s after entry · QR ≤3 s · POI
 ### 6.4 Logging
 Every location fix (session only), trigger event, recommendation, reminder and navigation start/arrival goes to SQLite with timestamp. A debug "Export log" button writes CSV to Downloads for the QA testing report. No data leaves the device (NG05).
 
-### 6.5 Debug tooling (debug builds only) — build this first, it saves days
+### 6.5 Debug tooling (7-tap hidden menu in Settings) — build this first, it saves days
 - **GPX replay:** pick a track from `test_data/gpx/`, speed ×1/×5/×20, optional accuracy override (to simulate canopy).
 - **Fake clock:** set "now" (e.g., 15.30) and speed; all reminders and recommendations use it (TC-10).
 - **Debug overlay on Explore:** per-POI distance + state + debounce count, current accuracy, active interval.

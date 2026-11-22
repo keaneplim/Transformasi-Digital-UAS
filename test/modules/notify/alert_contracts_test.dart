@@ -54,4 +54,17 @@ void main() {
             {'poi': 'P01', 'action': 'later', 'reminder': 'nap'}),
         isNull);
   });
+
+  test('reminderChannelId selects dedicated final_call channel and quiet twins',
+      () {
+    expect(reminderChannelId(ReminderKind.closing, vibrate: true), 'reminder');
+    expect(reminderChannelId(ReminderKind.closing, vibrate: false),
+        'reminder_quiet');
+    expect(
+        reminderChannelId(ReminderKind.hydration, vibrate: true), 'reminder');
+    expect(
+        reminderChannelId(ReminderKind.finalCall, vibrate: true), 'final_call');
+    expect(reminderChannelId(ReminderKind.finalCall, vibrate: false),
+        'final_call_quiet');
+  });
 }

@@ -66,9 +66,9 @@ class GuideController extends ChangeNotifier {
     budget = timeBudget ?? TimeBudget.fromContent(content, router);
     final finalCallMinM = _parkParam('final_call_min_distance_m', 200);
     _reminders = ReminderScheduler([
-      ClosingReminder(budget, gatePoiId: content.gate.id),
       FinalCallReminder(budget,
           gatePoiId: content.gate.id, minDistanceM: finalCallMinM),
+      ClosingReminder(budget, gatePoiId: content.gate.id),
       const HydrationReminder(),
     ]);
     _reminderStore = ReminderStore(_store);
@@ -142,7 +142,29 @@ class GuideController extends ChangeNotifier {
 
   // ---- time (demo can jump the clock, e.g. to 15.30 for TC-10) ---------------------------
   Duration _clockOffset = Duration.zero;
+
+  /// Real-session reminder state backed up before a debug clock shift, restored on reset.
+  Map<String, Object?>? _savedRealReminders;
+
   DateTime now() => _baseClock.now().add(_clockOffset);
+
+  bool get _debugClockActive => _clockOffset != Duration.zero && !isDemo;
+
+  void _enterDebugClock() {
+    if (!isDemo && sessionActive && _savedRealReminders == null) {
+      _savedRealReminders = _reminders.toJson();
+    }
+  }
+
+  void _restoreRealRemindersIfNeeded() {
+    final saved = _savedRealReminders;
+    if (saved == null) return;
+    _savedRealReminders = null;
+    _reminders.restore(saved);
+    reminder = null;
+    reminderDue = null;
+    _saveReminders();
+  }
 
   void setDemoTime(int hour, int minute) {
     final n = _baseClock.now();
@@ -151,8 +173,9 @@ class GuideController extends ChangeNotifier {
   }
 
   /// Fine clock control from the hidden debug menu (T31 / TC-10): moves simulated time
-  /// and evaluates reminders right away.
+  /// and evaluates reminders right away without consuming real-session reminders.
   void shiftClock(Duration delta) {
+    _enterDebugClock();
     _clockOffset += delta;
     if (sessionActive) _checkReminders();
     notifyListeners();
@@ -160,6 +183,7 @@ class GuideController extends ChangeNotifier {
 
   /// Sets simulated time of day from the hidden debug menu and checks reminders at once.
   void setClockTime(int hour, int minute) {
+    _enterDebugClock();
     final n = _baseClock.now();
     _clockOffset = DateTime(n.year, n.month, n.day, hour, minute).difference(n);
     if (sessionActive) _checkReminders();
@@ -168,6 +192,7 @@ class GuideController extends ChangeNotifier {
 
   void resetDemoTime() {
     _clockOffset = Duration.zero;
+    _restoreRealRemindersIfNeeded();
     notifyListeners();
   }
 
@@ -310,6 +335,8 @@ class GuideController extends ChangeNotifier {
     debugMenuUnlocked = false;
     debugOverlay = false;
     _debugWeakGps = false;
+    _clockOffset = Duration.zero;
+    _restoreRealRemindersIfNeeded();
     notifyListeners();
   }
 
@@ -421,7 +448,18 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool get _keepFastGps => approaching != null || navigation != null;
+  bool _appForeground = true;
+
+  /// App lifecycle hook (B1 / Android 12+): geolocator recreates the foreground service on
+  /// interval switches, which is only allowed while the app is resumed. Any interval change
+  /// deferred while locked is applied on return to foreground.
+  void setAppVisible(bool visible) {
+    if (_appForeground == visible) return;
+    _appForeground = visible;
+    if (visible) _syncGpsInterval();
+  }
+
+  bool get _keepFastGps => _engine.hasNearbyActivity || navigation != null;
 
   void _onStepsChanged() {
     final current = stepTracker?.steps ?? 0;
@@ -436,7 +474,7 @@ class GuideController extends ChangeNotifier {
 
   void _syncGpsInterval() {
     final loc = location;
-    if (!sessionActive || isDemo || loc == null) return;
+    if (!sessionActive || isDemo || loc == null || !_appForeground) return;
     final target = _trackingPolicy.interval;
     if (loc.currentInterval != target) {
       unawaited(loc.setInterval(target));
@@ -603,6 +641,7 @@ class GuideController extends ChangeNotifier {
       _meter.anchor(f.position, f.at);
     }
     _reminders.reset();
+    _savedRealReminders = null;
     _trackingPolicy.reset();
     _lastPolicySteps = 0;
     _recommendedFor.clear();
@@ -626,6 +665,8 @@ class GuideController extends ChangeNotifier {
       unawaited(stepTracker?.start());
       _startHeartbeat();
     }
+    // UC-A03-3: a session started after the closing threshold is reminded at once.
+    _checkReminders();
     notifyListeners();
   }
 
@@ -789,6 +830,7 @@ class GuideController extends ChangeNotifier {
     _recommendedFor.clear();
     stopAudio();
     _clockOffset = Duration.zero;
+    _savedRealReminders = null;
     notifyListeners();
   }
 
@@ -1580,14 +1622,16 @@ class GuideController extends ChangeNotifier {
   /// there is no way there.
   bool navigateForReminder(GuideReminder r) {
     final to = reminderDestination(r);
-    if (reminder == r) dismissReminder();
+    if (reminder == r) dismissReminder(r);
     return startNavigation(to);
   }
 
   /// Hydration "Ingatkan 10 menit lagi" (#33): back in [hydrationSnooze], not after the full
-  /// interval. Other reminders are just dismissed.
-  void snoozeReminder() {
-    if (reminder != GuideReminder.hydration) return dismissReminder();
+  /// interval. Other reminders are just dismissed. Ignores stale taps if [expected] no longer
+  /// matches the open reminder.
+  void snoozeReminder([GuideReminder? expected]) {
+    if (expected != null && reminder != expected) return;
+    if (reminder != GuideReminder.hydration) return dismissReminder(expected);
     _reminders.snooze(ReminderKind.hydration, now(), hydrationSnooze);
     _saveReminders();
     reminder = null;
@@ -1604,7 +1648,7 @@ class GuideController extends ChangeNotifier {
 
   void _saveReminders() {
     final r = _record;
-    if (r == null || !sessionActive) return;
+    if (r == null || !sessionActive || _debugClockActive) return;
     unawaited(_reminderStore.save(r.id, _reminders.toJson()));
   }
 
@@ -1616,7 +1660,8 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void dismissReminder() {
+  void dismissReminder([GuideReminder? expected]) {
+    if (expected != null && reminder != expected) return;
     if (reminder case final r?) {
       final kind = switch (r) {
         GuideReminder.closing => ReminderKind.closing,

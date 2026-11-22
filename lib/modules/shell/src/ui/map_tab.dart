@@ -1005,13 +1005,13 @@ class _DebugOverlay extends StatelessWidget {
                       color: Colors.white, fontWeight: FontWeight.w600),
                 ),
               ),
-              InkWell(
-                onTap: onClose,
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(Icons.close_rounded,
-                      size: 16, color: Colors.white70),
-                ),
+              IconButton(
+                onPressed: onClose,
+                tooltip: 'Tutup overlay debug',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.close_rounded,
+                    size: 18, color: Colors.white70),
               ),
             ],
           ),

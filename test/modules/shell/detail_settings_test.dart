@@ -198,10 +198,15 @@ void main() {
     expect(find.text(GuideController.appVersion), findsOneWidget);
     expect(find.text('Menu debug'), findsNothing);
 
-    for (var i = 0; i < 7; i++) {
+    for (var i = 0; i < 6; i++) {
       await tester.tap(find.text('Versi aplikasi'));
       await tester.pump(const Duration(milliseconds: 50));
     }
+    expect(g.debugMenuUnlocked, isFalse);
+    expect(find.textContaining('menu debug'), findsNothing,
+        reason: 'pre-unlock taps stay silent for ordinary visitors');
+
+    await tester.tap(find.text('Versi aplikasi'));
     await tester.pump(const Duration(milliseconds: 300));
     expect(g.debugMenuUnlocked, isTrue);
 
@@ -243,5 +248,12 @@ void main() {
     expect(find.text('Panggilan terakhir'), findsOneWidget);
     expect(find.text('Segera menuju gerbang sekarang'), findsOneWidget);
     expect(find.text('Navigasi ke gerbang'), findsOneWidget);
+  });
+
+  test('GuideController.appVersion matches pubspec.yaml', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final match =
+        RegExp(r'^version:\s*([^\s+]+)', multiLine: true).firstMatch(pubspec);
+    expect(match?.group(1), GuideController.appVersion);
   });
 }

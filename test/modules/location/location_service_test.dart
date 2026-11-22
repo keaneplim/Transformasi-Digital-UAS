@@ -23,9 +23,10 @@ class _Source implements LocationSource {
 
 class _Perms implements LocationPermissions {
   LocationAccess access = LocationAccess.granted;
+  Completer<LocationAccess>? pending;
 
   @override
-  Future<LocationAccess> check() async => access;
+  Future<LocationAccess> check() => pending?.future ?? Future.value(access);
 
   @override
   Future<LocationAccess> request() async => access;
@@ -146,5 +147,41 @@ void main() {
       expect(s.currentQuality, GpsQuality.none);
       s.stop();
     });
+  });
+
+  test(
+      'overlapping setInterval and stop never leaks or restarts foreground GPS (M1)',
+      () async {
+    final src = _Source();
+    final perms = _Perms();
+    final s = LocationServiceImpl(source: src, permissions: perms);
+    await s.startSession();
+    expect(src.subscribes, 1);
+    expect(s.isRunning, isTrue);
+
+    // Hold permission check open during setInterval, then stop before it finishes.
+    perms.pending = Completer<LocationAccess>();
+    final intervalCall = s.setInterval(const Duration(seconds: 10));
+    final stopCall = s.stop();
+    perms.pending!.complete(LocationAccess.granted);
+    await Future.wait([intervalCall, stopCall]);
+
+    expect(s.isRunning, isFalse);
+    expect(s.currentInterval, const Duration(seconds: 3));
+    expect(src.subscribes, 1,
+        reason:
+            'stale setInterval must not open a new subscription after stop');
+  });
+
+  test('currentInterval stays 3 s when permission is denied on setInterval',
+      () async {
+    final src = _Source();
+    final perms = _Perms();
+    final s = LocationServiceImpl(source: src, permissions: perms);
+    await s.startSession();
+    perms.access = LocationAccess.denied;
+    await s.setInterval(const Duration(seconds: 10));
+    expect(s.currentInterval, const Duration(seconds: 3));
+    await s.stop();
   });
 }

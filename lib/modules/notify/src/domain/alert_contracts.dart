@@ -92,6 +92,12 @@ class AlertTap {
       'AlertTap($poiId, ${action.name}${reminder == null ? '' : ', ${reminder!.name}'})';
 }
 
+/// Android notification channel id for a reminder (PB07 quiet twins + UC-A03-2 final call).
+String reminderChannelId(ReminderKind kind, {required bool vibrate}) {
+  final base = kind == ReminderKind.finalCall ? 'final_call' : 'reminder';
+  return vibrate ? base : '${base}_quiet';
+}
+
 /// System notifications and vibration (module `notify`, ARCHITECTURE §3). The plugin adapter
 /// lives in `src/data/`; tests use a fake. Copy is passed in, so the wording stays with the
 /// screens that own it.

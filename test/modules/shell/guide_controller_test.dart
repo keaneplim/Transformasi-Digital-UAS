@@ -625,6 +625,13 @@ void main() {
   });
 
   group('T25 battery-aware tracking (A06)', () {
+    void standStill(GeoPoint pos, int seconds) {
+      for (var s = 0; s <= seconds; s += 10) {
+        if (s > 0) clock.advance(const Duration(seconds: 10));
+        gps.push(pos, clock.now(), speed: 0.0);
+      }
+    }
+
     test('stationary 60 s slows GPS to 10 s; step wakes back to 3 s at once',
         () async {
       final stepStream = StreamController<int>.broadcast(sync: true);
@@ -655,10 +662,10 @@ void main() {
 
       // Stand far from every POI so approaching doesn't hold 3 s.
       const openSpot = GeoPoint(-6.851, 107.641);
-      gps.push(openSpot, clock.now(), speed: 0.0);
+      standStill(openSpot, 50);
       expect(gps.currentInterval, const Duration(seconds: 3));
 
-      clock.advance(const Duration(seconds: 60));
+      clock.advance(const Duration(seconds: 10));
       gps.push(openSpot, clock.now(), speed: 0.0);
       expect(gps.currentInterval, const Duration(seconds: 10));
       expect(g.trackingMode, TrackingMode.stationary);
@@ -673,20 +680,55 @@ void main() {
     test('starting navigation wakes GPS back to 3 s immediately', () {
       final g = guide()..startSession();
       const openSpot = GeoPoint(-6.851, 107.641);
-      gps.push(openSpot, clock.now(), speed: 0.0);
-      clock.advance(const Duration(seconds: 65));
-      g.heartbeat();
+      standStill(openSpot, 60);
       expect(gps.currentInterval, const Duration(seconds: 10));
 
       g.startNavigation(g.place('P05')!);
       expect(gps.currentInterval, const Duration(seconds: 3));
       expect(g.trackingMode, TrackingMode.moving);
     });
+
+    test(
+        'B1 lifecycle guard: never recreates GPS stream while hidden; syncs on resume',
+        () {
+      final g = guide()..startSession();
+      g.setAppVisible(false);
+      const openSpot = GeoPoint(-6.851, 107.641);
+      standStill(openSpot, 60);
+      expect(g.trackingMode, TrackingMode.stationary);
+      expect(gps.currentInterval, const Duration(seconds: 3),
+          reason: 'must not recreate foreground service while screen locked');
+
+      g.setAppVisible(true);
+      expect(gps.currentInterval, const Duration(seconds: 10),
+          reason: 'deferred interval applies once app resumes');
+    });
+
+    test(
+        'approaching a second POI keeps 3 s even when a trigger card hides the banner',
+        () {
+      final g = guide()..startSession();
+      // Open a trigger card for P04 so the approaching banner is suppressed.
+      final p04 = g.place('P04')!;
+      gps.push(p04.position, clock.now(), speed: 0.0);
+      clock.advance(const Duration(seconds: 3));
+      gps.push(p04.position, clock.now(), speed: 0.0);
+      expect(g.pendingTrigger?.id, 'P04');
+      expect(g.approaching, isNull, reason: 'banner hidden while card open');
+
+      // Stand in the approaching ring of P05 (radius 20 m → ~35 m away is approaching).
+      final p05 = g.place('P05')!.position;
+      final nearP05 = GeoPoint(p05.lat + 0.00031, p05.lng);
+      standStill(nearP05, 70);
+      expect(g.approaching, isNull, reason: 'banner still suppressed');
+      expect(gps.currentInterval, const Duration(seconds: 3),
+          reason: 'engine nearby activity holds 3 s cadence');
+    });
   });
 
   group('T23 final call (UC-A03-2) & T31 debug helpers', () {
     test(
-        'final call supersedes open closing card, quiet when navigating to gate',
+        'final call supersedes open closing card directly; stale closing dismiss is ignored',
         () {
       final g = guide();
       g.update(() => g.hydrationMin = 0);
@@ -700,19 +742,98 @@ void main() {
       g.heartbeat();
       expect(g.reminder, GuideReminder.closing);
 
-      // Already navigating to gate → final call stays quiet.
-      g
-        ..dismissReminder()
-        ..startNavigation(g.gatePlace);
+      // Leave closing card open; at finalAt, finalCall directly supersedes it.
+      clock.setNow(finalAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.finalCall);
+
+      // A stale dismiss from the outgoing closing card must not dismiss finalCall.
+      g.dismissReminder(GuideReminder.closing);
+      expect(g.reminder, GuideReminder.finalCall);
+      g.dismissReminder(GuideReminder.finalCall);
+      expect(g.reminder, isNull);
+    });
+
+    test('final call stays quiet when already navigating to gate', () {
+      final g = guide();
+      g.update(() => g.hydrationMin = 0);
+      final p06 = g.place('P06')!.position;
+      gps.push(p06, clock.now());
+      g.startSession();
+      final closeAt = g.closingReminderAt;
+      final finalAt = g.finalCallAt;
+
+      // Visitor gets the closing reminder and taps "Navigasi ke gerbang".
+      clock.setNow(closeAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.closing);
+      expect(g.navigateForReminder(GuideReminder.closing), isTrue);
+      expect(g.reminder, isNull);
+
+      // At finalCallAt while still navigating to the gate → stays quiet.
       clock.setNow(finalAt);
       g.heartbeat();
       expect(g.reminder, isNull);
 
-      // Cancel navigation → final call fires.
+      // Cancelling navigation while still > 200 m away → final call fires.
       g
         ..cancelNavigation()
         ..heartbeat();
       expect(g.reminder, GuideReminder.finalCall);
+    });
+
+    test(
+        'UC-A03-3 late start reminds immediately without heartbeat; very late plays only finalCall',
+        () {
+      final g = guide();
+      g.update(() => g.hydrationMin = 0);
+      final p06 = g.place('P06')!.position;
+      gps.push(p06, clock.now());
+      final closeAt = g.closingReminderAt;
+      final finalAt = g.finalCallAt;
+
+      // Start past closingReminderAt (before finalCallAt) → closing at once.
+      clock.setNow(closeAt.add(const Duration(minutes: 5)));
+      g.startSession();
+      expect(g.reminder, GuideReminder.closing);
+      g.endSession();
+
+      // Start past finalCallAt (> 200 m from gate) → only finalCall, no closing follow-up.
+      clock.setNow(finalAt.add(const Duration(minutes: 1)));
+      g.startSession();
+      expect(g.reminder, GuideReminder.finalCall);
+      g.dismissReminder(GuideReminder.finalCall);
+      clock.advance(const Duration(seconds: 5));
+      g.heartbeat();
+      expect(g.reminder, isNull,
+          reason: 'closing was covered by finalCall; no second alarm');
+    });
+
+    test(
+        'debug clock shift does not consume real session reminders and resets on close',
+        () {
+      final g = guide();
+      g.update(() => g.hydrationMin = 0);
+      final p06 = g.place('P06')!.position;
+      gps.push(p06, clock.now());
+      g.startSession();
+      final closeAt = g.closingReminderAt;
+
+      // Shift clock past closing inside debug menu → simulated reminder fires.
+      g
+        ..unlockDebugMenu()
+        ..setClockTime(closeAt.hour, closeAt.minute + 1);
+      expect(g.reminder, GuideReminder.closing);
+
+      // Closing debug menu restores live time and real reminder state.
+      g.lockDebugMenu();
+      expect(g.now(), clock.now());
+      expect(g.reminder, isNull);
+
+      // Later reaching the real threshold still fires the real closing reminder.
+      clock.setNow(closeAt);
+      g.heartbeat();
+      expect(g.reminder, GuideReminder.closing);
     });
 
     test('debugLogSummary & simulated weak GPS banner work cleanly', () {
