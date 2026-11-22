@@ -1,6 +1,6 @@
 # Stitch Prompts — Jelajah Taman
 
-> **Outdated (2026-11-12).** These prompts describe design v1 (amber CTA, no mascot). The app now follows [DESIGN.md](DESIGN.md) v2 "Sunlit Field Guide"; current screens are in `test_goldens/baselines/`. Kept for history only. Issue #18 (unsourced "WWII-era" wording) still applies if the prompts are ever reused.
+> **Outdated (2026-11-12).** These prompts describe design v1 (amber CTA, no mascot). The app now follows [DESIGN.md](../DESIGN.md) v2 "Sunlit Field Guide"; current screens are in `test_goldens/baselines/`. Kept for history only. Issue #18 (unsourced "WWII-era" wording) still applies if the prompts are ever reused.
 
 How to use:
 1. In Stitch, create a new project and choose **App (mobile)**.
@@ -9,7 +9,7 @@ How to use:
 4. Then paste the screen prompts **one at a time**, in order, in the same project. Change one screen per prompt; if a result drifts, reply with a short correction ("keep the same palette and fonts as Home; remove the emojis").
 5. Optional: upload `figures/fig_wire_a.png` / `fig_wire_b.png` together with the matching prompt as a layout reference, adding: "Use this wireframe only for layout; follow the design system for style and replace every emoji with a line icon."
 
-Full design system: [DESIGN.md](DESIGN.md).
+Full design system: [DESIGN.md](../DESIGN.md).
 
 ---
 

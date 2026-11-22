@@ -18,12 +18,14 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 | `test_goldens/` | Screen baselines, not in CI (`baselines/*.png`) |
 | `test/` | Mirrors `lib/` |
 | `tools/` | `check_architecture.dart`, `validate_content.py`, `make_dummy_data.py`, `prd_to_md.py`, `gpx_to_graph.py` (survey GPX → `trail_graph.json`), `resolve_coords.py` (photo EXIF / OSM / Places → coordinates), `osm_to_basemap.py` (OSM + elevation → `assets/map/`), `osm_to_graph.py` (OSM paths → `trail_graph.json` + routes), `photos.py` (Commons + survey photos, Gemini retouch, credits), `narration.py` (audio); tests in `tools/tests/` (`python -m unittest discover -s tools/tests`) |
-| `docs/prd/` | PRD: docx = canonical, pdf export, `PRD.md` = generated readable copy (`python tools/prd_to_md.py`); kickoff report |
+| `.agents/` | Agent context: `AGENTS.md` (full project context), `rules.md`, `MEMORY.md` (session handoff), `PROGRESS.md` (status, issues, decisions). Root `CLAUDE.md` loads them. |
+| `docs/prd/` | PRD: docx = canonical, pdf export, `PRD.md` = generated readable copy (`python tools/prd_to_md.py`); `archive/` kickoff report |
 | `docs/presentation/` | Deck (pptx + pdf) |
-| `docs/design/` | `DESIGN.md` = design system v2 (source of truth); Stitch prompts and `screens/` = v1, history only |
-| `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, `DEVICE_CHECK.md`, `SURVEY_CHECKLIST.md` |
-| `PROGRESS.md` | Living status, open issues, decisions, log |
-| `LLM_History.md` | AI-assisted work log for the AI & Tools Disclosure + session handoff |
+| `docs/design/` | `DESIGN.md` = design system v2 (source of truth); `archive-v1/` = v1 Stitch prompts and screens, history only |
+| `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md` |
+| `docs/adr/` | Architecture Decision Records (index in `README.md`) |
+| `docs/qa/` | Test scenarios (`scenario/`), `DEVICE_CHECK.md`, `AI_DISCLOSURE_LOG.md` (AI & Tools Disclosure source) |
+| `docs/survey/` | `SURVEY_CHECKLIST.md` |
 
 ## Download the APK
 
@@ -85,7 +87,7 @@ The UI currently runs on mock data (demo state, no GPS needed): tap any place �
 3. One other coder reviewed it and can explain the code (A↔B, B↔C, C↔A).
 4. Tested on a real Android phone, not only the emulator, for anything touching GPS, audio, notifications or sensors.
 5. AI assistance logged for the AI & Tools Disclosure (date, tool, purpose, decision).
-6. If behaviour differs from the PRD, the decision is in PROGRESS.md and queued for the PRD Change Log.
+6. If behaviour differs from the PRD, the decision is in `.agents/PROGRESS.md` and queued for the PRD Change Log.
 
 Branches: `feat/<module>-<short>` → PR → `main`. Never push directly to `main` (the only exception is CI's own `jelajah-taman.apk` commit).
 Commit messages: no `Co-Authored-By` AI trailers or "Generated with" footers; AI use goes in the disclosure log.
