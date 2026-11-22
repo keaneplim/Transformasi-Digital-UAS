@@ -9,7 +9,7 @@ Outputs (read by lib/modules/map):
 Sources (attribution shown in the app):
   - © OpenStreetMap contributors, ODbL — survey/raw/osm/overpass.json (Overpass API, cached)
   - Terrain: Google Elevation API on a 20 m grid — survey/raw/osm/dem_google.json (needs
-    GOOGLE_ELEVATION_API_KEY from .env.local, see CLAUDE.local.md). Fallback without a key:
+    GOOGLE_ELEVATION_API_KEY from .env.local, see .agents/AGENTS.local.md). Fallback without a key:
     AWS Terrain Tiles / Mapzen "terrarium" (SRTM, public) — survey/raw/osm/dem_z14.json
 
 `--refresh` re-downloads both (network); without it the build is offline and deterministic.

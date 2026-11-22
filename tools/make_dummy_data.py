@@ -5,7 +5,7 @@ Every coordinate, distance, elevation and duration produced here is FAKE.
 - Positions are a synthetic layout in metres around an arbitrary anchor, NOT surveyed points.
 - Texts are "[ISI]" placeholders. No historical or location facts are invented.
 
-Replace with real survey data (see docs/engineering/SURVEY_CHECKLIST.md). Once real data exists,
+Replace with real survey data (see docs/survey/SURVEY_CHECKLIST.md). Once real data exists,
 delete this script so nobody regenerates dummy data over the real files.
 
 Usage:  python tools/make_dummy_data.py

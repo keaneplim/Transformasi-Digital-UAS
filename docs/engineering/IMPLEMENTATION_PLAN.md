@@ -4,7 +4,7 @@ Feature-level build plan for the 3 coders. **What** the product must do lives in
 
 - **If this file and the PRD disagree, the PRD wins** until the change is approved and written into the PRD Change Log (§10). Decisions D01–D14 (§1) are accepted and in PRD v0.9.1. Items still marked **PROPOSED** elsewhere in this file are smaller defaults the PRD doesn't cover; the owning coder may adjust them and records the outcome in PROGRESS.md.
 - `[VERIFIKASI]` values (coordinates, opening hours, route lengths, history facts) are **not** filled in here. Code reads them from data files, so they can be updated after the survey without touching code.
-- Current status and open issues live in [PROGRESS.md](../../PROGRESS.md). Issue numbers like "#8" refer to its *Known issues* table.
+- Current status and open issues live in [PROGRESS.md](../../.agents/PROGRESS.md). Issue numbers like "#8" refer to its *Known issues* table.
 
 ---
 
