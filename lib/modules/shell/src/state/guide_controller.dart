@@ -17,6 +17,7 @@ import 'package:jelajah_taman/modules/session/session.dart';
 import 'package:jelajah_taman/modules/trigger/trigger.dart';
 import 'package:jelajah_taman/modules/wellness/wellness.dart';
 
+import 'guide_prefs.dart';
 import 'places.dart';
 
 /// Where the visitor's position comes from (ADR-009).
@@ -38,6 +39,7 @@ class GuideController extends ChangeNotifier {
     required this.router,
     required Clock clock,
     this.player,
+    this.voice,
     this.location,
     this.stepTracker,
     KeyValueStore? store,
@@ -53,6 +55,7 @@ class GuideController extends ChangeNotifier {
       for (final f in content.facilities) Place.facility(f),
     ];
     _byId = {for (final p in places) p.id: p};
+    _loadPrefs();
     _engine = GeofenceEngine(
       targets: buildGeofenceTargets(content, activeRouteId: routeId),
       params: GeofenceParams.fromPark(content.park),
@@ -75,6 +78,11 @@ class GuideController extends ChangeNotifier {
     }
     final pl = player;
     if (pl != null) _subs.add(pl.commands.listen(onMediaCommand));
+    // Without an Indonesian voice the arbiter drops every line, so reading aloud would rush
+    // through the text in silence: then the progress stays simulated.
+    unawaited(voice?.support.then((s) {
+      _voiceReady = s != VoiceSupport.missing;
+    }, onError: (Object _) {}));
     stepTracker?.onChange = () {
       if (_disposed) return;
       _persist();
@@ -88,6 +96,10 @@ class GuideController extends ChangeNotifier {
   final TrailRouter router;
   final Clock _baseClock;
   final NarrationPlayer? player;
+
+  /// The guide's voice (VoiceArbiter); reads a POI text aloud when its recording is missing
+  /// or fails (T07). Null in tests and the web preview.
+  final TtsService? voice;
 
   /// Device position; null where no GPS plugin is bound (tests, web preview).
   final LocationService? location;
@@ -136,6 +148,7 @@ class GuideController extends ChangeNotifier {
 
   void toggleInterest(String c) {
     interests.contains(c) ? interests.remove(c) : interests.add(c);
+    _savePrefs();
     notifyListeners();
   }
 
@@ -143,13 +156,47 @@ class GuideController extends ChangeNotifier {
     routeId = id;
     _engine.setTargets(buildGeofenceTargets(content, activeRouteId: id));
     _persist(force: true);
+    _savePrefs();
     notifyListeners();
   }
 
   void finishOnboarding() {
     onboarded = true;
+    _savePrefs();
     notifyListeners();
   }
+
+  /// #32: what the visitor chose survives closing the app (onboarding, Settings, Home).
+  void _loadPrefs() {
+    final p = GuidePrefs.load(_store,
+        defaults: GuidePrefs(
+            hydrationMin: content.park.param('hydration_default_min').round()));
+    onboarded = p.onboarded;
+    autoPlay = p.autoPlay;
+    voiceGuidance = p.voiceGuidance;
+    vibration = p.vibration;
+    hydrationMin = p.hydrationMin;
+    textScale = p.textScale;
+    weightKg = p.weightKg;
+    interests
+      ..clear()
+      ..addAll(p.interests);
+    if (content.routes.any((r) => r.id == p.routeId)) routeId = p.routeId;
+  }
+
+  GuidePrefs get prefs => GuidePrefs(
+        onboarded: onboarded,
+        autoPlay: autoPlay,
+        voiceGuidance: voiceGuidance,
+        vibration: vibration,
+        hydrationMin: hydrationMin,
+        textScale: textScale,
+        weightKg: weightKg,
+        interests: {...interests},
+        routeId: routeId,
+      );
+
+  void _savePrefs() => unawaited(prefs.save(_store));
 
   // ---- mode (real GPS / demo) ----------------------------------------------------------------
   late AppMode mode;
@@ -180,7 +227,6 @@ class GuideController extends ChangeNotifier {
   LocationFix? fix;
   GpsQuality quality = GpsQuality.none;
   bool _hasHeading = false;
-  LocationFix? _lastGood;
   Timer? _heartbeat;
 
   bool get locationSupported => location != null;
@@ -262,10 +308,8 @@ class GuideController extends ChangeNotifier {
     fix = f;
     position = f.position;
     if (f.headingDeg != null && !_hasHeading) headingDeg = f.headingDeg!;
-    if (!f.isWeak(_weakM)) {
-      _recordWalk(f);
-      _navOnFix(f);
-    }
+    _recordWalk(f);
+    if (!f.isWeak(_weakM)) _navOnFix(f);
     // Geofences only run during a session (D07, #31): before "Mulai jelajah" (or at home)
     // nothing triggers; the map still shows the dot.
     if (sessionActive) _apply(_engine.onFix(f, now()));
@@ -287,23 +331,18 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Walked distance and trail from good fixes: ≥ 3 m steps, jumps faster than 3.5 m/s
-  /// (GPS glitches, a car) are skipped.
+  /// Walked distance, active time and trail during a session (T27): [ActivityMeter] keeps
+  /// fixes with accuracy ≤ 20 m that moved more than max(3 m, accuracy / 2) and drops
+  /// glitch jumps faster than 3.5 m/s.
   void _recordWalk(LocationFix f) {
-    final last = _lastGood;
-    if (!sessionActive || last == null) {
-      _lastGood = f;
-      return;
+    if (!sessionActive) return;
+    if (_meter.add(f.position, f.at, accuracyM: f.accuracyM)) {
+      _addTrail(f.position);
     }
-    final d = haversineM(last.position, f.position);
-    if (d < 3) return;
-    final dt = math.max(1, f.at.difference(last.at).inMilliseconds) / 1000;
-    _lastGood = f;
-    if (d / dt > 3.5) return;
-    walkedM += d;
-    if (trail.isEmpty || haversineM(trail.last, f.position) > 4) {
-      trail.add(f.position);
-    }
+  }
+
+  void _addTrail(GeoPoint p) {
+    if (trail.isEmpty || haversineM(trail.last, p) > 4) trail.add(p);
   }
 
   void _startHeartbeat() {
@@ -333,8 +372,10 @@ class GuideController extends ChangeNotifier {
   /// The simulated walk runs this many times faster than 3 km/h.
   double walkSpeedFactor = 25;
 
+  /// Settings change: applied, remembered on the phone (#32), shown.
   void update(VoidCallback change) {
     change();
+    _savePrefs();
     notifyListeners();
   }
 
@@ -344,8 +385,22 @@ class GuideController extends ChangeNotifier {
   DateTime? sessionEnd;
   final Set<String> visited = {};
   final Set<String> triggered = {};
-  double walkedM = 0;
   final List<GeoPoint> trail = [];
+
+  /// Walked distance, active time and kcal of the session (F08, D11).
+  late final ActivityMeter _meter =
+      ActivityMeter(elevationAt: router.elevationAt);
+
+  double get walkedM => _meter.distanceM;
+
+  /// Previews and tests: a distance without the walk (counted as flat walking at 3 km/h).
+  set walkedM(double m) => _meter.distanceM = m;
+
+  /// Minutes actually walking (UC-F08-2 "active time"); the summary shows it under the kcal.
+  Duration get activeTime => _meter.activeTime;
+
+  /// Of [activeTime], walking up a slope steeper than 8 % (MET 6,0 instead of 3,5).
+  Duration get climbTime => _meter.climbTime;
 
   /// Real mode on a phone: the hardware step counter (TC-12). Demo mode, tests and the web
   /// preview: estimated from the walked distance (0,72 m per step).
@@ -359,17 +414,33 @@ class GuideController extends ChangeNotifier {
       (stepTracker!.status != StepStatus.denied &&
           stepTracker!.status != StepStatus.noSensor);
 
-  /// Onboarding "Aktivitas fisik": asks the OS. True when allowed (or nothing to ask).
-  Future<bool> requestActivity() async =>
-      await stepTracker?.requestAccess() ?? true;
+  /// Onboarding / Settings "Aktivitas fisik": asks the OS. True when allowed (or nothing to
+  /// ask). Allowed during a session: steps are counted from now on.
+  Future<bool> requestActivity() async {
+    final ok = await stepTracker?.requestAccess() ?? true;
+    if (ok) await refreshAccess();
+    return ok;
+  }
+
+  /// Back from the phone's settings or a permission dialog (Settings → "Izin ponsel"):
+  /// location and step counting pick up a permission given meanwhile.
+  Future<void> refreshAccess() async {
+    if (isDemo || _disposed) return;
+    await _initLocation();
+    final st = stepTracker;
+    if (st != null && sessionActive && st.status == StepStatus.denied) {
+      await st.start(restore: st.toJson());
+    }
+    if (!_disposed) notifyListeners();
+  }
+
   Duration get sessionDuration => sessionStart == null
       ? Duration.zero
       : (sessionEnd ?? now()).difference(sessionStart!);
-  double get kcal {
-    // MET × kg × hours (D11); walking on trails ≈ MET 4.0.
-    final h = sessionDuration.inSeconds / 3600;
-    return 4.0 * (weightKg ?? 60) * h;
-  }
+
+  /// D11: MET 3,5 on flat or gentle ground, 6,0 on climbs > 8 % (heights from the trail
+  /// graph), × body weight (default 60 kg) × active hours. Always labelled as an estimate.
+  double get kcal => _meter.kcal(weightKg: weightKg);
 
   List<Place> get routePois => [
         for (final id in route.poiSequence.toSet())
@@ -389,13 +460,17 @@ class GuideController extends ChangeNotifier {
     _queue.clear();
     pendingTrigger = null;
     approaching = null;
-    walkedM = 0;
+    _meter.start();
     trail
       ..clear()
       ..addAll([if (showUser && !outsideZone) position]);
-    _lastGood = fix != null && !fix!.isWeak(_weakM)
-        ? fix
-        : null; // walking starts from here
+    // Walking starts from here (a usable fix, or the simulated dot).
+    if (isDemo) {
+      _meter.anchor(position, now());
+    } else if (fix case final f?
+        when f.accuracyM <= ActivityMeter.maxAccuracyM) {
+      _meter.anchor(f.position, f.at);
+    }
     _reminders.reset();
     _recommendedFor.clear();
     recommendationCue = null;
@@ -465,7 +540,8 @@ class GuideController extends ChangeNotifier {
       ..walkedM = walkedM
       ..trail.replaceRange(0, r.trail.length, trail)
       ..triggerState = _engine.toJson()
-      ..stepState = _sensorSteps ? stepTracker!.toJson() : null;
+      ..stepState = _sensorSteps ? stepTracker!.toJson() : null
+      ..activityState = _meter.toJson();
     unawaited(_sessions.save(r));
   }
 
@@ -477,7 +553,8 @@ class GuideController extends ChangeNotifier {
       ..walkedM = walkedM
       ..trail.replaceRange(0, r.trail.length, trail)
       ..triggerState = _engine.toJson()
-      ..stepState = _sensorSteps ? stepTracker!.toJson() : r.stepState;
+      ..stepState = _sensorSteps ? stepTracker!.toJson() : r.stepState
+      ..activityState = _meter.toJson();
     unawaited(_sessions.finish(r));
     _record = null;
   }
@@ -510,11 +587,12 @@ class GuideController extends ChangeNotifier {
     visited
       ..clear()
       ..addAll(r.visitedIds.where(known.contains));
-    walkedM = r.walkedM;
+    _meter.restore(r.activityState, walkedM: r.walkedM);
     trail
       ..clear()
       ..addAll(r.trail);
     if (isDemo && trail.isNotEmpty) position = trail.last;
+    if (isDemo) _meter.anchor(position, now());
     // What was already shown stays shown: no second closing reminder after a restart.
     final shown = _reminderStore.load(r.id);
     if (shown != null) _reminders.restore(shown);
@@ -562,7 +640,7 @@ class GuideController extends ChangeNotifier {
     sessionEnd = null;
     visited.clear();
     triggered.clear();
-    walkedM = 0;
+    _meter.start();
     trail.clear();
     if (isDemo) position = content.gate.position;
     _engine.reset();
@@ -571,6 +649,7 @@ class GuideController extends ChangeNotifier {
     approaching = null;
     pendingTrigger = null;
     reminder = null;
+    reminderDue = null;
     recommendationCue = null;
     _recommendedFor.clear();
     stopAudio();
@@ -891,6 +970,7 @@ class GuideController extends ChangeNotifier {
       stopWalking();
       arrivedAt = n.to; // D06: arrival never triggers the POI again
       approaching = null;
+      _arrivedAt(n.to);
       if (vibration) HapticFeedback.heavyImpact();
     }
     _checkReminders();
@@ -933,6 +1013,7 @@ class GuideController extends ChangeNotifier {
         content.park.param('arrival_m')) {
       arrivedAt = n.to;
       approaching = null;
+      _arrivedAt(n.to);
       if (vibration) HapticFeedback.heavyImpact();
       bus?.publish(NavigationArrived(
           at: now(), destinationId: n.to.id, isPoi: n.to.isPoi));
@@ -965,9 +1046,10 @@ class GuideController extends ChangeNotifier {
   }
 
   void _moveTo(GeoPoint p, {required bool record}) {
-    if (record) {
-      walkedM += haversineM(position, p);
-      if (trail.isEmpty || haversineM(trail.last, p) > 4) trail.add(p);
+    if (record && sessionActive) {
+      if (_meter.add(p, now())) _addTrail(p);
+    } else {
+      _meter.anchor(p, now());
     }
     if (haversineM(position, p) > 0.5) headingDeg = bearingDeg(position, p);
     position = p;
@@ -991,8 +1073,9 @@ class GuideController extends ChangeNotifier {
 
   // ---- audio -------------------------------------------------------------------------------
   // POIs with a narration file (`audio` in pois.json) play it through [player] (just_audio,
-  // bound in the composition root). Without a player (tests) or without a file (TTS fallback,
-  // T07) the progress is simulated with a timer.
+  // bound in the composition root). Without a file, or when it fails to play, the voice reads
+  // the POI text aloud sentence by sentence (T07). Without either (tests, preview) the
+  // progress is simulated with a timer.
   Place? nowPlaying;
   double audioPos = 0; // seconds
   bool audioPlaying = false;
@@ -1007,10 +1090,35 @@ class GuideController extends ChangeNotifier {
   StreamSubscription<void>? _doneSub;
   final Map<String, double> _fileSeconds = {};
 
-  bool _usesFile(Place p) => player != null && p.poi?.audio != null;
+  /// Recordings that failed to open or play this run: read aloud instead.
+  final Set<String> _fileFailed = {};
+  final Map<String, NarrationScript> _scripts = {};
+  bool _voiceReady = false;
 
-  double audioLength(Place p) =>
-      _fileSeconds[p.id] ?? (p.poi?.audioSeconds ?? 90).toDouble();
+  /// Bumped to abandon the sentence loop of [_speak] (pause, seek, stop, switch).
+  int _spokenRun = 0;
+  bool _speaking = false;
+  int _spokenIndex = 0;
+
+  bool _usesFile(Place p) =>
+      player != null && p.poi?.audio != null && !_fileFailed.contains(p.id);
+
+  NarrationScript _script(Place p) =>
+      _scripts[p.id] ??= NarrationScript.fromText(p.poi?.displayText ?? '');
+
+  bool _usesVoice(Place p) =>
+      !_usesFile(p) && voice != null && _voiceReady && !_script(p).isEmpty;
+
+  /// Where [p]'s narration comes from now (the audio card says "Dibacakan suara pemandu").
+  NarrationSource narrationSource(Place p) => _usesFile(p)
+      ? NarrationSource.recording
+      : _usesVoice(p)
+          ? NarrationSource.voice
+          : NarrationSource.simulated;
+
+  double audioLength(Place p) => _usesVoice(p)
+      ? _script(p).length
+      : _fileSeconds[p.id] ?? (p.poi?.audioSeconds ?? 90).toDouble();
   double get audioProgress => nowPlaying == null
       ? 0
       : (audioPos / audioLength(nowPlaying!)).clamp(0, 1);
@@ -1026,12 +1134,18 @@ class GuideController extends ChangeNotifier {
     nowPlaying = p;
     audioPlaying = true;
     engage(p, EngagementKind.listened);
+    _startSource(p, fresh: switching);
+    notifyListeners();
+  }
+
+  void _startSource(Place p, {required bool fresh}) {
     if (_usesFile(p)) {
-      unawaited(_playFile(p, fresh: switching));
+      unawaited(_playFile(p, fresh: fresh));
+    } else if (_usesVoice(p)) {
+      unawaited(_speak(p));
     } else {
       _startTimer();
     }
-    notifyListeners();
   }
 
   Future<void> _playFile(Place p, {required bool fresh}) async {
@@ -1065,9 +1179,61 @@ class GuideController extends ChangeNotifier {
       await pl.seek(Duration(milliseconds: (audioPos * 1000).round()));
       await pl.play();
     } catch (e) {
-      AppLog.info('Narration file failed for ${p.id}: $e — simulating instead');
-      _startTimer();
+      // T07: a missing or broken file is read aloud instead (simulated without a voice).
+      AppLog.info('Narration file failed for ${p.id}: $e — reading the text');
+      _fileFailed.add(p.id);
+      unawaited(_posSub?.cancel());
+      unawaited(_doneSub?.cancel());
+      _posSub = null;
+      _doneSub = null;
+      if (_disposed || nowPlaying?.id != p.id || !audioPlaying) return;
+      audioPos = 0;
+      _startSource(p, fresh: false);
+      notifyListeners();
     }
+  }
+
+  /// T07: the POI text through the voice, one sentence per line, so a trigger prompt or a turn
+  /// instruction can cut in (the arbiter reads the sentence again afterwards). Progress moves
+  /// within the estimated length of the sentence being read and jumps when it ends.
+  Future<void> _speak(Place p) async {
+    final v = voice!;
+    final script = _script(p);
+    final run = ++_spokenRun;
+    _speaking = true;
+    if (audioPos >= script.length - 0.3) audioPos = 0;
+    var i = script.indexAt(audioPos);
+    audioPos = script.starts[i];
+    _spokenIndex = i;
+    _audioTimer?.cancel();
+    _audioTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (run != _spokenRun) return;
+      final cap = script.endOf(_spokenIndex) - 0.2;
+      if (audioPos >= cap) return;
+      audioPos = math.min(audioPos + 0.2, cap);
+      notifyListeners();
+    });
+    for (; i < script.sentences.length; i++) {
+      _spokenIndex = i;
+      await v.say(script.sentences[i], priority: VoicePriority.narration);
+      if (_disposed || run != _spokenRun) return;
+      audioPos = script.endOf(i);
+      notifyListeners();
+    }
+    _audioTimer?.cancel();
+    _speaking = false;
+    audioPlaying = false;
+    narrationsDone++;
+    _onFinished(p.id, FinishReason.narrationDone, now());
+    notifyListeners();
+  }
+
+  /// Stops reading aloud (the sentence being read and the rest).
+  void _stopSpeaking() {
+    if (!_speaking) return;
+    _speaking = false;
+    _spokenRun++;
+    unawaited(voice?.cancel(VoicePriority.narration));
   }
 
   void _startTimer() {
@@ -1088,6 +1254,7 @@ class GuideController extends ChangeNotifier {
 
   void _stopPlayback({bool release = true}) {
     _audioTimer?.cancel();
+    _stopSpeaking();
     _posSub?.cancel();
     _doneSub?.cancel();
     _posSub = null;
@@ -1109,6 +1276,7 @@ class GuideController extends ChangeNotifier {
   void _pause() {
     audioPlaying = false;
     _audioTimer?.cancel();
+    _stopSpeaking();
     if (nowPlaying != null && _usesFile(nowPlaying!)) {
       unawaited(player!.pause());
     }
@@ -1123,7 +1291,8 @@ class GuideController extends ChangeNotifier {
         if (player != null) unawaited(player!.setVolume(0.2));
       case VoiceDuck.pause:
         if (player != null) unawaited(player!.setVolume(0.2));
-        if (audioPlaying) {
+        // Read aloud: the arbiter already stops the sentence and reads it again after.
+        if (audioPlaying && !_speaking) {
           _voicePaused = true;
           _pause();
         }
@@ -1165,11 +1334,19 @@ class GuideController extends ChangeNotifier {
   }
 
   void seekAudio(double fraction) {
-    if (nowPlaying == null) return;
-    audioPos = fraction * audioLength(nowPlaying!);
-    if (_usesFile(nowPlaying!)) {
+    final p = nowPlaying;
+    if (p == null) return;
+    audioPos = fraction * audioLength(p);
+    if (_usesFile(p)) {
       unawaited(
           player!.seek(Duration(milliseconds: (audioPos * 1000).round())));
+    } else if (_usesVoice(p)) {
+      // Read aloud: from the start of the sentence at that point.
+      audioPos = _script(p).starts[_script(p).indexAt(audioPos)];
+      if (audioPlaying) {
+        _stopSpeaking();
+        unawaited(_speak(p));
+      }
     }
     notifyListeners();
   }
@@ -1190,6 +1367,9 @@ class GuideController extends ChangeNotifier {
 
   // ---- reminders (A03 closing, F08 hydration; rules in `reminders` + `TimeBudget`) --------
   GuideReminder? reminder;
+
+  /// What the open reminder says (voice, notification and card use the same words).
+  ReminderDue? reminderDue;
 
   /// The one closing-time rule (T23): reminder, recommendation filter and route chooser.
   late final TimeBudget budget;
@@ -1218,8 +1398,55 @@ class GuideController extends ChangeNotifier {
       ReminderKind.hydration => GuideReminder.hydration,
       ReminderKind.closing || ReminderKind.finalCall => GuideReminder.closing,
     };
+    reminderDue = due;
     _saveReminders();
     bus?.publish(due);
+  }
+
+  /// The nearest rest point (saung, bangku) by walking distance: UC-F08-3 "Titik istirahat
+  /// terdekat", destination of the hydration reminder.
+  Place get nearestRest {
+    final rests = nearest(group: 'fasilitas');
+    return rests.firstWhere((p) => p.kind == 'istirahat',
+        orElse: () => rests.isEmpty ? gatePlace : rests.first);
+  }
+
+  /// Where the reminder's main button goes: the gate (closing) or the nearest rest point.
+  Place reminderDestination(GuideReminder r) =>
+      r == GuideReminder.closing ? gatePlace : nearestRest;
+
+  /// Card / notification title of the hydration reminder ("Sudah 55 menit berjalan. …").
+  /// The Settings preview (no reminder fired) reads as if the interval had just passed.
+  String get hydrationLine {
+    if (reminderDue?.kind == ReminderKind.hydration) return reminderDue!.text;
+    final every = Duration(minutes: hydrationMin > 0 ? hydrationMin : 45);
+    return hydrationText(sessionDuration > every ? sessionDuration : every);
+  }
+
+  /// Reminder "Navigasi …" (card or notification): handled, navigation starts. False when
+  /// there is no way there.
+  bool navigateForReminder(GuideReminder r) {
+    final to = reminderDestination(r);
+    if (reminder == r) dismissReminder();
+    return startNavigation(to);
+  }
+
+  /// Hydration "Ingatkan 10 menit lagi" (#33): back in [hydrationSnooze], not after the full
+  /// interval. Other reminders are just dismissed.
+  void snoozeReminder() {
+    if (reminder != GuideReminder.hydration) return dismissReminder();
+    _reminders.snooze(ReminderKind.hydration, now(), hydrationSnooze);
+    _saveReminders();
+    reminder = null;
+    reminderDue = null;
+    notifyListeners();
+  }
+
+  /// UC-F08-3: reaching a rest point counts as the break, the hydration timer starts again.
+  void _arrivedAt(Place p) {
+    if (p.isPoi || p.kind != 'istirahat' || !sessionActive) return;
+    _reminders.acknowledge(ReminderKind.hydration, now());
+    _saveReminders();
   }
 
   void _saveReminders() {
@@ -1231,6 +1458,7 @@ class GuideController extends ChangeNotifier {
   /// Settings → Mode demo preview; doesn't count as shown.
   void showReminder(GuideReminder r) {
     reminder = r;
+    reminderDue = null;
     if (vibration) HapticFeedback.mediumImpact();
     notifyListeners();
   }
@@ -1245,6 +1473,7 @@ class GuideController extends ChangeNotifier {
       _saveReminders();
     }
     reminder = null;
+    reminderDue = null;
     notifyListeners();
   }
 
@@ -1384,6 +1613,18 @@ class GuideController extends ChangeNotifier {
 
 enum GuideReminder { closing, hydration }
 
+/// Where a narration comes from (T07).
+enum NarrationSource {
+  /// The recorded MP3.
+  recording,
+
+  /// The POI text read aloud by the guide's voice (no recording, or it failed).
+  voice,
+
+  /// Neither available (tests, preview): progress only.
+  simulated,
+}
+
 class Recommendation {
   const Recommendation(this.items, {this.gateWalk = Duration.zero})
       : allVisited = false;
@@ -1406,6 +1647,7 @@ final guideProvider = ChangeNotifierProvider<GuideController>((ref) {
     router: ref.watch(trailRouterProvider),
     clock: ref.watch(clockProvider),
     player: ref.watch(narrationPlayerProvider),
+    voice: ref.watch(ttsServiceProvider),
     location: ref.watch(locationServiceProvider),
     stepTracker: ref.watch(stepTrackerProvider),
     store: ref.watch(keyValueStoreProvider),

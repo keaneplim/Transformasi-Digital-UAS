@@ -108,6 +108,7 @@ class SessionRecord {
     List<RecommendationEntry>? recommendations,
     this.triggerState,
     this.stepState,
+    this.activityState,
   })  : interests = [...interests],
         trail = trail ?? [],
         events = events ?? [],
@@ -141,6 +142,7 @@ class SessionRecord {
       ],
       triggerState: j['trigger'] as Map<String, Object?>?,
       stepState: j['steps'] as Map<String, Object?>?,
+      activityState: j['activity'] as Map<String, Object?>?,
     );
   }
 
@@ -168,6 +170,10 @@ class SessionRecord {
   /// Step counter snapshot (`StepTracker.toJson`, F08), opaque to this module. Null in demo
   /// mode and on phones without a step counter.
   Map<String, Object?>? stepState;
+
+  /// Walking meter snapshot (`ActivityMeter.toJson`, F08: active time on flat ground and on
+  /// climbs for the kcal estimate), opaque to this module. Null in records written before it.
+  Map<String, Object?>? activityState;
 
   bool get isEnded => endedAt != null;
 
@@ -213,5 +219,6 @@ class SessionRecord {
           'recommendations': [for (final r in recommendations) r.toJson()],
         if (triggerState != null) 'trigger': triggerState,
         if (stepState != null) 'steps': stepState,
+        if (activityState != null) 'activity': activityState,
       };
 }

@@ -38,6 +38,17 @@ class GraphTrailRouter implements TrailRouter {
   final TrailNetwork _net;
   final Map<String, String> _names;
 
+  @override
+  double? elevationAt(GeoPoint p, {double maxOffTrailM = 25}) {
+    if (_net.graph.edges.isEmpty) return null;
+    final s = _net.snap(p);
+    if (s.offTrailM > maxOffTrailM) return null;
+    final e = _net.graph.edges[s.edge];
+    final a = _net.graph.nodes[e.from]!.elevationM;
+    final b = _net.graph.nodes[e.to]!.elevationM;
+    return a + (b - a) * s.fraction;
+  }
+
   void _requireNode(String id) {
     if (!_net.graph.nodes.containsKey(id)) {
       throw ArgumentError.value(id, 'nodeId', 'unknown graph node');

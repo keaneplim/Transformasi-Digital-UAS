@@ -56,6 +56,13 @@ class FakeTts implements TtsService {
 
   @override
   Future<void> stopAll() async => stopAlls++;
+
+  final cancelled = <VoicePriority>[];
+  @override
+  Future<void> cancel(VoicePriority priority) async {
+    cancelled.add(priority);
+    release();
+  }
 }
 
 void main() {

@@ -13,7 +13,8 @@ import 'overlays.dart';
 import 'widgets.dart';
 
 /// UI06 POI Detail: parallax photo gallery (Hero from the card you tapped), audio card,
-/// safety callout, observations, quick facts, then "Selesai, lihat berikutnya" (F07).
+/// safety callout, observations, key facts from the content (F03, only when the POI has
+/// them), quick facts, then "Selesai, lihat berikutnya" (F07).
 class PoiDetailScreen extends ConsumerStatefulWidget {
   const PoiDetailScreen({super.key, required this.id, this.heroSuffix = ''});
 
@@ -205,6 +206,10 @@ class _PoiDetailScreenState extends ConsumerState<PoiDetailScreen> {
                         Text('Yang akan Anda temui', style: JTText.h2),
                         const SizedBox(height: 10),
                         Text(poi.displayText, style: JTText.body),
+                        if (poi.keyFacts.isNotEmpty) ...[
+                          const SizedBox(height: 26),
+                          _KeyFacts(facts: poi.keyFacts, tint: place.tint),
+                        ],
                         const SizedBox(height: 26),
                         Text('Sekilas', style: JTText.h2),
                         const SizedBox(height: 12),
@@ -418,11 +423,13 @@ class _AudioCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Cerita tempat ini', style: JTText.title),
-                    Text(
-                        place.poi?.audio == null
-                            ? 'Dibacakan suara otomatis'
-                            : 'Narasi audio',
-                        style: JTText.caption),
+                    _SourceLine(
+                      voice: switch (demo.narrationSource(place)) {
+                        NarrationSource.recording => false,
+                        NarrationSource.voice => true,
+                        NarrationSource.simulated => place.poi?.audio == null,
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -510,6 +517,146 @@ class _AudioCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Under "Cerita tempat ini": a recording, or the text read by the guide's voice (T07).
+class _SourceLine extends StatelessWidget {
+  const _SourceLine({required this.voice});
+
+  final bool voice;
+
+  @override
+  Widget build(BuildContext context) => AnimatedSwitcher(
+        duration: JTMotion.base,
+        layoutBuilder: (current, previous) => Stack(
+            alignment: Alignment.centerLeft,
+            children: [...previous, if (current != null) current]),
+        child: Row(
+          key: ValueKey(voice),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+                voice
+                    ? Icons.record_voice_over_rounded
+                    : Icons.graphic_eq_rounded,
+                size: 13,
+                color: JT.muted),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(voice ? 'Dibacakan suara pemandu' : 'Narasi audio',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: JTText.caption),
+            ),
+          ],
+        ),
+      );
+}
+
+/// F03 "fakta kunci" (`key_facts` in pois.json): numbered, from official sources only.
+/// Nothing is drawn for a POI without facts.
+class _KeyFacts extends StatelessWidget {
+  const _KeyFacts({required this.facts, required this.tint});
+
+  final List<String> facts;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Fakta kunci', style: JTText.h2)),
+              Pill(
+                label: '${facts.length} fakta',
+                icon: Icons.auto_stories_rounded,
+                color: tint,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: JT.surface,
+              borderRadius: BorderRadius.circular(JT.rCard),
+              border: Border.all(color: JT.line),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -14,
+                  top: -10,
+                  child: Transform.rotate(
+                    angle: 0.25,
+                    child: DoodleIcon(Doodle.sparkle,
+                        size: 74, color: tint.withValues(alpha: 0.12)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 6, 16, 6),
+                  child: Column(
+                    children: [
+                      for (final (i, fact) in facts.indexed) ...[
+                        if (i > 0)
+                          const Divider(height: 1, indent: 46, color: JT.line),
+                        Entrance(
+                          delay: JTMotion.stagger * (i + 1),
+                          child:
+                              _KeyFact(number: i + 1, text: fact, tint: tint),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+}
+
+class _KeyFact extends StatelessWidget {
+  const _KeyFact(
+      {required this.number, required this.text, required this.tint});
+
+  final int number;
+  final String text;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: 'Fakta $number: $text',
+        excludeSemantics: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.lerp(tint, JT.cream, 0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: Text('$number',
+                    style: JTText.number(15,
+                        color: Color.lerp(tint, JT.ink, 0.3)!)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Text(text, style: JTText.bodySm),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _Safety extends StatelessWidget {

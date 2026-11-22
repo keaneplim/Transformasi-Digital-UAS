@@ -11,6 +11,11 @@ abstract interface class TrailRouter {
   Duration walkingTime(GeoPoint from, String toNodeId);
 
   Duration walkingTimeBetween(String fromNodeId, String toNodeId);
+
+  /// Ground height at [p] from the trail graph (the nearest trail point, between the heights
+  /// of its edge's two nodes), or null when [p] is more than [maxOffTrailM] from any trail.
+  /// The kcal estimate uses it to tell climbs from flat walking (D11).
+  double? elevationAt(GeoPoint p, {double maxOffTrailM = 25});
 }
 
 class RouteResult {

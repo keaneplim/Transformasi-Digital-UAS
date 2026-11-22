@@ -1,5 +1,7 @@
-/// Highest first: safety (closing reminder) > navigation > trigger prompt > reminder (hydration).
-enum VoicePriority { safety, navigation, triggerPrompt, reminder }
+/// Highest first: safety (closing reminder) > navigation > trigger prompt > reminder (hydration)
+/// > narration (a POI text read aloud when its recording is missing, T07). Anything else cuts
+/// into a narration sentence, which is then read again from its start.
+enum VoicePriority { safety, navigation, triggerPrompt, reminder, narration }
 
 /// Named `NarrationState` to avoid clashing with audio_service's `PlaybackState`.
 enum NarrationState { idle, loading, playing, paused, completed }
@@ -36,4 +38,8 @@ abstract interface class TtsService {
 
   /// Silence now and forget everything queued (session ended).
   Future<void> stopAll();
+
+  /// Silence and forget only the lines of [priority] (narration paused or stopped); the
+  /// futures of those lines complete.
+  Future<void> cancel(VoicePriority priority);
 }

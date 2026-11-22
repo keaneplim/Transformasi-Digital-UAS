@@ -1,15 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jelajah_taman/core/ui/ui.dart';
 import 'package:jelajah_taman/modules/audio/audio.dart';
+import 'package:jelajah_taman/modules/location/location.dart';
 
+import '../data/device_permissions.dart';
 import '../state/guide_controller.dart';
 import '../state/places.dart';
 
-/// UI15 Settings. Visitor preferences first; the "Mode demo" panel (preview tools to
-/// move around the park without GPS) sits collapsed at the bottom.
+/// UI15 Settings. Visitor preferences first (kept on the phone, #32), then the phone
+/// permissions the guide relies on (allow again or open the phone's settings, PB07/T27); the
+/// "Mode demo" panel (preview tools to move around the park without GPS) sits collapsed at
+/// the bottom.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -85,13 +91,14 @@ class SettingsScreen extends ConsumerWidget {
                       color: JT.category('rekreasi'),
                       title: 'Getar',
                       subtitle:
-                          'Getaran singkat saat mendekati tempat menarik.',
+                          'Saat mendekati dan tiba di tempat menarik, juga untuk pengingat.',
                       value: demo.vibration,
                       onChanged: (v) => demo.update(() => demo.vibration = v),
                     ),
                   ],
                 ),
                 if (voice != null) _VoiceHint(voice),
+                const _PermissionsGroup(),
                 _Group(
                   title: 'Kesehatan',
                   children: [
@@ -257,6 +264,247 @@ class _VoiceHint extends StatelessWidget {
           );
         },
       );
+}
+
+/// "Izin ponsel": what the guide may use, why it matters, and a way to allow it again —
+/// the system dialog while Android still offers it, else the app's page in the phone's
+/// settings. Re-read when the visitor comes back to the app.
+class _PermissionsGroup extends ConsumerStatefulWidget {
+  const _PermissionsGroup();
+
+  @override
+  ConsumerState<_PermissionsGroup> createState() => _PermissionsGroupState();
+}
+
+class _PermissionsGroupState extends ConsumerState<_PermissionsGroup> {
+  PermissionState? _notify;
+  PermissionState? _activity;
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(onResume: () => unawaited(_refresh()));
+    unawaited(_refresh());
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  DevicePermissions? get _perms => ref.read(devicePermissionsProvider);
+
+  Future<void> _refresh() async {
+    final perms = _perms;
+    final guide = ref.read(guideProvider);
+    unawaited(guide.refreshAccess());
+    if (perms == null) return;
+    try {
+      final n = await perms.notifications();
+      final a = await perms.activity();
+      if (mounted) {
+        setState(() {
+          _notify = n;
+          _activity = a;
+        });
+      }
+    } on Object {
+      // Plugin missing (preview): the rows just stay hidden.
+    }
+  }
+
+  Future<void> _allow(
+      Future<PermissionState> Function() ask, PermissionState? now) async {
+    final perms = _perms;
+    if (perms == null) return;
+    unawaited(HapticFeedback.selectionClick());
+    if (now == PermissionState.blocked) {
+      await perms.openAppSettings(); // _refresh runs on the way back
+      return;
+    }
+    await ask();
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final guide = ref.watch(guideProvider);
+    final perms = ref.watch(devicePermissionsProvider);
+    final location = guide.locationSupported && !guide.isDemo
+        ? switch (guide.access) {
+            null => null,
+            LocationAccess.granted => PermissionState.granted,
+            LocationAccess.denied => PermissionState.denied,
+            LocationAccess.deniedForever ||
+            LocationAccess.serviceOff =>
+              PermissionState.blocked,
+          }
+        : null;
+    final rows = <Widget>[
+      if (location != null)
+        _PermissionRow(
+          icon: Icons.my_location_rounded,
+          color: JT.sky,
+          title: 'Lokasi',
+          state: location,
+          on: 'Cerita diputar saat Anda tiba di setiap tempat.',
+          off: guide.access == LocationAccess.serviceOff
+              ? 'GPS ponsel mati. Nyalakan agar pemandu tahu posisi Anda.'
+              : 'Tanpa lokasi, pindai kode QR atau pilih tempat secara manual.',
+          onAllow: () async {
+            unawaited(HapticFeedback.selectionClick());
+            if (location == PermissionState.blocked) {
+              await (guide.access == LocationAccess.serviceOff
+                  ? guide.openLocationSettings()
+                  : perms?.openAppSettings());
+            } else {
+              await guide.requestLocation();
+            }
+          },
+        ),
+      if (perms != null && _notify != null)
+        _PermissionRow(
+          icon: Icons.notifications_active_rounded,
+          color: JT.category('rekreasi'),
+          title: 'Notifikasi',
+          state: _notify!,
+          on: 'Pemberitahuan tiba dan pengingat muncul di layar kunci.',
+          off: 'Pemberitahuan di layar kunci tidak muncul. Kartu di aplikasi '
+              'dan suara pemandu tetap ada.',
+          onAllow: () => _allow(perms.requestNotifications, _notify),
+        ),
+      if (perms != null && _activity != null && !guide.isDemo)
+        _PermissionRow(
+          icon: Icons.directions_walk_rounded,
+          color: JT.category('alam'),
+          title: 'Aktivitas fisik',
+          state: _activity!,
+          on: 'Langkah Anda dihitung selama penjelajahan.',
+          off: 'Langkah tidak dihitung. Jarak dan durasi tetap tercatat.',
+          onAllow: () async {
+            if (_activity == PermissionState.blocked) {
+              await _allow(perms.requestActivity, _activity);
+            } else {
+              unawaited(HapticFeedback.selectionClick());
+              await guide.requestActivity();
+              await _refresh();
+            }
+          },
+        ),
+    ];
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return _Group(title: 'Izin ponsel', children: rows);
+  }
+}
+
+class _PermissionRow extends StatelessWidget {
+  const _PermissionRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.state,
+    required this.on,
+    required this.off,
+    required this.onAllow,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final PermissionState state;
+  final String on;
+  final String off;
+  final VoidCallback onAllow;
+
+  static const _warn = Color(0xFFA63A22);
+
+  @override
+  Widget build(BuildContext context) {
+    final granted = state == PermissionState.granted;
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _Leading(icon, granted ? color : JT.faint),
+                Positioned(
+                  right: -3,
+                  bottom: -3,
+                  child: AnimatedSwitcher(
+                    duration: JTMotion.base,
+                    transitionBuilder: (c, a) =>
+                        ScaleTransition(scale: a, child: c),
+                    child: Container(
+                      key: ValueKey(granted),
+                      width: 17,
+                      height: 17,
+                      decoration: BoxDecoration(
+                        color: granted ? JT.leaf : JT.terracotta,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: JT.surface, width: 2),
+                      ),
+                      child: Icon(
+                          granted
+                              ? Icons.check_rounded
+                              : Icons.priority_high_rounded,
+                          size: 10,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(child: Text(title, style: JTText.title)),
+                      const SizedBox(width: 8),
+                      Text(granted ? 'Aktif' : 'Nonaktif',
+                          style: JTText.caption.copyWith(
+                              color: granted ? JT.forestBright : _warn,
+                              fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  AnimatedSwitcher(
+                    duration: JTMotion.base,
+                    child: Text(granted ? on : off,
+                        key: ValueKey(granted), style: JTText.caption),
+                  ),
+                  if (!granted) ...[
+                    const SizedBox(height: 10),
+                    SoftButton(
+                      label: state == PermissionState.blocked
+                          ? 'Buka pengaturan ponsel'
+                          : 'Izinkan',
+                      icon: state == PermissionState.blocked
+                          ? Icons.open_in_new_rounded
+                          : Icons.check_circle_outline_rounded,
+                      height: 40,
+                      expand: false,
+                      color: Color.lerp(color, JT.cream, 0.82)!,
+                      foreground: Color.lerp(color, JT.ink, 0.35)!,
+                      onTap: onAllow,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _Group extends StatelessWidget {

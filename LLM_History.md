@@ -14,13 +14,14 @@ The record of AI-assisted work on this project. It has two jobs:
 
 ---
 
-## 1. Current state (handoff) — as of 2026-11-21, session 8
+## 1. Current state (handoff) — as of 2026-11-22, session 9
 
 **Git** (2026-11-20)
 - `origin/main` = `origin/keane` = `7fe9455` (fast-forwarded in session 7): PB06, PB07, PB03 GPX, PR #6 tab transitions, PR #7 APK CI, PR #8 test scenarios (`docs/scenario/`), Jacob's 17 Nov progress deck. Every other remote branch is fully in `main`.
 - T23 (`17702cd`) and PB10 (`f032b82`) are in `main` via PR #10 (`ee87c2b`).
 - Branch `feat/voice` (from `ee87c2b`) = F04 voice part (T07/T15, taken over from C) **plus** (session 8) D08/T17 weak-GPS help card + manual pick + #31 gate, all **uncommitted**, to be committed by Keane (two commits suggested, see session 8) and opened as a PR. Tell Khalfani (voice) and Ballard (T17, `trigger`).
 - `feat/voice` committed by Keane as `b4cc3f7` and pushed (PR open). Branch `feat/pedometer` (from `feat/voice`): F08 step counter `ef71342` (committed) + F07 recommendation (session 8 row 6, **uncommitted**).
+- (Session 9, 22 Nov) Branch `feat/wellness-notify-settings` (from `feat/recommendation`, Khalfani): key facts, saved Settings (#32), reminder notifications + snooze (#33), kcal D11 / active time / accuracy filter, "Izin ponsel", Getar ↔ channel vibration, TTS narration fallback. Pushed; **stacked PR into `feat/recommendation`**: retarget to `main` once Keane's branches are merged. Golden baselines regenerated locally, not committed.
 - CI on push to `main` commits a release APK (`jelajah-taman.apk`, ~46 MB each, issue #35). After it runs, `git pull` before new work.
 - Untracked on purpose: `web/` (local preview).
 
@@ -32,14 +33,15 @@ The record of AI-assisted work on this project. It has two jobs:
 |---|---|---|
 | Sprint 1 PB01–PB05 | code ◐ | No phone test yet (PB01/02/05, DEVICE_CHECK §3 empty); GPX committed (PB03, `survey/raw/2026-11-07/`); 5 ESTIMATE coordinates (#28) |
 | PB06 geofence + visit log | ☑ code | Evidence video; phone check of restore |
-| PB07 notifications | ◐ built | **Phone test** (lock screen, Dengarkan/Lihat/Nanti, Android 12L+ no crash) + screenshots; denied-permission hint; "Getar" setting vs channel vibration |
+| PB07 notifications | ◐ built; permission hint + Getar ↔ quiet channels 22 Nov | **Phone test** (lock screen, Dengarkan/Lihat/Nanti, reminder buttons, Getar off = no buzz, Android 12L+ no crash) + screenshots |
 | PB08 content | ◐ | Final POI text (all `[ISI]`), photos P03/P09 |
 | PB10 QR | ◐ scanner in `main`; weak-GPS banner + manual pick built 21 Nov (`feat/voice`) | Printed QR P05/P06, TC-04 on 2 phones in airplane mode, SK-F02-15 banner timing in the cave, deep link (optional) |
 | PB11 eyes-free | ◐ voice built 20 Nov, media session 21 Nov (`feat/voice`) | Phone check: id-ID voice, lock-screen/earphone controls, interruptions, TC-06 (DEVICE_CHECK §1.6) |
 | PB12 graph | ⚠ | Built from OSM, not survey GPX: Change Log or validate with `tahura-f.gpx` |
 | PB13 search | ☑ code | TC-07 run |
 | PB14 navigation | ◐ | Logic in `GuideController` (not `navigation` module); voice turns + arrival built (`feat/voice`); demo arrival at 3 m instead of 15 m; TC-08 + video |
-| B: T23 closing reminder | ◐ in `main` | System notification when hidden (notify, C); voice built in `feat/voice` |
+| B: T23 closing reminder | ◐ in `main`; notification when hidden + hydration snooze 22 Nov | UC-A03-2 final call; phone check |
+| C: T27/T28/T31 wellness + Settings | ◐ 22 Nov (`feat/wellness-notify-settings`) | TC-12 on phones; Settings version info + debug menu |
 
 **Next steps, in order** (priority plan of session 7: Musts first, by risk)
 1. Commit `feat/voice` (voice + T17 + media session, session 8) and open the PR; install the APK on a phone and run DEVICE_CHECK §1.6 before merging if at all possible (the media session changes `MainActivity`).
@@ -47,17 +49,26 @@ The record of AI-assisted work on this project. It has two jobs:
 3. ~~F07 to spec (#34)~~ built in session 8 (uncommitted on `feat/pedometer`); TC-09/TC-10 on GPX replay still to run. Tell Ballard.
 4. Keane: decide PB12 (OSM vs GPX). Demo arrival stays at 3 m (session 8: 15 m would stop the simulated walk before the POI triggers).
 5. First phone install now, not in field week: PB01/02/05/07, offline; fill DEVICE_CHECK §3.
-6. Fix #32, #33 (C); drop the APK commit from CI (#35); branch protection on `main`. (#31 closed in session 8.)
+6. ~~Fix #32, #33~~ (session 9); drop the APK commit from CI (#35); branch protection on `main`. (#31 closed in session 8.)
 
 **How to resume an AI session**
 - Read `CLAUDE.md`, `PROGRESS.md` and this §1 first. Don't re-parse the PRD docx: read `docs/prd/PRD.md` (generated).
 - Flutter 3.47.9 is at `C:\Users\mitba\dev\flutter` (not on PATH). PowerShell: `$env:Path = "C:\Users\mitba\dev\flutter\bin;" + $env:Path`.
 - Full local check (same as CI): `python tools/validate_content.py` · `python -m unittest discover -s tools/tests` · `dart format --output=none --set-exit-if-changed lib test tools` · `flutter analyze` · `dart run tools/check_architecture.dart` · `flutter test`.
-- Last known result (21 Nov, `feat/pedometer` + F07 uncommitted): content 0 errors (33 warnings) · Python tests pass (19) · analyze clean · architecture pass · 264 Flutter tests; release APK builds. (`flutter test` also rewrites `analysis_options.yaml`: revert it.) Release APK built locally (see session 7 row 6). Goldens: baselines were made on another OS; compare against a render of unchanged HEAD on the same machine, not against the committed PNGs.
+- Last known result (22 Nov, `feat/wellness-notify-settings`): content 0 errors · Python tests pass (19) · analyze clean · architecture pass · 312 Flutter tests. (21 Nov: 264 tests; release APK builds. (`flutter test` also rewrites `analysis_options.yaml`: revert it.) Release APK built locally (see session 7 row 6). Goldens: baselines were made on another OS; compare against a render of unchanged HEAD on the same machine, not against the committed PNGs.
 
 ---
 
 ## 2. Session log (newest first)
+
+### Session 9 — 2026-11-22
+**Tool:** Claude Code (T3 Code), model Claude Opus 5.5. **Human:** Khalfani.
+
+| # | Human request | AI output | Human decision / correction | Verified by | Result |
+|---|---|---|---|---|---|
+| 1 | Deep analysis of what is still remaining (`.agents/AGENTS.md`); who owns the open branches | Remaining-work list per feature/owner; `feat/voice`, `feat/pedometer`, `feat/recommendation` are Keane's | — | git log/branches, code reading | No code change |
+| 2 | Plan and build 7 tasks (key facts, saved Settings, reminder notifications, snooze #33, kcal/active time/accuracy filter + re-ask Aktivitas fisik, PB07 permission hint + Getar ↔ channels, TTS fallback T07); new branch, docs, push, PR; "UI polished and advanced"; ask when unsure | AI asked where to base the PR (the work builds on three unmerged branches) | Khalfani: **stacked PR on `feat/recommendation`** | — | — |
+| 3 | (build) | `GuidePrefs` (`guide.prefs`); `ReminderScheduler.snooze` + `Reminder.due`; `reminder` channel + quiet twins, `showReminder`, reminder taps (navigate/snooze/later) in `TriggerAlerts`; `ActivityMeter` (wellness) + `TrailRouter.elevationAt`; `DevicePermissions` (shell, permission_handler) + Settings "Izin ponsel"; `NarrationScript` + `VoicePriority.narration` + `TtsService.cancel`; UI06 "Fakta kunci", UI13 reminder cards (fact tiles, rest-point tile, snooze), UI14 effort bar, UI15 permission rows | AI decisions to confirm: hydration text = walked minutes (not the interval); arriving at a rest point counts as drinking (UC-F08-3); the read-aloud path has no lock-screen controls; key facts left empty in content (no AI facts, PRD §8.2), goldens use clearly fake "Contoh fakta" text | 312 Flutter tests; format, analyze, architecture, validator, Python tests clean; goldens regenerated and looked at (new 12b, 25b; changed 22–25; 17/18/28/29/s360 only animation timing) | branch `feat/wellness-notify-settings`, PR to `feat/recommendation` |
 
 ### Session 8 — 2026-11-21
 **Tool:** Claude Code (VS Code extension), model Claude Opus 5.5. **Human:** Keane.
@@ -171,6 +182,11 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-20 | Two new controller tests failed at first: jumping the fake clock from 10.00 to 15.xx also made the 45 min hydration reminder due, which correctly took the slot | AI's own test run | Hydration off in those tests; the scheduler's priority is tested separately |
 | 2026-11-20 | First `VoiceArbiter`: a line taken off the queue was not yet "current" while the voice-support check was awaited, so the same text could be queued and said twice (and an interruption in that moment was missed) | AI's own test (duplicate text) | The line becomes current before the await; interrupted/cancelled lines are re-checked after it |
 | 2026-11-20 | First `VoiceAlerts` said "Anda tiba di Gua Belanda." from navigation right before the trigger prompt "Anda tiba di Gua Belanda. Ingin mendengar ceritanya?" | AI, reading the event log of its own test | Arrival line skipped when that POI's prompt is showing; tested both ways |
+| 2026-11-22 | Closing-reminder test at 15.30 at the gate got the hydration reminder: the closing reminder is only due at 15.45 there (walk ≈ 0) | AI's own test run | Test at 15.50 with hydration off |
+| 2026-11-22 | Hydration preview in Settings said "Sudah 1 menit berjalan" (session just started) | AI, looking at golden 23 | Preview uses at least the chosen interval |
+| 2026-11-22 | First UI14 effort bar rendered invisible (flex children with zero size) | AI, looking at golden 24 | Rebuilt with `Stack` + `FractionallySizedBox` |
+| 2026-11-22 | Golden scripts: `scrollUntilVisible` found several scrollables, and a camera jump overshot the target | AI's own golden run | `ensureVisible` + drag |
+| 2026-11-22 | Hydration card widget test tapped while the card was still sliding in (tap missed) | AI's own test run | Pump the entrance first |
 | 2026-11-06 | Minor tooling slips: Python escaping in shell heredocs, a `sed` edit that silently didn't apply, CRLF line endings from the PRD generator on Windows | AI | Switched to the edit tools; `newline="\n"` + `.gitattributes` |
 
 ---

@@ -108,7 +108,54 @@ void main() {
       expect(at(45)?.kind, ReminderKind.hydration);
       expect(at(46), isNull);
       expect(at(89), isNull);
-      expect(at(90)?.text, 'Sudah 45 menit berjalan. Minum air dulu, yuk.');
+      expect(at(90)?.text, 'Sudah 90 menit berjalan. Minum air dulu, yuk.',
+          reason: 'the walked time, not the interval');
+    });
+
+    test('snooze (#33): back 10 min later, not after the full interval', () {
+      final s = scheduler();
+      DateTime t(int min) => morning.add(Duration(minutes: min));
+      ReminderDue? at(int min) =>
+          s.check(ctx(t(min), sessionStart: morning, hydration: every));
+      expect(at(45), isNotNull);
+      s.snooze(ReminderKind.hydration, t(45), hydrationSnooze);
+      expect(s.snoozedUntil(ReminderKind.hydration), t(55));
+      expect(at(54), isNull);
+      final again = at(55);
+      expect(again?.kind, ReminderKind.hydration);
+      expect(again?.text, 'Sudah 55 menit berjalan. Minum air dulu, yuk.');
+      expect(s.snoozedUntil(ReminderKind.hydration), isNull);
+      expect(at(56), isNull);
+      // after the snoozed one, the normal interval counts from when it came back
+      expect(at(99), isNull);
+      expect(at(100), isNotNull);
+    });
+
+    test('dismissing a snoozed reminder cancels the snooze', () {
+      final s = scheduler();
+      final first = morning.add(every);
+      s.check(ctx(first, sessionStart: morning, hydration: every));
+      s.snooze(ReminderKind.hydration, first, hydrationSnooze);
+      s.acknowledge(
+          ReminderKind.hydration, first.add(const Duration(minutes: 2)));
+      expect(
+          s.check(ctx(first.add(const Duration(minutes: 10)),
+              sessionStart: morning, hydration: every)),
+          isNull);
+    });
+
+    test('a snooze survives a restart', () {
+      final s = scheduler();
+      final first = morning.add(every);
+      s.check(ctx(first, sessionStart: morning, hydration: every));
+      s.snooze(ReminderKind.hydration, first, hydrationSnooze);
+      final again = scheduler()..restore(s.toJson());
+      expect(again.snoozedUntil(ReminderKind.hydration),
+          first.add(hydrationSnooze));
+      expect(
+          again.check(ctx(first.add(hydrationSnooze),
+              sessionStart: morning, hydration: every)),
+          isNotNull);
     });
 
     test('dismissing counts the interval again from then', () {
