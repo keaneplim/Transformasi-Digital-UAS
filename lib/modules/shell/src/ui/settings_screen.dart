@@ -174,15 +174,26 @@ class SettingsScreen extends ConsumerWidget {
                 _Group(
                   title: 'Tentang',
                   children: [
+                    _InfoRow(
+                      icon: Icons.offline_pin_rounded,
+                      title: 'Data offline',
+                      subtitle:
+                          'Tersedia · versi ${demo.content.contentVersion}',
+                    ),
                     _ActionRow(
                       icon: Icons.info_outline_rounded,
                       color: JT.muted,
                       title: 'Tentang & atribusi',
                       onTap: () => context.push('/about'),
                     ),
+                    const _VersionRow(),
                   ],
                 ),
                 const _DemoPanel(),
+                if (demo.debugMenuUnlocked) ...[
+                  const SizedBox(height: 14),
+                  const _DebugPanel(),
+                ],
                 const SizedBox(height: 20),
                 Center(
                   child: Column(
@@ -989,6 +1000,14 @@ class _DemoPanelState extends ConsumerState<_DemoPanel> {
                               },
                             ),
                             _DarkChip(
+                              label: 'Panggilan terakhir',
+                              icon: Icons.warning_amber_rounded,
+                              onTap: () {
+                                context.pop();
+                                demo.showReminder(GuideReminder.finalCall);
+                              },
+                            ),
+                            _DarkChip(
                               label: 'Minum',
                               icon: Icons.water_drop_rounded,
                               onTap: () {
@@ -1049,6 +1068,278 @@ class _DarkChip extends StatelessWidget {
               Text(label, style: JTText.label.copyWith(color: Colors.white)),
             ],
           ),
+        ),
+      );
+}
+
+/// Version row in "Tentang": 7 taps unlock the hidden debug menu (UC-SH-5 / T31).
+class _VersionRow extends ConsumerStatefulWidget {
+  const _VersionRow();
+
+  @override
+  ConsumerState<_VersionRow> createState() => _VersionRowState();
+}
+
+class _VersionRowState extends ConsumerState<_VersionRow> {
+  static const _needed = 7;
+  int _taps = 0;
+
+  void _onTap() {
+    final demo = ref.read(guideProvider);
+    if (demo.debugMenuUnlocked) return;
+    _taps++;
+    final left = _needed - _taps;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (left <= 0) {
+      _taps = 0;
+      demo.unlockDebugMenu();
+      unawaited(HapticFeedback.mediumImpact());
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('Menu debug aktif',
+              style: JTText.body.copyWith(color: Colors.white)),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: JT.dusk,
+        ));
+    } else if (_taps >= 4) {
+      // Keep pre-unlock feedback nonverbal so ordinary visitors never see debug copy.
+      unawaited(HapticFeedback.selectionClick());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked = ref.watch(guideProvider).debugMenuUnlocked;
+    return InkWell(
+      onTap: _onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(
+          children: [
+            const _Leading(Icons.verified_outlined, JT.muted),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Versi aplikasi', style: JTText.title),
+                  const SizedBox(height: 2),
+                  Text(
+                    unlocked
+                        ? '${GuideController.appVersion} · Menu debug aktif'
+                        : GuideController.appVersion,
+                    style: JTText.caption,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hidden debug menu unlocked by 7 taps on the version row (UC-SH-5 / §6.5 / T31).
+class _DebugPanel extends ConsumerWidget {
+  const _DebugPanel();
+
+  Future<void> _pickClock(BuildContext context, GuideController demo) async {
+    final cur = demo.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: cur.hour, minute: cur.minute),
+    );
+    if (picked != null) {
+      demo.setClockTime(picked.hour, picked.minute);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final demo = ref.watch(guideProvider);
+    final moving = demo.trackingMode == TrackingMode.moving;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: JT.dusk,
+        borderRadius: BorderRadius.circular(JT.rCard),
+        border: Border.all(color: JT.sun.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.bug_report_rounded, color: JT.sun),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Menu debug',
+                        style: JTText.title.copyWith(color: Colors.white)),
+                    Text('Diagnostik GPS, geofence, dan jam uji',
+                        style: JTText.caption.copyWith(color: Colors.white60)),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: demo.lockDebugMenu,
+                style: TextButton.styleFrom(foregroundColor: JT.sun),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'GPS ${demo.activeGpsInterval.inSeconds} dtk · '
+                  '${moving ? "Bergerak" : "Diam (hemat baterai)"}'
+                  '${demo.accuracyM != null ? " · ±${demo.accuracyM!.round()} m" : ""}',
+                  style: JTText.caption.copyWith(color: Colors.white),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Tutup ${clockLabel(demo.closingTime)} · '
+                  'Pengingat ${clockLabel(demo.closingReminderAt)} · '
+                  'Panggilan akhir ${clockLabel(demo.finalCallAt)}',
+                  style: JTText.caption.copyWith(color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          _DebugSwitch(
+            title: 'Overlay debug di Peta',
+            subtitle: 'Tampilkan interval GPS, jarak & state tiap POI.',
+            value: demo.debugOverlay,
+            onChanged: demo.setDebugOverlay,
+          ),
+          _DebugSwitch(
+            title: 'Simulasi GPS lemah (UI12)',
+            subtitle: 'Tampilkan banner QR & pilih manual di Peta.',
+            value: demo.debugWeakGps,
+            onChanged: demo.setDebugWeakGps,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 8),
+            child: Text('JAM SIMULASI (${clockLabel(demo.now())})',
+                style: JTText.overline.copyWith(color: Colors.white54)),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _DarkChip(
+                  label: '−15 mnt',
+                  onTap: () => demo.shiftClock(const Duration(minutes: -15))),
+              _DarkChip(
+                  label: '−1 mnt',
+                  onTap: () => demo.shiftClock(const Duration(minutes: -1))),
+              _DarkChip(
+                  label: '+1 mnt',
+                  onTap: () => demo.shiftClock(const Duration(minutes: 1))),
+              _DarkChip(
+                  label: '+15 mnt',
+                  onTap: () => demo.shiftClock(const Duration(minutes: 15))),
+              _DarkChip(
+                  label: 'Pilih jam…',
+                  icon: Icons.access_time_rounded,
+                  onTap: () => _pickClock(context, demo)),
+              _DarkChip(label: 'Sekarang', onTap: demo.resetDemoTime),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 14, bottom: 8),
+            child: Text('AKSI UJI',
+                style: JTText.overline.copyWith(color: Colors.white54)),
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _DarkChip(
+                label: 'Panggilan terakhir',
+                icon: Icons.warning_amber_rounded,
+                onTap: () {
+                  context.pop();
+                  demo.showReminder(GuideReminder.finalCall);
+                },
+              ),
+              _DarkChip(
+                label: 'Salin log sesi',
+                icon: Icons.copy_rounded,
+                onTap: () {
+                  unawaited(Clipboard.setData(
+                      ClipboardData(text: demo.debugLogSummary())));
+                  ScaffoldMessenger.maybeOf(context)
+                    ?..hideCurrentSnackBar()
+                    ..showSnackBar(SnackBar(
+                      content: Text('Ringkasan log sesi disalin',
+                          style: JTText.body.copyWith(color: Colors.white)),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: JT.ink,
+                    ));
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DebugSwitch extends StatelessWidget {
+  const _DebugSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: JTText.label.copyWith(color: Colors.white)),
+                  Text(subtitle,
+                      style: JTText.caption.copyWith(color: Colors.white60)),
+                ],
+              ),
+            ),
+            Switch.adaptive(
+              value: value,
+              activeTrackColor: JT.sun,
+              inactiveTrackColor: Colors.white24,
+              inactiveThumbColor: Colors.white70,
+              trackOutlineColor:
+                  const WidgetStatePropertyAll(Colors.transparent),
+              onChanged: onChanged,
+            ),
+          ],
         ),
       );
 }

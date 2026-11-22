@@ -76,6 +76,15 @@ class LocalAlertNotifier implements AlertNotifier {
     vibration: const [0, 400, 200, 400],
   );
 
+  /// UC-A03-2 final call: stronger 3-pulse vibration on the lock screen (with quiet twin).
+  static final _finalCallChannel = _ChannelPair(
+    'final_call',
+    'Panggilan terakhir',
+    'Peringatan mendesak saat waktu tempuh ke gerbang mendekati jam tutup',
+    importance: Importance.high,
+    vibration: const [0, 400, 150, 400, 150, 400],
+  );
+
   static const _nextChannel = AndroidNotificationChannel(
     'next',
     'Rekomendasi berikutnya',
@@ -123,6 +132,7 @@ class LocalAlertNotifier implements AlertNotifier {
       ..._triggerChannel.both,
       ..._approachChannel.both,
       ..._reminderChannel.both,
+      ..._finalCallChannel.both,
       _nextChannel,
     ]) {
       await android?.createNotificationChannel(c);
@@ -264,7 +274,10 @@ class LocalAlertNotifier implements AlertNotifier {
     required String laterLabel,
     required bool snoozes,
   }) {
-    final channel = _reminderChannel.pick(vibrate: _vibrate);
+    final pair =
+        kind == ReminderKind.finalCall ? _finalCallChannel : _reminderChannel;
+    final channel = pair.pick(vibrate: _vibrate);
+    assert(channel.id == reminderChannelId(kind, vibrate: _vibrate));
     return _show(
       id: reminderId,
       payload: AlertTap.payloadOf(poiId: destinationId, reminder: kind),

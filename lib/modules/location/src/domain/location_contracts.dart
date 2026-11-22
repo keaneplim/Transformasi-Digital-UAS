@@ -86,6 +86,12 @@ abstract interface class LocationService {
 
   bool get isRunning;
 
+  /// Active GPS polling interval (3 s while moving, 10 s when stationary; A06 / T25).
+  Duration get currentInterval;
+
+  /// Adjusts the active GPS interval while tracking (re-subscribes only on change).
+  Future<void> setInterval(Duration interval);
+
   Future<LocationAccess> access();
 
   /// Asks the OS (shows the system dialog when allowed to).

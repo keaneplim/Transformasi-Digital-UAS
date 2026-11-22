@@ -184,4 +184,76 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
     expect(perms.calls, ['openAppSettings']);
   });
+
+  testWidgets(
+      'Settings UI15: offline content version + 7 taps unlock debug menu (T31)',
+      (tester) async {
+    final g = await pump(tester, '/settings');
+    await tester.scrollUntilVisible(find.text('Versi aplikasi'), 300,
+        scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Versi aplikasi'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Data offline'), findsOneWidget);
+    expect(find.text('Tersedia · versi 1'), findsOneWidget);
+    expect(find.text(GuideController.appVersion), findsOneWidget);
+    expect(find.text('Menu debug'), findsNothing);
+
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(find.text('Versi aplikasi'));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(g.debugMenuUnlocked, isFalse);
+    expect(find.textContaining('menu debug'), findsNothing,
+        reason: 'pre-unlock taps stay silent for ordinary visitors');
+
+    await tester.tap(find.text('Versi aplikasi'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(g.debugMenuUnlocked, isTrue);
+
+    await tester.scrollUntilVisible(find.text('Menu debug'), 300,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('Overlay debug di Peta'), findsOneWidget);
+    expect(find.text('Simulasi GPS lemah (UI12)'), findsOneWidget);
+
+    // Fine clock shift (+15 mnt) updates simulated time.
+    final before = g.now();
+    await tester.scrollUntilVisible(find.text('+15 mnt'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('+15 mnt'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('+15 mnt'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(g.now().difference(before), const Duration(minutes: 15));
+
+    // Closing the debug menu hides it again.
+    await tester.scrollUntilVisible(find.text('Tutup'), -200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Tutup'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('Tutup'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(g.debugMenuUnlocked, isFalse);
+    expect(find.text('Menu debug'), findsNothing);
+  });
+
+  testWidgets('UI13 final call card renders urgent copy (UC-A03-2)',
+      (tester) async {
+    final g = await pump(tester, '/home');
+    g
+      ..startSession()
+      ..showReminder(GuideReminder.finalCall);
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Panggilan terakhir'), findsOneWidget);
+    expect(find.text('Segera menuju gerbang sekarang'), findsOneWidget);
+    expect(find.text('Navigasi ke gerbang'), findsOneWidget);
+  });
+
+  test('GuideController.appVersion matches pubspec.yaml', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final match =
+        RegExp(r'^version:\s*([^\s+]+)', multiLine: true).firstMatch(pubspec);
+    expect(match?.group(1), GuideController.appVersion);
+  });
 }

@@ -8,20 +8,25 @@ import 'package:jelajah_taman/modules/location/location.dart';
 class _Source implements LocationSource {
   final controller = StreamController<LocationFix>.broadcast();
   bool? lastBackground;
+  Duration? lastInterval;
+  int subscribes = 0;
 
   @override
   Stream<LocationFix> fixes(
       {required Duration interval, bool background = false}) {
     lastBackground = background;
+    lastInterval = interval;
+    subscribes++;
     return controller.stream;
   }
 }
 
 class _Perms implements LocationPermissions {
   LocationAccess access = LocationAccess.granted;
+  Completer<LocationAccess>? pending;
 
   @override
-  Future<LocationAccess> check() async => access;
+  Future<LocationAccess> check() => pending?.future ?? Future.value(access);
 
   @override
   Future<LocationAccess> request() async => access;
@@ -93,6 +98,90 @@ void main() {
     src.controller.add(fix(5, heading: 42));
     await Future<void>.delayed(Duration.zero);
     expect(headings, [42]);
+    await s.stop();
+  });
+
+  test('setInterval re-subscribes on change and stopSession resets to 3 s',
+      () async {
+    final src = _Source();
+    final s = LocationServiceImpl(source: src, permissions: _Perms());
+    await s.startSession();
+    expect(src.lastInterval, const Duration(seconds: 3));
+    expect(src.subscribes, 1);
+
+    await s.setInterval(const Duration(seconds: 3));
+    expect(src.subscribes, 1, reason: 'no-op when interval is unchanged');
+
+    await s.setInterval(const Duration(seconds: 10));
+    expect(s.currentInterval, const Duration(seconds: 10));
+    expect(src.lastInterval, const Duration(seconds: 10));
+    expect(src.lastBackground, isTrue);
+    expect(src.subscribes, 2);
+
+    await s.stopSession();
+    expect(s.currentInterval, const Duration(seconds: 3));
+    expect(src.lastInterval, const Duration(seconds: 3));
+    expect(src.lastBackground, isFalse);
+    await s.stop();
+  });
+
+  test('10 s stationary interval adapts no-fix timeout so quality stays good',
+      () {
+    fakeAsync((async) {
+      final src = _Source();
+      final s = LocationServiceImpl(source: src, permissions: _Perms());
+      s.setInterval(const Duration(seconds: 10));
+      s.startSession();
+      async.flushMicrotasks();
+      expect(src.lastInterval, const Duration(seconds: 10));
+      src.controller.add(fix(6));
+      async.flushMicrotasks();
+      expect(s.currentQuality, GpsQuality.good);
+
+      // 12 s would be GpsQuality.none at 3 s polling, but at 10 s polling it is normal.
+      async.elapse(const Duration(seconds: 12));
+      expect(s.currentQuality, GpsQuality.good);
+
+      // Truly silent past 24 s → none.
+      async.elapse(const Duration(seconds: 15));
+      expect(s.currentQuality, GpsQuality.none);
+      s.stop();
+    });
+  });
+
+  test(
+      'overlapping setInterval and stop never leaks or restarts foreground GPS (M1)',
+      () async {
+    final src = _Source();
+    final perms = _Perms();
+    final s = LocationServiceImpl(source: src, permissions: perms);
+    await s.startSession();
+    expect(src.subscribes, 1);
+    expect(s.isRunning, isTrue);
+
+    // Hold permission check open during setInterval, then stop before it finishes.
+    perms.pending = Completer<LocationAccess>();
+    final intervalCall = s.setInterval(const Duration(seconds: 10));
+    final stopCall = s.stop();
+    perms.pending!.complete(LocationAccess.granted);
+    await Future.wait([intervalCall, stopCall]);
+
+    expect(s.isRunning, isFalse);
+    expect(s.currentInterval, const Duration(seconds: 3));
+    expect(src.subscribes, 1,
+        reason:
+            'stale setInterval must not open a new subscription after stop');
+  });
+
+  test('currentInterval stays 3 s when permission is denied on setInterval',
+      () async {
+    final src = _Source();
+    final perms = _Perms();
+    final s = LocationServiceImpl(source: src, permissions: perms);
+    await s.startSession();
+    perms.access = LocationAccess.denied;
+    await s.setInterval(const Duration(seconds: 10));
+    expect(s.currentInterval, const Duration(seconds: 3));
     await s.stop();
   });
 }

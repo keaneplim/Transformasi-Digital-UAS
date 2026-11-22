@@ -1,10 +1,10 @@
 /// Module `reminders` (level 4, owner B scheduler + closing / C hydration) — public front door.
 ///
 /// ReminderScheduler + Reminder strategies: ClosingReminder (A03, uses routing's TimeBudget),
-/// HydrationReminder (F08 d). Returns E10 ReminderDue for the caller to publish and show (UI13).
-/// Snooze (`ReminderScheduler.snooze`, hydration "Ingatkan 10 menit lagi") is persisted with
-/// the session. Voice and the system notification are shown by shell. Not built yet: final call
-/// (UC-A03-2).
+/// FinalCallReminder (UC-A03-2), HydrationReminder (F08 d). Returns E10 ReminderDue for the
+/// caller to publish and show (UI13). Snooze (`ReminderScheduler.snooze`, hydration "Ingatkan
+/// 10 menit lagi") is persisted with the session. Voice and the system notification are shown
+/// by shell.
 /// Spec: IMPLEMENTATION_PLAN.md A03, F08(d). Template: docs/engineering/ARCHITECTURE.md §7.
 library;
 

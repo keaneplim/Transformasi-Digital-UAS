@@ -64,11 +64,16 @@ class GuideController extends ChangeNotifier {
         AppMode.values.asNameMap()[_store.getString(_modeKey)] ?? AppMode.real;
     _sessions = SessionStore(_store);
     budget = timeBudget ?? TimeBudget.fromContent(content, router);
+    final finalCallMinM = _parkParam('final_call_min_distance_m', 200);
     _reminders = ReminderScheduler([
+      FinalCallReminder(budget,
+          gatePoiId: content.gate.id, minDistanceM: finalCallMinM),
       ClosingReminder(budget, gatePoiId: content.gate.id),
       const HydrationReminder(),
     ]);
     _reminderStore = ReminderStore(_store);
+    _trackingPolicy =
+        TrackingPolicy(params: TrackingPolicyParams.fromPark(content.park));
     final loc = location;
     if (loc != null) {
       _subs
@@ -85,6 +90,7 @@ class GuideController extends ChangeNotifier {
     }, onError: (Object _) {}));
     stepTracker?.onChange = () {
       if (_disposed) return;
+      _onStepsChanged();
       _persist();
       notifyListeners();
     };
@@ -111,10 +117,24 @@ class GuideController extends ChangeNotifier {
   final bool Function(GeoPoint) _insideZone;
   late final GeofenceEngine _engine;
   late final SessionStore _sessions;
+  late final TrackingPolicy _trackingPolicy;
+  int _lastPolicySteps = 0;
   final List<StreamSubscription<Object?>> _subs = [];
   static const _modeKey = 'app_mode';
+
+  /// App version shown in Settings UI15 (kept in sync with pubspec.yaml).
+  static const appVersion = '0.1.0';
+
   late final List<Place> places;
   late final Map<String, Place> _byId;
+
+  double _parkParam(String key, double fallback) {
+    try {
+      return content.park.param(key);
+    } on StateError {
+      return fallback;
+    }
+  }
 
   Place? place(String id) => _byId[id];
   List<Place> get pois => places.where((p) => p.isPoi).toList();
@@ -122,7 +142,29 @@ class GuideController extends ChangeNotifier {
 
   // ---- time (demo can jump the clock, e.g. to 15.30 for TC-10) ---------------------------
   Duration _clockOffset = Duration.zero;
+
+  /// Real-session reminder state backed up before a debug clock shift, restored on reset.
+  Map<String, Object?>? _savedRealReminders;
+
   DateTime now() => _baseClock.now().add(_clockOffset);
+
+  bool get _debugClockActive => _clockOffset != Duration.zero && !isDemo;
+
+  void _enterDebugClock() {
+    if (!isDemo && sessionActive && _savedRealReminders == null) {
+      _savedRealReminders = _reminders.toJson();
+    }
+  }
+
+  void _restoreRealRemindersIfNeeded() {
+    final saved = _savedRealReminders;
+    if (saved == null) return;
+    _savedRealReminders = null;
+    _reminders.restore(saved);
+    reminder = null;
+    reminderDue = null;
+    _saveReminders();
+  }
 
   void setDemoTime(int hour, int minute) {
     final n = _baseClock.now();
@@ -130,8 +172,27 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Fine clock control from the hidden debug menu (T31 / TC-10): moves simulated time
+  /// and evaluates reminders right away without consuming real-session reminders.
+  void shiftClock(Duration delta) {
+    _enterDebugClock();
+    _clockOffset += delta;
+    if (sessionActive) _checkReminders();
+    notifyListeners();
+  }
+
+  /// Sets simulated time of day from the hidden debug menu and checks reminders at once.
+  void setClockTime(int hour, int minute) {
+    _enterDebugClock();
+    final n = _baseClock.now();
+    _clockOffset = DateTime(n.year, n.month, n.day, hour, minute).difference(n);
+    if (sessionActive) _checkReminders();
+    notifyListeners();
+  }
+
   void resetDemoTime() {
     _clockOffset = Duration.zero;
+    _restoreRealRemindersIfNeeded();
     notifyListeners();
   }
 
@@ -242,10 +303,75 @@ class GuideController extends ChangeNotifier {
 
   /// UI12 "GPS lemah" banner: weak or no fixes for 60 s during a session (D08).
   bool get gpsWeakBanner =>
-      !isDemo &&
-      sessionActive &&
-      access == LocationAccess.granted &&
-      _engine.weakBanner;
+      _debugWeakGps ||
+      (!isDemo &&
+          sessionActive &&
+          access == LocationAccess.granted &&
+          _engine.weakBanner);
+
+  // ---- hidden debug menu (T31 / §6.5) -------------------------------------------------------
+  bool debugMenuUnlocked = false;
+  bool debugOverlay = false;
+  bool _debugWeakGps = false;
+
+  bool get debugWeakGps => _debugWeakGps;
+
+  /// Active GPS polling interval (T25 / A06): 3 s while moving, 10 s while stationary.
+  Duration get activeGpsInterval =>
+      location?.currentInterval ?? _trackingPolicy.interval;
+
+  TrackingMode get trackingMode => _trackingPolicy.mode;
+
+  /// Per-POI geofence diagnostics for the Explore debug overlay (T31).
+  List<GeofenceDebugEntry> get geofenceDebug => _engine.debugSnapshot();
+
+  void unlockDebugMenu() {
+    if (debugMenuUnlocked) return;
+    debugMenuUnlocked = true;
+    notifyListeners();
+  }
+
+  void lockDebugMenu() {
+    debugMenuUnlocked = false;
+    debugOverlay = false;
+    _debugWeakGps = false;
+    _clockOffset = Duration.zero;
+    _restoreRealRemindersIfNeeded();
+    notifyListeners();
+  }
+
+  void setDebugOverlay(bool on) {
+    if (debugOverlay == on) return;
+    debugOverlay = on;
+    notifyListeners();
+  }
+
+  void setDebugWeakGps(bool on) {
+    if (_debugWeakGps == on) return;
+    _debugWeakGps = on;
+    notifyListeners();
+  }
+
+  /// Compact plain-text snapshot for QA testing reports (copied from the debug menu).
+  String debugLogSummary() {
+    final buf = StringBuffer()
+      ..writeln(
+          'Jelajah Taman v$appVersion (konten v${content.contentVersion})')
+      ..writeln('Waktu: ${clockLabel(now())} · Mode: ${mode.name}')
+      ..writeln('GPS: ${quality.name}'
+          '${accuracyM != null ? " (±${accuracyM!.round()} m)" : ""}'
+          ' · Interval: ${activeGpsInterval.inSeconds} dtk (${trackingMode.name})')
+      ..writeln('Sesi: ${sessionActive ? "aktif" : "tidak aktif"}'
+          ' · Rute: ${route.name}')
+      ..writeln('Langkah: ${stepsKnown ? steps : "–"}'
+          ' · Jarak: ${walkedM.round()} m'
+          ' · Energi: ±${kcal.round()} kkal')
+      ..writeln('Dikunjungi (${visited.length}): ${visited.join(", ")}')
+      ..writeln('Terpicu (${triggered.length}): ${triggered.join(", ")}')
+      ..writeln(
+          'Rekomendasi (${recommendationLog.length}): ${recommendationLog.map((e) => "${e.afterPoiId}->${e.poiIds.join("/")}").join("; ")}');
+    return buf.toString().trimRight();
+  }
 
   double? get accuracyM => isDemo ? null : fix?.accuracyM;
   double? get heading =>
@@ -312,10 +438,47 @@ class GuideController extends ChangeNotifier {
     if (!f.isWeak(_weakM)) _navOnFix(f);
     // Geofences only run during a session (D07, #31): before "Mulai jelajah" (or at home)
     // nothing triggers; the map still shows the dot.
-    if (sessionActive) _apply(_engine.onFix(f, now()));
+    if (sessionActive) {
+      _apply(_engine.onFix(f, now()));
+      _trackingPolicy.onFix(f, now(), keepFast: _keepFastGps);
+      _syncGpsInterval();
+    }
     _checkReminders();
     _persist();
     notifyListeners();
+  }
+
+  bool _appForeground = true;
+
+  /// App lifecycle hook (B1 / Android 12+): geolocator recreates the foreground service on
+  /// interval switches, which is only allowed while the app is resumed. Any interval change
+  /// deferred while locked is applied on return to foreground.
+  void setAppVisible(bool visible) {
+    if (_appForeground == visible) return;
+    _appForeground = visible;
+    if (visible) _syncGpsInterval();
+  }
+
+  bool get _keepFastGps => _engine.hasNearbyActivity || navigation != null;
+
+  void _onStepsChanged() {
+    final current = stepTracker?.steps ?? 0;
+    if (current > _lastPolicySteps) {
+      _lastPolicySteps = current;
+      if (sessionActive && !isDemo) {
+        _trackingPolicy.onStep(now());
+        _syncGpsInterval();
+      }
+    }
+  }
+
+  void _syncGpsInterval() {
+    final loc = location;
+    if (!sessionActive || isDemo || loc == null || !_appForeground) return;
+    final target = _trackingPolicy.interval;
+    if (loc.currentInterval != target) {
+      unawaited(loc.setInterval(target));
+    }
   }
 
   void _onHeading(double deg) {
@@ -355,10 +518,16 @@ class GuideController extends ChangeNotifier {
   /// One heartbeat (every 5 s during a real-mode session): no fixes at all also count as
   /// weak GPS (D08), and reminders fire on time. Public so tests and goldens can step time.
   void heartbeat() {
-    final before = (reminder, gpsWeakBanner);
+    final before = (reminder, gpsWeakBanner, _trackingPolicy.mode);
     _engine.tick(now());
+    if (sessionActive && !isDemo) {
+      _trackingPolicy.tick(now(), keepFast: _keepFastGps);
+      _syncGpsInterval();
+    }
     _checkReminders();
-    if ((reminder, gpsWeakBanner) != before) notifyListeners();
+    if ((reminder, gpsWeakBanner, _trackingPolicy.mode) != before) {
+      notifyListeners();
+    }
   }
 
   // ---- settings ----------------------------------------------------------------------------
@@ -472,6 +641,9 @@ class GuideController extends ChangeNotifier {
       _meter.anchor(f.position, f.at);
     }
     _reminders.reset();
+    _savedRealReminders = null;
+    _trackingPolicy.reset();
+    _lastPolicySteps = 0;
     _recommendedFor.clear();
     recommendationCue = null;
     _record = SessionRecord(
@@ -493,6 +665,8 @@ class GuideController extends ChangeNotifier {
       unawaited(stepTracker?.start());
       _startHeartbeat();
     }
+    // UC-A03-3: a session started after the closing threshold is reminded at once.
+    _checkReminders();
     notifyListeners();
   }
 
@@ -503,6 +677,8 @@ class GuideController extends ChangeNotifier {
     stopWalking();
     navigation = null;
     _heartbeat?.cancel();
+    _trackingPolicy.reset();
+    _lastPolicySteps = 0;
     if (!isDemo) unawaited(location?.stopSession());
     unawaited(stepTracker?.stop()); // the count stays for the summary
     if (wasActive && _record != null) {
@@ -654,6 +830,7 @@ class GuideController extends ChangeNotifier {
     _recommendedFor.clear();
     stopAudio();
     _clockOffset = Duration.zero;
+    _savedRealReminders = null;
     notifyListeners();
   }
 
@@ -919,6 +1096,10 @@ class GuideController extends ChangeNotifier {
     arrivedAt = null;
     _offRoute = 0;
     if (!sessionActive) startSession();
+    if (!isDemo) {
+      _trackingPolicy.tick(now(), keepFast: true);
+      _syncGpsInterval();
+    }
     bus?.publish(NavigationStarted(at: now(), destinationId: to.id));
     notifyListeners();
     return true;
@@ -1381,22 +1562,36 @@ class GuideController extends ChangeNotifier {
   /// A03: jam tutup − waktu jalan ke gerbang − 15 menit, from where the visitor is now.
   DateTime get closingReminderAt => budget.closingReminderAt(origin, now());
 
+  /// UC-A03-2: jam tutup − waktu jalan ke gerbang (final call threshold).
+  DateTime get finalCallAt => budget.finalCallAt(origin, now());
+
   /// F08 route chooser: the whole route (gate → gate) ends by closing − 15 min.
   bool routeFits(TrailRoute r) =>
       budget.routeFits(Duration(minutes: r.durationMin), now());
 
   void _checkReminders() {
-    if (reminder != null || !sessionActive) return;
-    final due = _reminders.check(ReminderContext(
+    if (!sessionActive) return;
+    final ctx = ReminderContext(
       now: now(),
       position: origin,
       sessionStart: sessionStart!,
       hydrationEvery: Duration(minutes: hydrationMin),
-    ));
+      navigatingToGate: navigation?.to.isGate ?? false,
+    );
+    final ReminderDue? due;
+    if (reminder == null) {
+      due = _reminders.check(ctx);
+    } else if (reminder != GuideReminder.finalCall) {
+      // UC-A03-2: final call supersedes an open softer reminder card.
+      due = _reminders.checkOnly(ReminderKind.finalCall, ctx);
+    } else {
+      return;
+    }
     if (due == null) return;
     reminder = switch (due.kind) {
       ReminderKind.hydration => GuideReminder.hydration,
-      ReminderKind.closing || ReminderKind.finalCall => GuideReminder.closing,
+      ReminderKind.closing => GuideReminder.closing,
+      ReminderKind.finalCall => GuideReminder.finalCall,
     };
     reminderDue = due;
     _saveReminders();
@@ -1411,9 +1606,9 @@ class GuideController extends ChangeNotifier {
         orElse: () => rests.isEmpty ? gatePlace : rests.first);
   }
 
-  /// Where the reminder's main button goes: the gate (closing) or the nearest rest point.
+  /// Where the reminder's main button goes: the gate (closing/final call) or nearest rest.
   Place reminderDestination(GuideReminder r) =>
-      r == GuideReminder.closing ? gatePlace : nearestRest;
+      r == GuideReminder.hydration ? nearestRest : gatePlace;
 
   /// Card / notification title of the hydration reminder ("Sudah 55 menit berjalan. …").
   /// The Settings preview (no reminder fired) reads as if the interval had just passed.
@@ -1427,14 +1622,16 @@ class GuideController extends ChangeNotifier {
   /// there is no way there.
   bool navigateForReminder(GuideReminder r) {
     final to = reminderDestination(r);
-    if (reminder == r) dismissReminder();
+    if (reminder == r) dismissReminder(r);
     return startNavigation(to);
   }
 
   /// Hydration "Ingatkan 10 menit lagi" (#33): back in [hydrationSnooze], not after the full
-  /// interval. Other reminders are just dismissed.
-  void snoozeReminder() {
-    if (reminder != GuideReminder.hydration) return dismissReminder();
+  /// interval. Other reminders are just dismissed. Ignores stale taps if [expected] no longer
+  /// matches the open reminder.
+  void snoozeReminder([GuideReminder? expected]) {
+    if (expected != null && reminder != expected) return;
+    if (reminder != GuideReminder.hydration) return dismissReminder(expected);
     _reminders.snooze(ReminderKind.hydration, now(), hydrationSnooze);
     _saveReminders();
     reminder = null;
@@ -1451,7 +1648,7 @@ class GuideController extends ChangeNotifier {
 
   void _saveReminders() {
     final r = _record;
-    if (r == null || !sessionActive) return;
+    if (r == null || !sessionActive || _debugClockActive) return;
     unawaited(_reminderStore.save(r.id, _reminders.toJson()));
   }
 
@@ -1463,13 +1660,15 @@ class GuideController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void dismissReminder() {
+  void dismissReminder([GuideReminder? expected]) {
+    if (expected != null && reminder != expected) return;
     if (reminder case final r?) {
-      _reminders.acknowledge(
-          r == GuideReminder.closing
-              ? ReminderKind.closing
-              : ReminderKind.hydration,
-          now());
+      final kind = switch (r) {
+        GuideReminder.closing => ReminderKind.closing,
+        GuideReminder.finalCall => ReminderKind.finalCall,
+        GuideReminder.hydration => ReminderKind.hydration,
+      };
+      _reminders.acknowledge(kind, now());
       _saveReminders();
     }
     reminder = null;
@@ -1611,7 +1810,7 @@ class GuideController extends ChangeNotifier {
   }
 }
 
-enum GuideReminder { closing, hydration }
+enum GuideReminder { closing, finalCall, hydration }
 
 /// Where a narration comes from (T07).
 enum NarrationSource {

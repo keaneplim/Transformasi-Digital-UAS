@@ -36,8 +36,14 @@ void main() {
 
   test('park params are readable and typed', () {
     expect(content.park.param('cooldown_min'), 10);
+    expect(content.park.param('gps_stationary_interval_s'), 10);
+    expect(content.park.param('final_call_min_distance_m'), 200);
     expect(content.park.recWeights.values.fold<double>(0, (a, b) => a + b),
         closeTo(1, 1e-9));
     expect(() => content.park.param('does_not_exist'), throwsStateError);
+  });
+
+  test('contentVersion is parsed from pois.json (T31)', () {
+    expect(content.contentVersion, 1);
   });
 }

@@ -16,6 +16,7 @@ void main() {
   final start = DateTime(2026, 11, 20, 13);
 
   ReminderScheduler scheduler() => ReminderScheduler([
+        FinalCallReminder(budget, gatePoiId: content.gate.id),
         ClosingReminder(budget, gatePoiId: content.gate.id),
         const HydrationReminder(),
       ]);
@@ -23,12 +24,14 @@ void main() {
   ReminderContext ctx(DateTime now,
           {GeoPoint? at,
           DateTime? sessionStart,
-          Duration hydration = Duration.zero}) =>
+          Duration hydration = Duration.zero,
+          bool navigatingToGate = false}) =>
       ReminderContext(
         now: now,
         position: at ?? p06,
         sessionStart: sessionStart ?? start,
         hydrationEvery: hydration,
+        navigatingToGate: navigatingToGate,
       );
 
   setUp(() {
@@ -67,9 +70,22 @@ void main() {
 
     test('a session started after the threshold is reminded at once (UC-A03-3)',
         () {
-      final late = threshold.add(const Duration(minutes: 20));
+      // Past closingReminderAt, still before finalCallAt → regular closing reminder.
+      final late = threshold.add(const Duration(minutes: 5));
       final due = scheduler().check(ctx(late, sessionStart: late));
       expect(due?.kind, ReminderKind.closing);
+
+      // Past finalCallAt (> 200 m from gate) → only finalCall fires, covering closing.
+      final veryLate =
+          budget.finalCallAt(p06, start).add(const Duration(minutes: 1));
+      final s = scheduler();
+      expect(s.check(ctx(veryLate, sessionStart: veryLate))?.kind,
+          ReminderKind.finalCall);
+      expect(
+          s.check(ctx(veryLate.add(const Duration(seconds: 5)),
+              sessionStart: veryLate)),
+          isNull,
+          reason: 'closing is covered by finalCall (no double alarm)');
     });
 
     test('follows the position: due at P06, not yet at the gate', () {
@@ -90,6 +106,59 @@ void main() {
       final s = scheduler()..check(ctx(threshold));
       s.reset();
       expect(s.check(ctx(threshold))?.kind, ReminderKind.closing);
+    });
+  });
+
+  group('final call reminder (UC-A03-2)', () {
+    test('fires once at close − walk when > 200 m from gate', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      // Closing fires first at closingReminderAt.
+      expect(s.check(ctx(threshold))?.kind, ReminderKind.closing);
+      // Not a second before finalCallAt.
+      expect(
+          s.check(ctx(finalAt.subtract(const Duration(seconds: 1)))), isNull);
+      final due = s.check(ctx(finalAt));
+      expect(due, isNotNull);
+      expect(due!.kind, ReminderKind.finalCall);
+      expect(due.actionDestinationId, 'P01');
+      expect(due.text, startsWith('Segera menuju gerbang sekarang.'));
+      // Fires at most once per session.
+      expect(s.check(ctx(finalAt.add(const Duration(minutes: 2)))), isNull);
+    });
+
+    test('silent when already within 200 m of the gate', () {
+      final s = scheduler();
+      final late = DateTime(2026, 11, 20, 15, 59);
+      expect(
+          s.checkOnly(
+              ReminderKind.finalCall, ctx(late, at: content.gate.position)),
+          isNull);
+    });
+
+    test('silent when already navigating to the gate', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      expect(
+          s.checkOnly(
+              ReminderKind.finalCall, ctx(finalAt, navigatingToGate: true)),
+          isNull);
+      // Cancelling navigation later while still > 200 m allows it to fire.
+      expect(s.checkOnly(ReminderKind.finalCall, ctx(finalAt))?.kind,
+          ReminderKind.finalCall);
+    });
+
+    test('persisted across app restart', () {
+      final s = scheduler();
+      final finalAt = budget.finalCallAt(p06, start);
+      expect(s.checkOnly(ReminderKind.finalCall, ctx(finalAt))?.kind,
+          ReminderKind.finalCall);
+      final again = scheduler()..restore(s.toJson());
+      expect(again.hasFired(ReminderKind.finalCall), isTrue);
+      expect(
+          again.checkOnly(ReminderKind.finalCall,
+              ctx(finalAt.add(const Duration(minutes: 1)))),
+          isNull);
     });
   });
 

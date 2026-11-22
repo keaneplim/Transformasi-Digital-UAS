@@ -35,6 +35,10 @@ class _Gps implements LocationService {
   @override
   bool get isRunning => true;
   @override
+  Duration get currentInterval => const Duration(seconds: 3);
+  @override
+  Future<void> setInterval(Duration interval) async {}
+  @override
   Future<LocationAccess> access() async => granted;
   @override
   Future<LocationAccess> requestAccess() async => granted;
@@ -145,5 +149,19 @@ void main() {
     await _frames(tester);
     expect(find.text('scanner'), findsOneWidget);
     guide().endSession();
+  });
+
+  testWidgets('T31 debug overlay shows GPS interval & POI states on Explore',
+      (tester) async {
+    await open(tester, LocationAccess.granted);
+    expect(find.textContaining('3 dtk (bergerak)'), findsNothing);
+    guide().setDebugOverlay(true);
+    await _frames(tester);
+    expect(find.textContaining('3 dtk (bergerak)'), findsOneWidget);
+    expect(find.textContaining('db 0'), findsWidgets);
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await _frames(tester);
+    expect(guide().debugOverlay, isFalse);
+    expect(find.textContaining('3 dtk (bergerak)'), findsNothing);
   });
 }
