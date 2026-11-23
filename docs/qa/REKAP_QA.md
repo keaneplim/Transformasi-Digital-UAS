@@ -7,8 +7,9 @@ Penulis: Jacob (PM/QA), diperbarui setelah setiap putaran uji selesai, dari log 
 ## Cara membaca
 
 - **Putaran uji** = satu kali menjalankan sekumpulan skenario pada satu versi APK yang sama. APK baru berarti putaran baru.
-- **Status QA:** `Belum diuji` · `Lulus` (semua skenario wajib lulus pada ≥2 HP) · `Sebagian` (ada kriteria yang belum terpenuhi atau baru satu HP) · `Gagal` (ada cacat Kritis/Mayor terbuka) · `Perlu uji ulang` (kode berubah setelah disetujui) · `Terblokir` (tidak dapat diuji; sebutkan sebabnya).
+- **Status QA:** `Belum diuji` · `Lulus` (semua skenario wajib lulus di HP penguji, dan skenario lintas perangkatnya lulus di HP Jacob dan HP Dimas) · `Sebagian` (ada kriteria yang belum terpenuhi, atau skenario lintas perangkat baru lulus di satu HP) · `Gagal` (ada cacat Kritis/Mayor terbuka) · `Perlu uji ulang` (kode berubah setelah disetujui) · `Terblokir` (tidak dapat diuji; sebutkan sebabnya).
 - **Cara uji:** `Luar` = sudah lulus di luar Tahura (perangkat, mode demo, mock location, atau GPS nyata non-Tahura) · `Tahura` = sudah dikonfirmasi di lokasi.
+- **Perangkat:** satu HP per penguji (merek berbeda). Dua belas skenario sensitif perangkat (daftar di `qa/RENCANA_QA.md` §2, branch `qa`) dijalankan kedua penguji di HP masing-masing; skenario lain cukup sekali.
 - "Kode selesai" di `PROGRESS.md` bukan "disetujui QA". Hanya tabel ini yang menyatakan persetujuan QA.
 - Detail per skenario: branch `qa`, `qa/<penguji>/putaran-NN/HASIL.md`.
 
