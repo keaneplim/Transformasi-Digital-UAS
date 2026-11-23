@@ -82,7 +82,7 @@ Full text, acceptance criteria and priorities: PRD §3 and §3.1. Test cases: PR
 | A07 | Accessibility | Could | Larger text, contrast, targets ≥48 dp, screen-reader labels. | — |
 
 ### Acceptance bar
-- Field tests TC-01…TC-13 (PRD Lampiran A); test scenarios SK-* in `docs/qa/scenario/` trace to every AC and TC.
+- Field tests TC-01…TC-13 (PRD Lampiran A); test scenarios SK-* in `qa/scenario/` trace to every AC and TC.
 - Usability: ≥5 respondents, task-based + SUS, **SUS ≥68** (PB20).
 - Pedometer error ≤10% over 200 manually counted steps (TC-12).
 - Final compliance matrix: PRD §11 (filled in W14–15). Unresolved items before baseline v1.0: PRD Lampiran B.
@@ -216,7 +216,7 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 - **Golden screens** in `test_goldens/` (not in CI; regenerate after UI changes and inspect).
 - **Python tool tests** in `tools/tests/`.
 - **CI** (`.github/workflows/ci.yml`): content validation → PRD.md sync → Python tests → `dart format` → `flutter analyze` → architecture check → `flutter test`; then a release arm64 APK on every PR (workflow artifact) and push. On push to `main` the APK is published as `jelajah-taman.apk` on the **`apk-latest` GitHub Release**, signed with the CI debug key; it is never committed to the repository (ADR 0010).
-- **QA:** two testers, Jacob (location, trigger, QR, search, navigation, offline, battery, install, main flow) and Michael Dimas (content, eyes-free, recommendation, reminders, wellness, data, accessibility, Settings, non-goals, usability). Scenarios `docs/qa/scenario/`; status per feature `docs/qa/REKAP_QA.md` (on `main`); plans, logs per round and mock-location GPX on branch `qa` (`rules.md` §9.1); `docs/qa/DEVICE_CHECK.md` (≥2 Android phones; iPhone can't run the APK).
+- **QA:** two testers, Jacob (location, trigger, QR, search, navigation, offline, battery, install, main flow) and Michael Dimas (content, eyes-free, recommendation, reminders, wellness, data, accessibility, Settings, non-goals, usability). All QA documents live in one folder, `qa/` on branch `qa` (`rules.md` §9.1): scenarios `qa/scenario/`, status per feature `qa/REKAP_QA.md`, `qa/DEVICE_CHECK.md` (≥2 Android phones; iPhone can't run the APK), `qa/AI_DISCLOSURE_LOG.md`, the plan, per-tester results in `qa/QA1 - Jacob/` and `qa/QA2 - Mike/` (Fase 1 outside Tahura, Fase 2 inside Tahura) and mock-location GPX. There is no `docs/qa/`.
 - **Platforms:** Android only is in scope and committed; `web/` (browser preview) and `ios/` (personal simulator/device runs) stay local (ADR 0011).
 
 ## 9. Tech stack (PRD §8.1)
@@ -239,11 +239,11 @@ v2 **"Sunlit Field Guide"**: cream page, sun-yellow header band with drifting do
 | `docs/engineering/ARCHITECTURE.md` | Code architecture (§5 above in full). |
 | `docs/engineering/IMPLEMENTATION_PLAN.md` | Per-feature build spec: use cases, contracts, data schema, task list T01–T31 with owners and status, decisions D01–D14, as-built notes. PRD wins on conflict. |
 | `docs/adr/` | Architecture Decision Records `NNNN-kebab-title.md`, index in `README.md`. |
-| `docs/qa/scenario/` | Test scenarios SK-* (Bahasa Indonesia) with AC/TC traceability. |
-| `docs/qa/DEVICE_CHECK.md` | Test-phone checklist. |
-| `docs/qa/AI_DISCLOSURE_LOG.md` | AI-assisted work log: source of the AI & Tools Disclosure deliverable. |
-| `docs/qa/REKAP_QA.md` | QA verdict per feature/PB after each test round (Jacob); feeds the "Status QA" section of `PROGRESS.md`. |
-| branch `qa`, folder `qa/` | QA working area, not on `main`: test plan, per-tester logs per round (`qa/jacob/`, `qa/dimas/`), mock-location guide + GPX files (`rules.md` §9.1). |
+| `qa/scenario/` | Test scenarios SK-* (Bahasa Indonesia) with AC/TC traceability. |
+| `qa/DEVICE_CHECK.md` | Test-phone checklist. |
+| `qa/AI_DISCLOSURE_LOG.md` | AI-assisted work log: source of the AI & Tools Disclosure deliverable. |
+| `qa/REKAP_QA.md` | QA verdict per feature/PB after each test phase (Jacob); feeds the "Status QA" section of `PROGRESS.md`. |
+| `qa/` (branch `qa`) | Single QA folder: the rows above plus test plan `RENCANA_QA.md`, per-tester results by phase (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`), mock-location guide + GPX files (`rules.md` §9.1). Not on `main`. |
 | `docs/survey/SURVEY_CHECKLIST.md` | Survey trip checklist and post-survey data steps. |
 | `docs/content/narration/` | Narration scripts P01–P11 + `manifest.json`. |
 | `README.md` | Repo layout, setup, daily commands, definition of done. |
@@ -271,5 +271,5 @@ History: docs moved into `docs/` on 2026-11-06; agent context consolidated into 
 | R1–R8, E1–E10 | Architecture rules, domain events | ARCHITECTURE §2, §5.2 |
 | ADR NNNN | Architecture decisions (older text writes "ADR-008" for ADR 0008) | `docs/adr/` |
 | #n | Known issue | `.agents/PROGRESS.md` |
-| SK-* | Test scenario | `docs/qa/scenario/` |
+| SK-* | Test scenario | `qa/scenario/` |
 | `[VERIFIKASI]` / `[ISI]` | Needs field/manager confirmation / admin data missing — never fill by guessing | — |

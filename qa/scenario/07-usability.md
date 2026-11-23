@@ -89,9 +89,9 @@ Responden mengisi sendiri segera setelah tugas terakhir. Skala 1 (sangat tidak s
 | R5 | | | | | | | |
 | **Ringkasan** | | | berhasil tanpa melihat layar: … dari … | | | | rata-rata: … |
 
-| ID | Kriteria | Hasil yang diharapkan | Acuan |
-|---|---|---|---|
-| SK-USB-01 | Jumlah responden dan kelengkapan data | ≥5 responden menyelesaikan seluruh tugas dan mengisi SUS. | PB20 |
-| SK-USB-02 | Kunjungan POI tanpa melihat layar (T3) | ≥4 dari 5 responden berhasil. | F04 AC4 |
-| SK-USB-03 | Skor SUS | Rata-rata ≥68; bila di bawah itu, rencana perbaikan terdokumentasi beserta temuan prioritas. | PB20 |
-| SK-USB-04 | Temuan dan tindak lanjut | Setiap tugas yang gagal pada ≥2 responden dicatat sebagai temuan prioritas dan diuji ulang setelah perbaikan. | PB20, PB21 |
+| ID | Kriteria | Hasil yang diharapkan | Acuan | Penguji | Label | Cara uji di luar Tahura | Fase 2 (Tahura) | Lintas |
+|---|---|---|---|---|---|---|---|---|
+| SK-USB-01 | Jumlah responden dan kelengkapan data | ≥5 responden menyelesaikan seluruh tugas dan mengisi SUS. | PB20 | QA2 | LUAR | Responden di kampus; tugas berbasis lokasi memakai GPX 01/07. |  |  |
+| SK-USB-02 | Kunjungan POI tanpa melihat layar (T3) | ≥4 dari 5 responden berhasil. | F04 AC4 | QA2 | LUAR | Responden di kampus; tugas berbasis lokasi memakai GPX 01/07. |  |  |
+| SK-USB-03 | Skor SUS | Rata-rata ≥68; bila di bawah itu, rencana perbaikan terdokumentasi beserta temuan prioritas. | PB20 | QA2 | LUAR | Responden di kampus; tugas berbasis lokasi memakai GPX 01/07. |  |  |
+| SK-USB-04 | Temuan dan tindak lanjut | Setiap tugas yang gagal pada ≥2 responden dicatat sebagai temuan prioritas dan diuji ulang setelah perbaikan. | PB20, PB21 | QA2 | LUAR | Responden di kampus; tugas berbasis lokasi memakai GPX 01/07. |  |  |

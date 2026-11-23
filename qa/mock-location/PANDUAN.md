@@ -1,7 +1,7 @@
 # Panduan mock location — uji "lapangan" tanpa ke Tahura
 
 Status dokumen: Aktif
-Untuk: skenario berlabel `TAHURA→MOCK` di `qa/<penguji>/putaran-NN/HASIL.md`.
+Untuk: skenario berlabel `TAHURA→MOCK`, bagian *1B. Fake GPS* di Fase 1 `HASIL.md` (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`).
 
 **Prinsip:** ponsel diam di meja; aplikasi *mock location* memutar trek GPX yang berada **di dalam Tahura** sebagai posisi GPS. Jelajah Taman membaca posisi itu seperti GPS asli (aplikasi tidak menolak lokasi tiruan), sehingga pemicu, navigasi, rekomendasi, dan alur utama dapat diuji tanpa berjalan. Batasannya ada di `RENCANA_QA.md` §3.
 

@@ -24,7 +24,7 @@ Kelompok 5 · Transformasi Digital · STI ITB 2026 · Topik 7: Public Park & Wel
 | `docs/design/` | `DESIGN.md` = design system v2 (source of truth); `archive-v1/` = v1 Stitch prompts and screens, history only |
 | `docs/engineering/` | `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md` |
 | `docs/adr/` | Architecture Decision Records (index in `README.md`) |
-| `docs/qa/` | Test scenarios (`scenario/`), `DEVICE_CHECK.md`, `AI_DISCLOSURE_LOG.md` (AI & Tools Disclosure source) |
+| `qa/` (branch `qa` only) | All QA docs: scenarios (`scenario/`), `DEVICE_CHECK.md`, `REKAP_QA.md`, `AI_DISCLOSURE_LOG.md` (AI & Tools Disclosure source), test plan, per-tester logs, mock-location GPX |
 | `docs/survey/` | `SURVEY_CHECKLIST.md` |
 
 ## Download the APK

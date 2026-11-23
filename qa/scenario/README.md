@@ -4,7 +4,7 @@ Kumpulan skenario uji untuk membuktikan pemenuhan PRD Jelajah Taman (v0.9.2). Do
 
 **Kedudukan dokumen.** PRD (`docs/prd/PRD.md`, dibangkitkan dari docx) tetap menjadi acuan persyaratan; bila skenario di sini berbeda dari PRD, PRD yang berlaku dan skenario diperbaiki. Skenario yang bersumber dari rencana implementasi atau panduan desain, bukan dari PRD, diberi keterangan pada kolom Acuan ("rencana implementasi", `DESIGN.md`) dan tidak menentukan status kelulusan requirement.
 
-**Sumber.** `docs/prd/PRD.md` · `docs/engineering/IMPLEMENTATION_PLAN.md` (use case, kasus tepi) · `docs/qa/DEVICE_CHECK.md` · `docs/survey/SURVEY_CHECKLIST.md` · `docs/design/DESIGN.md` · `.agents/PROGRESS.md` (isu terbuka) · `assets/content/*.json`.
+**Sumber.** `docs/prd/PRD.md` · `docs/engineering/IMPLEMENTATION_PLAN.md` (use case, kasus tepi) · `qa/DEVICE_CHECK.md` · `docs/survey/SURVEY_CHECKLIST.md` · `docs/design/DESIGN.md` · `.agents/PROGRESS.md` (isu terbuka) · `assets/content/*.json`.
 
 ## Daftar berkas
 
@@ -34,21 +34,38 @@ Kumpulan skenario uji untuk membuktikan pemenuhan PRD Jelajah Taman (v0.9.2). Do
 
 Bila kolom Metode memuat dua kode (mis. "L, O"), kode pertama adalah cara utama dan kode kedua adalah bukti pendukung atau cara pendahuluan.
 
+## Pelaksanaan
+
+Setiap tabel skenario di berkas 01–07 memuat lima kolom pelaksanaan setelah kolom Metode. Kolom ini menggantikan kolom yang dulu ada di `HASIL.md`; `HASIL.md` sekarang hanya berisi `ID | Skenario | Metode | Hasil`.
+
+| Kolom | Arti |
+|---|---|
+| **Penguji** | `QA1` = Jacob (`qa/QA1 - Jacob/HASIL.md`) · `QA2` = Mike / Michael Dimas (`qa/QA2 - Mike/HASIL.md`). |
+| **Label** | Cara skenario dijalankan di **Fase 1** (di luar Tahura). Menentukan bagian Fase 1 di `HASIL.md`, lihat tabel di bawah. |
+| **Cara uji di luar Tahura** | Pengganti kondisi taman untuk Fase 1: mode demo / menu debug, trek GPX untuk mock location, lintasan GPS asli, atau papan QR cetak. |
+| **Fase 2 (Tahura)** | `Ya` = skenario juga diulang di **Fase 2**, di dalam Tahura, karena kondisi taman (kanopi, tanjakan, sinyal, mulut gua) dapat mengubah hasilnya. Hasil Fase 2 dicatat terpisah dari hasil Fase 1. |
+| **Lintas** | `Ya` = skenario sensitif perangkat (izin, layanan latar, notifikasi, mesin suara, sensor langkah, kamera, baterai). Dijalankan oleh **kedua** penguji di HP masing-masing; di `HASIL.md` penguji lain skenario ini ada di bagian 1E. |
+
+| Label | Arti | Bagian Fase 1 di `HASIL.md` |
+|---|---|---|
+| `LUAR` | Dapat diuji di mana saja: ponsel uji, mode demo, menu debug, pemeriksaan dokumen, hasil uji otomatis. | 1A. Tanpa GPS |
+| `TAHURA→MOCK` | Seharusnya di Tahura (butuh posisi di taman). Di luar Tahura dijalankan dengan **mock location**: ponsel diam, aplikasi lain memutar trek GPX taman sebagai GPS (`qa/mock-location/PANDUAN.md`). | 1B. Fake GPS |
+| `TAHURA→GPS` | Seharusnya di Tahura, tetapi yang diuji adalah perilaku GPS/sensor nyata, bukan posisi di taman. Dijalankan dengan **GPS asli di luar Tahura** (halaman kampus, lapangan). | 1C. GPS asli di luar ruangan |
+| `TAHURA→LUAR` | Seharusnya di Tahura (QR di mulut gua). Di luar Tahura memakai **papan QR cetak** di ruangan biasa/gelap. | 1D. Papan QR cetak |
+
+Batas yang tidak dapat dibuktikan oleh mock location dijelaskan di `qa/RENCANA_QA.md` §3.
+
 **Notasi:** `r` = radius pemicu POI. Waktu ditulis 24 jam dengan titik (15.30).
 
 ## Lingkungan uji
 
-- Minimal dua ponsel Android berbeda merek yang lulus `docs/qa/DEVICE_CHECK.md` (sensor penghitung langkah, suara TTS Indonesia luring, pengaturan baterai). iPhone tidak dapat menjalankan APK.
+- Minimal dua ponsel Android berbeda merek yang lulus `qa/DEVICE_CHECK.md` (sensor penghitung langkah, suara TTS Indonesia luring, pengaturan baterai). iPhone tidak dapat menjalankan APK.
 - Perlengkapan: earphone kabel dan Bluetooth, stopwatch, meteran atau roda ukur, power bank, senter, papan QR tercetak (P05, P06, satu ID tidak dikenal, satu QR asing), lembar catat.
 - Setiap sesi uji mencatat: tanggal, penguji, versi build (hash commit atau nomor versi APK), perangkat (merek, model, versi Android), cuaca dan kondisi sinyal untuk uji lapangan.
 
 ## Pencatatan hasil
 
-Satu baris per skenario per perangkat per putaran uji.
-
-| ID | Tanggal | Penguji | Build | Perangkat | Hasil aktual | Status | Bukti | ID cacat |
-|---|---|---|---|---|---|---|---|---|
-| SK-F02-02 | | | | | | | | |
+Hasil dicatat di `HASIL.md` masing-masing penguji (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`), satu baris per skenario per fase, dengan kolom `ID | Skenario | Metode | Hasil`. Tanggal, build, dan perangkat ditulis di kepala berkas dan di bawah judul tiap fase; hasil aktual, angka terukur, bukti, dan ID cacat ditulis di sel Hasil setelah statusnya (`qa/README.md` §4).
 
 **Status:** `Lulus` (hasil sesuai harapan) · `Sebagian` (sebagian kriteria terpenuhi; jelaskan) · `Gagal` · `Terblokir` (tidak dapat dijalankan; tulis penyebabnya, mis. fitur belum ada atau data belum terverifikasi). Tiga status pertama dipetakan ke Pass / Partial / Fail pada PRD §11. Hasil aktual ditulis apa adanya, termasuk angka terukur (PRD §8.2).
 
@@ -148,7 +165,7 @@ Uji lapangan dijadwalkan di awal Sprint 5 dengan tanggal cadangan karena musim h
 
 ## Kesiapan build per 22 November 2026
 
-Disusun dari `pubspec.yaml`, `.agents/MEMORY.md` dan `.agents/PROGRESS.md` pada cabang `main` (commit `86ba11a`, setelah PR #15), tanpa menjalankan aplikasi. Seluruh kemampuan di bawah sudah ada dalam kode tetapi **belum pernah diuji pada ponsel Android**. Periksa ulang sebelum setiap putaran uji; skenario yang fiturnya ternyata tidak berfungsi atau tidak ditemukan dicatat `Terblokir` atau `Gagal` sesuai keadaan.
+Disusun dari `pubspec.yaml`, `.agents/MEMORY.md` dan `.agents/PROGRESS.md` pada cabang `main` (commit `86ba11a`, setelah PR #15), tanpa menjalankan aplikasi. Seluruh kemampuan di bawah sudah ada dalam kode tetapi **belum pernah diuji pada ponsel Android**. Periksa ulang sebelum setiap fase uji; skenario yang fiturnya ternyata tidak berfungsi atau tidak ditemukan dicatat `Terblokir` atau `Gagal` sesuai keadaan.
 
 | Kemampuan | Keadaan pada build | Skenario yang paling terdampak |
 |---|---|---|

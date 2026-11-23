@@ -5,7 +5,7 @@ Purpose: where the work stands, so the next session (human or AI) starts from fa
 
 How to update (see `rules.md` §9):
 - Rewrite **Current state** so it is true at the end of your session (git, sprint status, next steps). Keep it short; details belong in `PROGRESS.md`.
-- Add a **session entry** at the top of *Sessions* (newest first): date, branch, who, objective, what changed, decisions, checks run, open items, next action. Keep the last ~5 entries; older ones are summarized in `docs/qa/AI_DISCLOSURE_LOG.md`.
+- Add a **session entry** at the top of *Sessions* (newest first): date, branch, who, objective, what changed, decisions, checks run, open items, next action. Keep the last ~5 entries; older ones are summarized in `qa/AI_DISCLOSURE_LOG.md`.
 - Facts only. Mark anything not verified as such.
 
 ---
@@ -38,14 +38,14 @@ How to update (see `rules.md` §9):
 
 **Next steps, in order**
 1. Prune old merged remote branches.
-2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `docs/qa/DEVICE_CHECK.md` §3.
+2. First install on ≥2 Android phones now: PB01/02/05/07, offline; fill `qa/DEVICE_CHECK.md` §3.
 3. Sourced POI texts + `key_facts` (F03), P03/P09 photos, 5 ESTIMATE coords (#28), and printed QR codes for P05/P06 before the field test.
 4. QA round 01 outside Tahura (branch `qa`, `rules.md` §9.1); Tahura once at the end of Sprint 5 (TC-01…TC-13 confirmation + demo); usability (≥5 respondents, SUS).
 5. Decide PB12 (OSM vs GPX), #13/#25/#26/#27; branch protection on `main`.
 
 **Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **347 Flutter tests pass**.
 
-**QA (22 Nov):** two testers, Jacob and Michael Dimas. Verdicts in `docs/qa/REKAP_QA.md` (all `Belum diuji`); plans, per-tester logs and mock-location GPX on branch `qa` (`rules.md` §9.1). Round 01 (outside Tahura, `apk-latest` after PR #15) is next; Tahura only once at the end of Sprint 5, together with the demo.
+**QA (23 Nov):** two testers, QA1 Jacob and QA2 Mike (Michael Dimas). All QA docs in `qa/` on branch `qa` (no `docs/qa/`). No rounds: `qa/QA1 - Jacob/HASIL.md` and `qa/QA2 - Mike/HASIL.md` have Fase 1 (outside Tahura, all scenarios) and Fase 2 (inside Tahura, scenarios marked *Fase 2* in `qa/scenario/`). Fase 1 started 23 Nov: Mike has 14 F03 results on `32018e3` (13 Lulus, SK-F03-08 Gagal). Verdicts in `qa/REKAP_QA.md` still `Belum diuji`. Changes uncommitted; Jacob has to agree to the shared-file changes.
 
 ---
 

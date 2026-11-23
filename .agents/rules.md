@@ -28,8 +28,8 @@ Then, only as the task needs:
 6. `docs/prd/PRD.md` (requirements, generated from the docx; never parse the docx)
 7. `docs/engineering/ARCHITECTURE.md` and `IMPLEMENTATION_PLAN.md` (how to build it)
 8. relevant ADRs in `docs/adr/`
-9. `docs/design/DESIGN.md` for any UI work; `docs/qa/scenario/` for test work;
-   `docs/qa/REKAP_QA.md` before reporting a feature's status or updating `PROGRESS.md`
+9. `docs/design/DESIGN.md` for any UI work; `qa/scenario/` for test work;
+   `qa/REKAP_QA.md` before reporting a feature's status or updating `PROGRESS.md`
 
 ## 3. Sources of truth
 
@@ -41,8 +41,8 @@ Then, only as the task needs:
 | UI | `docs/design/DESIGN.md` | v1 material in `docs/design/archive-v1/` is history only. |
 | Status, issues, team decisions | `.agents/PROGRESS.md` | Issue numbers like "#25" refer to its *Known issues* table. |
 | Where the work stands | `.agents/MEMORY.md` | |
-| AI use | `docs/qa/AI_DISCLOSURE_LOG.md` | Deliverable for QA. |
-| QA verdict per feature | `docs/qa/REKAP_QA.md` | Written by Jacob (PM/QA) after each test round, from both testers' logs on branch `qa`. Agents may draft it, marked `Draf AI`, until Jacob confirms. |
+| AI use | `qa/AI_DISCLOSURE_LOG.md` | Deliverable for QA. |
+| QA verdict per feature | `qa/REKAP_QA.md` | Written by Jacob (PM/QA) after each test phase, from both testers' `HASIL.md` (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`), per phase. Agents may draft it, marked `Draf AI`, until Jacob confirms. |
 
 If code and docs disagree, do not silently pick one: inspect the repo, name the mismatch, and update the relevant doc in the same change when the change is intentional. When the agent finds that the PRD could be improved, it proposes the change; the PRD is edited only once the team agrees.
 
@@ -87,7 +87,7 @@ Gotchas:
 ## 7. Git
 
 - Team members commit and push themselves. Agents commit, push or open PRs **only when explicitly asked**, on a branch (never directly on `main`).
-- **No `Co-Authored-By` trailers and no "Generated with …" footers** in commits or PRs. AI use is disclosed in `docs/qa/AI_DISCLOSURE_LOG.md` instead.
+- **No `Co-Authored-By` trailers and no "Generated with …" footers** in commits or PRs. AI use is disclosed in `qa/AI_DISCLOSURE_LOG.md` instead.
 - Commit subjects describe behaviour and may carry the backlog/task id (`PB10: real QR scanner …`, `T23: …`) or a conventional prefix (`docs:`, `fix:`, `ci:`). Avoid subjects that only name a sprint or phase.
 - Never commit secrets (`.env.local`, keystores), `tmp/`, or `.agents/AGENTS.local.md`.
 
@@ -103,7 +103,7 @@ Gotchas:
 After every substantive session, update:
 
 1. `.agents/MEMORY.md` — replace *Current state* and add a session entry at the top (format in that file).
-2. `docs/qa/AI_DISCLOSURE_LOG.md` — a session block in §1 (human request, AI output, human decision/correction, verification, result), AI mistakes in §2, a row in §3.
+2. `qa/AI_DISCLOSURE_LOG.md` — a session block in §1 (human request, AI output, human decision/correction, verification, result), AI mistakes in §2, a row in §3.
 3. `.agents/PROGRESS.md` — timeline/status, new or closed issues, team decisions, a log line.
 4. `docs/adr/` — a new ADR or an amendment to an existing one when the session made a durable technical decision (§10).
 
@@ -113,8 +113,8 @@ Small local edits only need the docs whose meaning actually changed.
 
 ### 9.1 QA results and the progress report
 
-- Detailed QA work lives only on branch `qa`, folder `qa/` (plan, per-tester logs per round, mock-location guide and GPX files). Read it without switching branch: `git fetch origin qa`, `git ls-tree -r --name-only origin/qa qa/`, `git show origin/qa:qa/<path>`.
-- When updating `PROGRESS.md`, take QA status from `docs/qa/REKAP_QA.md`; keep "code done" separate from "QA approved", and cite the scenario IDs and the build that was tested.
+- All QA documents live in one folder, `qa/` on branch `qa`: scenarios (`scenario/`), `DEVICE_CHECK.md`, `REKAP_QA.md`, `AI_DISCLOSURE_LOG.md`, the plan, per-tester results (`QA1 - Jacob/`, `QA2 - Mike/`: `HASIL.md` with Fase 1 outside Tahura and Fase 2 inside Tahura, `CACAT.md`, `bukti/`), mock-location guide and GPX files. There are no test rounds. There is no `docs/qa/`. Read it from another branch without switching: `git fetch origin qa`, `git ls-tree -r --name-only origin/qa qa/`, `git show origin/qa:qa/<path>`.
+- When updating `PROGRESS.md`, take QA status from `qa/REKAP_QA.md`; keep "code done" separate from "QA approved", and cite the scenario IDs and the build that was tested.
 - If a change on `main` alters a feature that QA already approved, say in `PROGRESS.md` that it needs a retest; the rekap itself is updated only by Jacob.
 - Merge direction is `main` → `qa` only; never merge `qa` into `main`.
 - Never invent results, measurements or a "Lulus"; write only what a tester reported.
@@ -131,4 +131,4 @@ Write an ADR in `docs/adr/` for durable technical decisions: architecture and mo
 
 ## 11. Adding files to `.agents/`
 
-Keep `.agents/` to the four committed files listed in `AGENTS.md` plus the gitignored `AGENTS.local.md`. Long-lived topic docs belong under `docs/` (`engineering/`, `qa/`, `design/`, `survey/`), decisions under `docs/adr/`. No scratch files, no duplicated content.
+Keep `.agents/` to the four committed files listed in `AGENTS.md` plus the gitignored `AGENTS.local.md`. Long-lived topic docs belong under `docs/` (`engineering/`, `design/`, `survey/`) or, for QA, under `qa/`, decisions under `docs/adr/`. No scratch files, no duplicated content.
