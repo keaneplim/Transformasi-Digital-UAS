@@ -21,7 +21,7 @@ Untuk: skenario berlabel `TAHURA→MOCK` di `qa/<penguji>/putaran-NN/HASIL.md`.
 - Putar dengan **kecepatan 1×** (±3 km/jam, sesuai `walk_speed_m_per_min` 50) untuk skenario pemicu. Untuk trek panjang (06, 06b, 07, 08) boleh 2× bila hanya menguji urutan/kelengkapan; catat kecepatan di kolom *Catatan*.
 - Untuk skenario layar terkunci: kunci layar setelah trek mulai berjalan.
 - Untuk mode pesawat (SK-A01-01, SK-F04-13, SK-F06-05): aktifkan mode pesawat setelah trek berjalan; mock location tetap bekerja tanpa internet.
-- Rekam layar sebagai bukti; sebut nomor trek di nama/catatan bukti, mis. `SK-F02-05_jacob_2026-11-24.mp4 (mock GPX 02)`.
+- Ambil screenshot (atau rekam layar bila perlu) sebagai bukti sesuai `qa/README.md` §4, dan sebut nomor trek di kolom *Catatan*, mis. "mock GPX 02".
 
 ## 3. Daftar trek
 

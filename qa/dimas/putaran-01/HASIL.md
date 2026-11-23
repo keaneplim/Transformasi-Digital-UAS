@@ -11,7 +11,7 @@ Panduan isi: lihat `qa/README.md` §4. Skenario lengkap (prasyarat, langkah, has
 
 **Hasil:** `Lulus` · `Sebagian` · `Gagal` · `Terblokir` · kosong = belum dijalankan.
 **Lintas = Ya:** skenario sensitif perangkat; Jacob juga menjalankannya di HP-nya sendiri (`qa/RENCANA_QA.md` §2). Tidak perlu bertukar HP.
-**Bukti:** nama berkas di Drive (`<ID>_dimas_<tanggal>.<ext>`) atau tautan. **Cacat:** ID dari `CACAT.md` (mis. `CD-001`).
+**Bukti:** screenshot di `bukti/` → `[ss](bukti/<ID>_dimas_<tanggal>.jpg)`; video di Drive → `[video](tautan Drive)` (`qa/README.md` §4). **Cacat:** ID dari `CACAT.md` (mis. `CD-001`).
 
 Jumlah: 112 skenario bagian sendiri (LUAR 93 · TAHURA→MOCK 17 · TAHURA→GPS 2 · TAHURA→LUAR 0) + 6 skenario lintas perangkat dari bagian Jacob.
 

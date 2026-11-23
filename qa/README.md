@@ -42,7 +42,11 @@ Skenario lengkap (prasyarat, langkah, hasil yang diharapkan) tetap di `docs/qa/s
 1. Isi kepala: build (hash commit di halaman Release `apk-latest`), HP Anda (merek, model, versi Android), tanggal.
 2. Jalankan skenario sesuai kolom **Cara uji di luar Tahura** (label di `RENCANA_QA.md` §3).
 3. Isi kolom **Hasil**: `Lulus` · `Sebagian` · `Gagal` · `Terblokir`. Jangan lupa bagian *Uji lintas perangkat* di akhir berkas. Angka terukur ditulis apa adanya di *Catatan* (mis. "trigger 6 dtk", "deviasi 9 m").
-4. **Bukti:** rekam layar / foto, simpan di Drive tim `QA/putaran-01/<penguji>/`, nama `<ID>_<penguji>_<tanggal>.<ext>`, contoh `SK-F02-02_jacob_2026-11-24.mp4`. Tulis nama berkasnya di kolom Bukti. Jangan masukkan video ke git.
+4. **Bukti:**
+   - **Screenshot** disimpan di folder `bukti/` di dalam folder putaran (mis. `qa/jacob/putaran-01/bukti/`), format JPG, dikecilkan ke ±300 KB (lebar ±1080 px). Nama: `<ID>_<penguji>_<tanggal>.jpg`, contoh `SK-F02-02_jacob_2026-11-24.jpg`; lebih dari satu gambar: tambah `_2`, `_3`.
+   - Di kolom **Bukti** tulis tautan relatif: `[ss](bukti/SK-F02-02_jacob_2026-11-24.jpg)`. Tautan ini bisa diklik di GitHub dan di pratinjau Markdown VS Code (Ctrl+Shift+V).
+   - **Video** (untuk hal yang tidak terlihat di gambar diam: waktu ≤10 detik, getar, suara) tidak dimasukkan ke git. Simpan di Drive tim `QA/putaran-01/<penguji>/` dengan nama yang sama (`.mp4`) dan tulis tautan Drive-nya di kolom Bukti, mis. `[video](https://drive.google.com/...)`. Bila tanpa video, tulis angka terukur di *Catatan* (mis. "muncul 6 dtk, getar 1×").
+   - Jangan menampilkan wajah orang lain tanpa izin.
 5. Cacat → baris baru di `CACAT.md` (`CJ-nnn` Jacob, `CD-nnn` Dimas), lalu tulis ID-nya di kolom *Catatan / Cacat*.
 6. Hasil dari mock location atau mode demo ditulis dengan keterangan "(mock GPX 01)" atau "(mode demo)" agar tidak tertukar dengan uji GPS asli.
 
@@ -58,7 +62,7 @@ Perintah yang bisa langsung dipakai:
 
 | Kebutuhan | Contoh permintaan ke agen |
 |---|---|
-| Mencatat hasil | "Catat di `qa/jacob/putaran-01/HASIL.md`: SK-F02-01 Lulus, getar 1x di 48 m, bukti SK-F02-01_jacob_2026-11-24.mp4." |
+| Mencatat hasil | "Catat SK-F02-01 Lulus di HASIL.md Jacob, getar 1x di 48 m, buktinya `Downloads/Screenshot_20261124_101500.jpg`." (AI menyalin, mengganti nama, mengecilkan gambar ke `bukti/`, lalu mengisi kolom Hasil dan Bukti) |
 | Mencatat cacat | "Buat cacat baru di CACAT.md Dimas: SK-F04-06, tombol Dengarkan tidak bereaksi di layar kunci, Mayor." |
 | Persiapan uji | "Skenario apa saja milik Jacob yang bisa diuji hari ini tanpa keluar rumah? Urutkan per GPX." |
 | Langkah uji | "Tampilkan langkah dan hasil yang diharapkan SK-F06-04, serta GPX yang dipakai." |
