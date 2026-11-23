@@ -27,7 +27,7 @@ qa/
 └── QA2 - Mike/              ← HASIL.md (Fase 1 + Fase 2) · CACAT.md · bukti/
 ```
 
-`HASIL.md` hanya berisi `ID | Skenario | Metode | Hasil`. Semua keterangan lain tentang skenario (langkah, label, cara uji di luar Tahura, Fase 2, lintas perangkat) ada di `qa/scenario/`; penjelasan kolomnya di `qa/scenario/README.md`, bagian *Pelaksanaan*.
+`HASIL.md` hanya berisi `ID | Skenario | Hasil | Penjelasan`. Semua keterangan lain tentang skenario (metode, langkah, label, cara uji di luar Tahura, Fase 2, lintas perangkat) ada di `qa/scenario/`; penjelasan kolomnya di `qa/scenario/README.md`, bagian *Pelaksanaan*.
 
 ## 2. Aturan branch
 
@@ -45,19 +45,19 @@ Tidak ada putaran. Pengujian dibagi menjadi dua fase, masing-masing satu bagian 
 | **Fase 1** | Di luar Tahura | **Semua** skenario, dikelompokkan menurut cara uji: 1A tanpa GPS (ponsel, mode demo / menu debug, dokumen) · 1B fake GPS (mock location memutar GPX) · 1C GPS asli di luar ruangan · 1D papan QR cetak · 1E skenario lintas perangkat dari penguji lain | `apk-latest` yang berlaku saat fase dimulai |
 | **Fase 2** | Di Tahura (satu hari, akhir Sprint 5) | Hanya skenario bertanda **Fase 2 = Ya** di `qa/scenario/`: hasilnya bisa berubah karena kondisi taman (kanopi, tanjakan, sinyal, mulut gua). Alur utama SK-E2E-* sekaligus menjadi demo | APK kandidat final |
 
-**Uji ulang.** Bila APK baru memperbaiki cacat, jalankan ulang skenario itu di fase yang sama dan timpa sel Hasil dengan menyebut build-nya, mis. `Lulus (uji ulang 4f2a1c9)`. Hasil lama tetap tersimpan di riwayat git. Setelah perbaikan, jalankan juga daftar asap (`qa/scenario/README.md`, bagian *Uji ulang*).
+**Uji ulang.** Bila APK baru memperbaiki cacat, jalankan ulang skenario itu di fase yang sama dan timpa kolom Hasil dan tulis build-nya di Penjelasan, mis. `uji ulang 4f2a1c9`. Hasil lama tetap tersimpan di riwayat git. Setelah perbaikan, jalankan juga daftar asap (`qa/scenario/README.md`, bagian *Uji ulang*).
 
 ## 4. Cara mengisi `HASIL.md`
 
 1. Isi kepala: HP Anda (merek, model, versi Android). Di bawah judul tiap fase: build (hash commit dari halaman Release `apk-latest`) dan tanggal.
 2. Buka skenarionya di `qa/scenario/` dan jalankan sesuai kolom **Cara uji di luar Tahura** (Fase 1) atau langkah aslinya di taman (Fase 2).
-3. Isi kolom **Hasil**: `Lulus` · `Sebagian` · `Gagal`. Kosong = belum dijalankan. Angka terukur, ID cacat, dan bukti ditulis di sel yang sama setelah statusnya, mis. `Lulus — getar 1× di 48 m (mock GPX 01), [ss](bukti/F02/SK-F02-01_jacob_2026-11-24.jpg)`.
+3. Isi kolom **Hasil** hanya dengan status: `Lulus` · `Sebagian` · `Gagal`. Kosong = belum dijalankan. Angka terukur, catatan, ID cacat, dan bukti ditulis di kolom **Penjelasan**, mis. `getar 1× di 48 m (mock GPX 01), [ss](bukti/F02/SK-F02-01_jacob_2026-11-24.jpg)`.
 4. **Bukti:**
    - **Screenshot** disimpan di `bukti/<kelompok>/` di folder Anda (mis. `qa/QA2 - Mike/bukti/F03/`), format JPG, dikecilkan ke ±300 KB (lebar ±1080 px). Nama: `<ID>_<penguji>_<tanggal>.jpg`, contoh `SK-F03-07_mike_2026-11-23.jpg`; lebih dari satu gambar: tambah `_2`, `_3`.
    - Tautan relatif seperti `[ss](bukti/F03/SK-F03-07_mike_2026-11-23.jpg)` bisa diklik di GitHub dan di pratinjau Markdown VS Code (Ctrl+Shift+V).
-   - **Video** (untuk hal yang tidak terlihat di gambar diam: waktu ≤10 detik, getar, suara) tidak dimasukkan ke git. Simpan di Drive tim `QA/<fase>/<penguji>/` dengan nama yang sama (`.mp4`) dan tulis tautannya di sel Hasil, mis. `[video](https://drive.google.com/...)`. Bila tanpa video, tulis angka terukur (mis. "muncul 6 dtk, getar 1×").
+   - **Video** (untuk hal yang tidak terlihat di gambar diam: waktu ≤10 detik, getar, suara) tidak dimasukkan ke git. Simpan di Drive tim `QA/<fase>/<penguji>/` dengan nama yang sama (`.mp4`) dan tulis tautannya di kolom Penjelasan, mis. `[video](https://drive.google.com/...)`. Bila tanpa video, tulis angka terukur (mis. "muncul 6 dtk, getar 1×").
    - Jangan menampilkan wajah orang lain tanpa izin.
-5. Cacat → baris baru di `CACAT.md` (`CJ-nnn` Jacob, `CD-nnn` Mike), lalu tulis ID-nya di sel Hasil.
+5. Cacat → baris baru di `CACAT.md` (`CJ-nnn` Jacob, `CD-nnn` Mike), lalu tulis ID-nya di kolom Penjelasan.
 6. Hasil dari mock location atau mode demo diberi keterangan "(mock GPX 01)" atau "(mode demo)" agar tidak tertukar dengan uji GPS asli.
 
 ## 5. Rekap (Jacob)
@@ -72,7 +72,7 @@ Perintah yang bisa langsung dipakai:
 
 | Kebutuhan | Contoh permintaan ke agen |
 |---|---|
-| Mencatat hasil | "Catat SK-F02-01 Lulus Fase 1 di HASIL.md QA1, getar 1x di 48 m, buktinya `Downloads/Screenshot_20261124_101500.jpg`." (AI menyalin, mengganti nama, mengecilkan gambar ke `bukti/`, lalu mengisi sel Hasil) |
+| Mencatat hasil | "Catat SK-F02-01 Lulus Fase 1 di HASIL.md QA1, getar 1x di 48 m, buktinya `Downloads/Screenshot_20261124_101500.jpg`." (AI menyalin, mengganti nama, mengecilkan gambar ke `bukti/`, lalu mengisi kolom Hasil dan Penjelasan) |
 | Mencatat cacat | "Buat cacat baru di CACAT.md QA2: SK-F04-06, tombol Dengarkan tidak bereaksi di layar kunci, Mayor." |
 | Persiapan uji | "Skenario apa saja Fase 1 milik QA1 yang bisa diuji hari ini tanpa keluar rumah? Urutkan per GPX." |
 | Langkah uji | "Tampilkan langkah dan hasil yang diharapkan SK-F06-04, serta GPX yang dipakai." |

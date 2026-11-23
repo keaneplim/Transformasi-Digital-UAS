@@ -15,6 +15,18 @@ Formerly `LLM_History.md` at the repo root (renamed and moved on 2026-11-22). It
 
 ## 1. Session log (newest first)
 
+### Session 13 — 2026-11-23
+**Tool:** Claude Code (desktop app), model Claude Opus 5.5. **Human:** Michael Dimas (QA2).
+
+| # | Human request | AI output | Human decision / correction | Verified by | Result |
+|---|---|---|---|---|---|
+| 1 | Delete `docs/qa/`, point every doc to `qa/` | Files moved with `git mv` (content kept), references updated in CLAUDE/README/.agents/qa | Mike wanted one QA folder; AI kept the files instead of deleting them | `git grep docs/qa` (only history left) | Committed in `a5cc98c` |
+| 2 | Results format: two phases instead of rounds, 4 columns, label/cara uji/lintas in the scenarios | Fase 1 (1A–1E) / Fase 2 sections, execution columns added to 219 scenarios, folders `QA1 - Jacob` / `QA2 - Mike` | Mike chose phases, columns and folder names, and asked for both testers | Script check: 219 scenarios covered, Mike's results preserved | Committed in `a5cc98c` |
+| 3 | Help finish F03; align scenarios with the PRD; fix results from the evidence | F03 rows rewritten to PRD wording; results compared with screenshots, `pois.json`, `image_credits.json`, narration scripts; CD-001…CD-004 | Mike thought F03-09 was not in the PRD; AI showed it is (F03 (c)) and kept it. Mike approved changing six of his Lulus verdicts | Data values quoted in each Penjelasan | Uncommitted until this push |
+| 4 | Document scenarios (A05, F08-13) | Validator runs on build data (broken copy and shipped data), code checks for data-driven values and network use | Mike later removed the A05 results and evidence folder; AI did not restore them | Validator exit codes | Removed by Mike |
+| 5 | Add a Penjelasan column, move Metode to the scenarios | Status / explanation split for both testers | Mike's decision | Row-by-row comparison, nothing lost | This push |
+| 6 | Sort and rename new screenshots, update results | 17 screenshots into `bukti/F08`, `HOM`, `SET`, `ONB`; 13 rows updated | Only rows whose screenshots show every expected result were set to Lulus (F08-10, HOM-02); Mike confirmed F08-08 was tested at 45 min | Each screenshot opened and matched to the scenario steps | This push |
+
 ### Session 12 — 2026-11-14 to 2026-11-22 (one long session)
 **Tool:** Claude Code (VS Code extension), model Claude Opus 5.5. **Human:** Jacob.
 
@@ -178,6 +190,8 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-22 | First test pass for T25/T23/T31 hit 3 test issues: `setDemoTime(h, m)` truncated seconds on `closingReminderAt`, `scrollUntilVisible` left the version row in sliver cache outside tap bounds, and `StreamController.broadcast().cancel()` inside `fakeAsync` ran outside fake microtasks | AI's own test run | Used `clock.setNow` for exact timestamps, `ensureVisible` before tapping, and tested live `setInterval` re-subscription in an async test + adapted timeout in `fakeAsync` |
 | 2026-11-22 | Initial PR #15 implementation recreated the geolocator foreground stream while backgrounded (Android 12+ restriction), lacked `_listen` serialization, let stale/deadband fixes enter stationary mode, coupled `_keepFastGps` to UI banner visibility, didn't check reminders on `startSession()`, could double-fire closing + finalCall on very late starts, and let debug clock shifts persist into real-session reminders | Cross-model AI review (Claude Opus 5.5 + Codex GPT-6.2 Sol medium) | Fixed all items in follow-up commit on PR #15 with 11 targeted regression tests |
 | 2026-11-06 | Minor tooling slips: Python escaping in shell heredocs, a `sed` edit that silently didn't apply, CRLF line endings from the PRD generator on Windows | AI | Switched to the edit tools; `newline="\n"` + `.gitattributes` |
+| 2026-11-23 | AI first proposed SK-F03-03 (fakta kunci) as Gagal; the "Sekilas" grid already shows kategori and jarak, so only tahun/ketinggian and the key-fact list are missing | AI's own re-check of the screenshot | Recorded as Sebagian with the reason |
+| 2026-11-23 | First push from the AI terminal failed (stored GitHub credentials rejected) | Push output | Mike pushes through GitHub Desktop when it fails again |
 
 ---
 
@@ -197,6 +211,7 @@ Listed for honest disclosure. All are fixed unless marked open.
 | 2026-11-22 | Devin (Gemini 4 Neon High) + reviews by Claude Opus 5.5 & Codex GPT-6.2 Sol | T25 battery-aware tracking (A06), T23 final-call reminder (UC-A03-2), T31 Settings offline version + 7-tap hidden debug menu & Explore map debug overlay + PR #15 review hardening | Khalfani reviewed plan, decided all 4 options, requested cross-model review & fixes; full local CI parity + 347 Flutter tests passed; phone checks pending |
 | 2026-11-23 | Claude Code (Claude Opus 5.5) | QA docs consolidated: `docs/qa/` → `qa/` (branch `qa`), references in agent/progress/CLAUDE/README docs updated | Michael Dimas asked for one QA folder; files moved with git mv (content unchanged), leftover `docs/qa` references checked with `git grep` |
 | 2026-11-23 | Claude Code (Claude Opus 5.5) | QA restructured from rounds to Fase 1 (outside Tahura) / Fase 2 (inside Tahura); tester folders `QA1 - Jacob`, `QA2 - Mike`; scenario execution columns moved to `qa/scenario/` | Michael Dimas chose the phases, the 4-column `HASIL.md` and the folder names and asked to apply it to both testers; script output checked: 219 scenarios carry the new columns, Mike's 14 results preserved |
+| 2026-11-23 | Claude Code (Claude Opus 5.5) | F03 scenarios aligned to PRD; F03 results re-checked against screenshots, `pois.json`, `image_credits.json` and narration scripts; CD-001–CD-004 drafted | Michael Dimas asked to correct results from the evidence; 6 of his Lulus verdicts changed with reasons in each Hasil cell; severities are AI proposals for the tester to confirm |
 | 2026-11-14 – 2026-11-22 | Claude Code (Claude Opus 5.5) | Jacob: QA orientation, progress deck updates (17 and 21 Nov), QA plan for two testers, mock-location GPX tracks, QA rekap and agent rules | Jacob decided scope, split and branch layout and approved each agent-rule line; the AI produced no test results |
 
 No facts about Tahura (history, coordinates, hours, routes) were taken from AI. All such values in the app are DUMMY or marked `[VERIFIKASI]` until the survey and the park manager confirm them (PRD §8.2).

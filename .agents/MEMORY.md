@@ -10,7 +10,7 @@ How to update (see `rules.md` §9):
 
 ---
 
-## Current state — as of 2026-11-22
+## Current state — as of 2026-11-23
 
 **Git**
 - `origin/main` = `86ba11a` (PR #11–#15 merged, incl. T25 battery-aware tracking, T23 final call, T31 version + 7-tap debug menu). All feature branches are in `main`.
@@ -45,11 +45,19 @@ How to update (see `rules.md` §9):
 
 **Last known check results** (22 Nov, `feat/t25-t23-t31-tracking-finalcall-settings`): content 0 errors (33 warnings) · 19 Python tests pass · `dart format` clean · `flutter analyze` clean · architecture check passed · **347 Flutter tests pass**.
 
-**QA (23 Nov):** two testers, QA1 Jacob and QA2 Mike (Michael Dimas). All QA docs in `qa/` on branch `qa` (no `docs/qa/`). No rounds: `qa/QA1 - Jacob/HASIL.md` and `qa/QA2 - Mike/HASIL.md` have Fase 1 (outside Tahura, all scenarios) and Fase 2 (inside Tahura, scenarios marked *Fase 2* in `qa/scenario/`). Fase 1 started 23 Nov: Mike has 14 F03 results on `32018e3` (13 Lulus, SK-F03-08 Gagal). Verdicts in `qa/REKAP_QA.md` still `Belum diuji`. Changes uncommitted; Jacob has to agree to the shared-file changes.
+**QA (23 Nov):** two testers, QA1 Jacob and QA2 Mike (Michael Dimas). All QA docs in `qa/` on branch `qa` (no `docs/qa/`). No rounds: `qa/QA1 - Jacob/HASIL.md` and `qa/QA2 - Mike/HASIL.md` have Fase 1 (outside Tahura, all scenarios) and Fase 2 (inside Tahura, scenarios marked *Fase 2* in `qa/scenario/`), columns `ID | Skenario | Hasil | Penjelasan`; Metode, label, cara uji, Fase 2 and Lintas are in the `qa/scenario/` tables. Fase 1 on `32018e3`: Mike 26 of 120 rows filled (13 Lulus, 12 Sebagian, 1 Gagal), CD-001…CD-005 open (content/data). Jacob not started. `REKAP_QA.md` still `Belum diuji`.
 
 ---
 
 ## Sessions
+
+### 2026-11-23 — QA restructure and QA2 Fase 1 (branch `qa`, Michael Dimas, Claude Code)
+- **Objective:** one QA folder, a clearer results format, and recording Mike's first Fase 1 results with evidence.
+- **Decisions (Mike):** `docs/qa/` moved into `qa/`; no test rounds, only Fase 1 (outside Tahura) and Fase 2 (inside Tahura); tester folders `qa/QA1 - Jacob/`, `qa/QA2 - Mike/`; `HASIL.md` columns `ID | Skenario | Hasil | Penjelasan`, everything else about a scenario in `qa/scenario/`; F03 scenarios aligned to PRD wording; results corrected from the evidence; evidence in per-group folders under `bukti/` with descriptive names; videos stay out of git.
+- **Changed:** `qa/` (README, RENCANA_QA, REKAP_QA, PANDUAN, scenario tables + README, both HASIL/CACAT, `bukti/`), `CLAUDE.md`, `README.md`, `.agents/` (AGENTS, rules, PROGRESS, MEMORY), `qa/AI_DISCLOSURE_LOG.md`. First commit `a5cc98c` on `qa`.
+- **Checks:** every scenario carries the new execution columns (219); no result lost when columns moved (row-by-row comparison); F03 findings checked against `pois.json`, `image_credits.json`, narration scripts and screenshots. Nothing tested by the AI on a phone.
+- **Open:** Jacob to agree to the shared-file changes; `main` still has `docs/qa/` (merging `main` → `qa` may conflict); CD-005 links to `bukti/A05/` which Mike removed; proposal to move 14 build/code-only scenarios to a developer verification section is unanswered; "jelajah_taman" app name not logged as a defect; Gua Jepang video to the team Drive.
+- **Next action:** Mike continues Fase 1 (F04 audio group, F07, A03); Jacob starts Fase 1 in `qa/QA1 - Jacob/HASIL.md`.
 
 ### 2026-11-22 — QA plan for two testers (main + branch `qa`, Jacob, Claude Code)
 - **Objective:** test plan for the features already on `main`, split between Jacob and Michael Dimas, with each scenario labelled "outside Tahura / should be at Tahura", a way to run Tahura scenarios elsewhere, and QA results the agents can read when the progress report is updated.

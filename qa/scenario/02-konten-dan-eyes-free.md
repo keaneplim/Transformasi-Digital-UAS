@@ -10,37 +10,37 @@ Isi satu baris per POI dalam mode pesawat. P11 bersifat opsional tetapi tetap di
 
 | POI | Teks 80–150 kata | Fakta kunci | Jumlah foto (1–3) | Audio dapat diputar | Durasi audio 120–180 dtk | Estimasi lama kunjungan | Konten khusus PRD §4.1 |
 |---|---|---|---|---|---|---|---|
-| P01 Gerbang | | | | | | | Sambutan, jam buka, tata tertib |
+| P01 Gerbang | | | | | | | Teks sambutan, peta zona, jam buka, tata tertib, audio sambutan |
 | P02 Monumen | | | | | | | Profil Ir. H. Djuanda dan asal penamaan Tahura |
-| P03 Museum | | | | | | | Jam buka museum |
+| P03 Museum | | | | | | | Isi museum, jam buka museum |
 | P04 Kolam Pakar | | | | | | | Asal-usul dan fungsi kolam |
-| P05 Gua Jepang | | | | | | | Tips keselamatan |
-| P06 Gua Belanda | | | | | | | Tips keselamatan |
-| P07 Penangkaran Rusa | | | | | | | Etika satwa |
-| P08 Hutan Pinus | | | | | | | Saran istirahat/hidrasi, penanda titik istirahat |
-| P09 Area Piknik | | | | | | | Aturan kebersihan |
+| P05 Gua Jepang | | | | | | | Sejarah dan fungsi gua, struktur lorong, fakta kunci, tips keselamatan |
+| P06 Gua Belanda | | | | | | | Sejarah gua (terowongan air dan fungsi militer), fakta kunci, tips keselamatan |
+| P07 Penangkaran Rusa | | | | | | | Spesies dan perilaku rusa, etika satwa |
+| P08 Hutan Pinus | | | | | | | Pinus dan manfaat udara hutan, penanda titik istirahat, saran istirahat/hidrasi |
+| P09 Area Piknik | | | | | | | Fasilitas area, aturan kebersihan |
 | P10 Koleksi Flora | | | | | | | Jenis tanaman khas Tahura |
-| P11 Curug Omas | | | | | | | Peringatan keselamatan, jarak dan kesulitan jalur |
+| P11 Curug Omas | | | | | | | Curug, jarak dan kesulitan jalur, peringatan keselamatan |
 
 ### Skenario
 
 | ID | Skenario | Prasyarat | Langkah | Hasil yang diharapkan | Acuan | Metode | Penguji | Label | Cara uji di luar Tahura | Fase 2 (Tahura) | Lintas |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | SK-F03-01 | Kelengkapan 10 POI inti dalam mode pesawat | Mode pesawat aktif sejak sebelum aplikasi dibuka | 1. Buka POI Detail P01–P10 satu per satu.<br>2. Isi lembar periksa di atas. | Kesepuluh POI inti memiliki teks, ≥1 foto, dan audio; seluruhnya tampil lengkap tanpa internet. | F03 AC1, AC3, TC-05 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-02 | Panjang dan bahasa teks | Akses ke `assets/content/pois.json` atau layar POI Detail | 1. Hitung jumlah kata teks setiap POI.<br>2. Periksa bahasa dan sapaan. | Setiap teks 80–150 kata, berbahasa Indonesia, menyapa pengguna dengan "Anda", tanpa penanda `[ISI]` atau teks draf pada build rilis. | F03 (deskripsi), NG08 | D, P | QA2 | LUAR | Periksa dokumen/data. |  |  |
-| SK-F03-03 | Fakta kunci | POI Detail terbuka | 1. Periksa daftar fakta kunci setiap POI. | Fakta kunci tampil (tahun, jarak/ketinggian, kategori) untuk POI yang memilikinya. | F03 (deskripsi) | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-04 | Jumlah dan asal foto | POI Detail terbuka | 1. Geser galeri setiap POI dan hitung fotonya.<br>2. Cocokkan dengan `assets/content/image_credits.json`. | Setiap POI memiliki 1–3 foto; setiap foto memiliki kredit yang tercatat. Foto yang bukan dokumentasi tim dicatat sebagai temuan terhadap PRD §4.1 ("foto asli hasil survei"). | F03 (deskripsi), PRD §4.1 catatan akurasi | P, D | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-05 | Durasi narasi audio | POI Detail terbuka | 1. Putar narasi tiap POI dan catat durasi total yang ditampilkan pemutar. | Durasi setiap narasi 120–180 detik. | F03 (deskripsi), PB08 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-06 | Estimasi lama kunjungan | POI Detail terbuka | 1. Periksa baris informasi di bawah nama POI. | Estimasi lama kunjungan tampil untuk setiap POI. | F03 (deskripsi) | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-02 | Panjang dan bahasa teks | Akses ke `assets/content/pois.json` atau layar POI Detail | 1. Hitung jumlah kata teks setiap POI.<br>2. Periksa bahasa dan sapaan. | Setiap teks 80–150 kata dan berbahasa Indonesia. | F03 (b), NG08 | D, P | QA2 | LUAR | Periksa dokumen/data. |  |  |
+| SK-F03-03 | Fakta kunci | POI Detail terbuka | 1. Periksa daftar fakta kunci setiap POI. | Setiap POI menampilkan fakta kunci: tahun, jarak/ketinggian, dan kategori. | F03 (b), UI06, PB09 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-04 | Jumlah dan asal foto | POI Detail terbuka | 1. Geser galeri setiap POI dan hitung fotonya.<br>2. Cocokkan dengan `assets/content/image_credits.json`. | Setiap POI memiliki 1–3 foto asli hasil survei (dokumentasi tim sendiri); asal setiap foto tercatat. | F03 (a), PRD §4.1 catatan akurasi | P, D | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-05 | Durasi narasi audio | POI Detail terbuka | 1. Putar narasi tiap POI dan catat durasi total yang ditampilkan pemutar. | Durasi setiap narasi 120–180 detik. | F03 (c), PB08 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-06 | Estimasi lama kunjungan | POI Detail terbuka | 1. Periksa baris informasi di bawah nama POI. | Estimasi lama kunjungan tampil untuk setiap POI. | F03 (d), UI06 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
 | SK-F03-07 | Kontrol pemutar audio | POI Detail P05 terbuka | 1. Ketuk putar.<br>2. Jeda pada detik ke-20.<br>3. Lanjutkan.<br>4. Biarkan hingga selesai, lalu putar ulang. | Audio dapat diputar, dijeda, dilanjutkan dari posisi jeda, dan diulang dari awal. | F03 AC2 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
 | SK-F03-08 | POI Detail dari notifikasi | POI baru terpicu; notifikasi tampil | 1. Ketuk "Lihat" pada notifikasi dan mulai stopwatch.<br>2. Ulangi dengan aplikasi di latar belakang dan dengan aplikasi tertutup. | POI Detail yang benar terbuka dalam ≤2 detik pada kedua kondisi; catat waktu masing-masing pada perangkat uji yang lebih lambat. | F03 AC4 | L, P | QA2 | TAHURA→MOCK | GPX 01 dengan layar terkunci, ketuk notifikasi. |  |  |
-| SK-F03-09 | Cadangan Text-to-Speech perangkat | Build uji dengan satu POI tanpa berkas audio (disiapkan pengembang); suara TTS Indonesia terpasang luring | 1. Buka POI tersebut dan ketuk putar dalam mode pesawat. | Teks POI dibacakan oleh TTS perangkat dalam Bahasa Indonesia; pemutar menunjukkan bahwa narasi memakai suara sintetis perangkat. | F03 (deskripsi) | P | QA2 | LUAR | Ponsel uji, di mana saja. |  | Ya |
+| SK-F03-09 | Cadangan Text-to-Speech perangkat | Build uji dengan satu POI tanpa berkas audio (disiapkan pengembang); suara TTS Indonesia terpasang luring | 1. Buka POI tersebut dan ketuk putar dalam mode pesawat. | Teks POI dibacakan oleh TTS perangkat dalam Bahasa Indonesia; pemutar menunjukkan bahwa narasi memakai suara sintetis perangkat. | F03 (c): fallback Text-to-Speech perangkat bila file belum tersedia | P | QA2 | LUAR | Ponsel uji, di mana saja. |  | Ya |
 | SK-F03-10 | Catatan keselamatan gua | POI Detail P05 dan P06 | 1. Periksa kartu catatan keselamatan. | Tips keselamatan tampil pada kedua gua. | PRD §4.1 (P05, P06) | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
 | SK-F03-11 | Konten khusus per POI | POI Detail seluruh POI | 1. Periksa kolom "Konten khusus" pada lembar periksa. | Setiap konten khusus yang disyaratkan PRD §4.1 tersedia. | PRD §4.1 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-12 | Sumber setiap fakta | Akses ke `pois.json` (`sources`) dan `docs/content/narration/` | 1. Untuk setiap POI, cocokkan fakta pada teks dan naskah narasi dengan rujukan sumbernya.<br>2. Tandai fakta yang masih `[VERIFIKASI]`. | Setiap fakta memiliki sumber tercatat (pengelola, papan informasi, atau pengukuran survei); tidak ada fakta yang hanya bersumber dari AI. Fakta tanpa sumber resmi dicatat sebagai temuan. | PRD §4.1 catatan akurasi, §8.2 | D | QA2 | LUAR | Periksa dokumen/data. |  |  |
-| SK-F03-13 | Kesesuaian audio dengan naskah | Naskah `docs/content/narration/P01–P11.md` | 1. Dengarkan setiap narasi sambil membaca naskahnya. | Isi audio sesuai naskah, tanpa kata yang salah ucap secara berarti atau terpotong; narasi tidak merujuk "tempat berikutnya" yang salah (PROGRESS #30). | PRD §8.2 (Audio narasi) | P, D | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-14 | Audio berlanjut di luar layar POI Detail | Narasi sedang diputar | 1. Kembali ke peta.<br>2. Kunci layar selama 30 detik. | Narasi tetap diputar saat berpindah layar dan saat layar terkunci. | F03, F04 | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
-| SK-F03-15 | POI Detail dari setiap pintu masuk | Sesi aktif | 1. Buka POI Detail dari marker peta, hasil pencarian, rekomendasi, QR, dan layar tiba. | POI yang benar terbuka dari setiap pintu masuk. | F03, UI06 | P, M | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-12 | Sumber setiap fakta | Akses ke `pois.json` (`sources`) dan `docs/content/narration/` | 1. Untuk setiap POI, cocokkan fakta pada teks dan naskah narasi dengan rujukan sumbernya.<br>2. Tandai fakta yang masih `[VERIFIKASI]`. | Setiap fakta dirujuk ke sumber resmi (pengelola Tahura/papan informasi) atau hasil pengukuran survei, dan sumbernya tercatat; tidak ada fakta yang hanya bersumber dari AI. | PRD §4.1 catatan akurasi, §8.2, PB08 | D | QA2 | LUAR | Periksa dokumen/data. |  |  |
+| SK-F03-13 | Kesesuaian audio dengan naskah | Naskah `docs/content/narration/P01–P11.md` | 1. Dengarkan setiap narasi sambil membaca naskahnya. | Isi audio sesuai naskah, tanpa kata yang salah ucap secara berarti atau terpotong. | F03 (c), PRD §8.2 (Audio narasi) | P, D | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-14 | Audio berlanjut di luar layar POI Detail | Narasi sedang diputar | 1. Kembali ke peta.<br>2. Kunci layar selama 30 detik. | Narasi tetap diputar saat berpindah layar dan saat layar terkunci. | F04 (d), PB11 (audio latar) | P | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
+| SK-F03-15 | POI Detail dari setiap pintu masuk | Sesi aktif | 1. Buka POI Detail dari marker peta, hasil pencarian, rekomendasi, QR, dan layar tiba. | POI yang benar terbuka dari setiap pintu masuk. | UI06; A02 (QR), F05 (pencarian), F07 (rekomendasi), UI11 "Buka detail" | P, M | QA2 | LUAR | Ponsel uji, di mana saja. |  |  |
 
 ## F04 — Eyes-Free Interaction
 

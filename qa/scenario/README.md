@@ -36,7 +36,7 @@ Bila kolom Metode memuat dua kode (mis. "L, O"), kode pertama adalah cara utama 
 
 ## Pelaksanaan
 
-Setiap tabel skenario di berkas 01–07 memuat lima kolom pelaksanaan setelah kolom Metode. Kolom ini menggantikan kolom yang dulu ada di `HASIL.md`; `HASIL.md` sekarang hanya berisi `ID | Skenario | Metode | Hasil`.
+Setiap tabel skenario di berkas 01–07 memuat lima kolom pelaksanaan setelah kolom Metode. Kolom ini menggantikan kolom yang dulu ada di `HASIL.md`; `HASIL.md` sekarang hanya berisi `ID | Skenario | Hasil | Penjelasan`; metode setiap skenario hanya ada di sini.
 
 | Kolom | Arti |
 |---|---|
@@ -65,7 +65,7 @@ Batas yang tidak dapat dibuktikan oleh mock location dijelaskan di `qa/RENCANA_Q
 
 ## Pencatatan hasil
 
-Hasil dicatat di `HASIL.md` masing-masing penguji (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`), satu baris per skenario per fase, dengan kolom `ID | Skenario | Metode | Hasil`. Tanggal, build, dan perangkat ditulis di kepala berkas dan di bawah judul tiap fase; hasil aktual, angka terukur, bukti, dan ID cacat ditulis di sel Hasil setelah statusnya (`qa/README.md` §4).
+Hasil dicatat di `HASIL.md` masing-masing penguji (`qa/QA1 - Jacob/`, `qa/QA2 - Mike/`), satu baris per skenario per fase, dengan kolom `ID | Skenario | Hasil | Penjelasan`. Tanggal, build, dan perangkat ditulis di kepala berkas dan di bawah judul tiap fase; hasil aktual, angka terukur, bukti, dan ID cacat ditulis di kolom Penjelasan (`qa/README.md` §4).
 
 **Status:** `Lulus` (hasil sesuai harapan) · `Sebagian` (sebagian kriteria terpenuhi; jelaskan) · `Gagal` · `Terblokir` (tidak dapat dijalankan; tulis penyebabnya, mis. fitur belum ada atau data belum terverifikasi). Tiga status pertama dipetakan ke Pass / Partial / Fail pada PRD §11. Hasil aktual ditulis apa adanya, termasuk angka terukur (PRD §8.2).
 
