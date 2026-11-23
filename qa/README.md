@@ -39,16 +39,16 @@ Skenario lengkap (prasyarat, langkah, hasil yang diharapkan) tetap di `docs/qa/s
 
 ## 4. Cara mengisi `HASIL.md`
 
-1. Isi kepala: build (hash commit di halaman Release `apk-latest`), dua HP, tanggal.
+1. Isi kepala: build (hash commit di halaman Release `apk-latest`), HP Anda (merek, model, versi Android), tanggal.
 2. Jalankan skenario sesuai kolom **Cara uji di luar Tahura** (label di `RENCANA_QA.md` §3).
-3. Isi **HP1** dan **HP2**: `Lulus` · `Sebagian` · `Gagal` · `Terblokir`. Angka terukur ditulis apa adanya di *Catatan* (mis. "trigger 6 dtk", "deviasi 9 m").
-4. **Bukti:** rekam layar / foto, simpan di Drive tim `QA/putaran-01/<penguji>/`, nama `<ID>_<HP>_<tanggal>.<ext>`, contoh `SK-F02-02_HP1_2026-11-24.mp4`. Tulis nama berkasnya di kolom Bukti. Jangan masukkan video ke git.
+3. Isi kolom **Hasil**: `Lulus` · `Sebagian` · `Gagal` · `Terblokir`. Jangan lupa bagian *Uji lintas perangkat* di akhir berkas. Angka terukur ditulis apa adanya di *Catatan* (mis. "trigger 6 dtk", "deviasi 9 m").
+4. **Bukti:** rekam layar / foto, simpan di Drive tim `QA/putaran-01/<penguji>/`, nama `<ID>_<penguji>_<tanggal>.<ext>`, contoh `SK-F02-02_jacob_2026-11-24.mp4`. Tulis nama berkasnya di kolom Bukti. Jangan masukkan video ke git.
 5. Cacat → baris baru di `CACAT.md` (`CJ-nnn` Jacob, `CD-nnn` Dimas), lalu tulis ID-nya di kolom *Catatan / Cacat*.
 6. Hasil dari mock location atau mode demo ditulis dengan keterangan "(mock GPX 01)" atau "(mode demo)" agar tidak tertukar dengan uji GPS asli.
 
 ## 5. Rekap ke `main` (Jacob)
 
-Setelah putaran ditutup: hitung per fitur (lihat kolom *Fitur* di `docs/qa/REKAP_QA.md`), tentukan status QA (`Lulus` hanya bila semua skenario wajib lulus di **kedua HP**), salin cacat terbuka, lalu commit di `main`: `docs: QA rekap putaran 01`. Perbarui juga baris "Last closed round" di `.agents/PROGRESS.md` §Status QA.
+Setelah putaran ditutup: hitung per fitur (lihat kolom *Fitur* di `docs/qa/REKAP_QA.md`), tentukan status QA (`Lulus` hanya bila semua skenario wajib lulus dan skenario lintas perangkatnya lulus di **HP Jacob dan HP Dimas**), salin cacat terbuka, lalu commit di `main`: `docs: QA rekap putaran 01`. Perbarui juga baris "Last closed round" di `.agents/PROGRESS.md` §Status QA.
 
 ## 6. Bantuan AI (Claude Code / agen lain)
 
@@ -58,8 +58,8 @@ Perintah yang bisa langsung dipakai:
 
 | Kebutuhan | Contoh permintaan ke agen |
 |---|---|
-| Mencatat hasil | "Catat di `qa/jacob/putaran-01/HASIL.md`: SK-F02-01 HP1 Lulus, getar 1x di 48 m, bukti SK-F02-01_HP1_2026-11-24.mp4." |
-| Mencatat cacat | "Buat cacat baru di CACAT.md Dimas: SK-F04-06 HP2, tombol Dengarkan tidak bereaksi di layar kunci, Mayor." |
+| Mencatat hasil | "Catat di `qa/jacob/putaran-01/HASIL.md`: SK-F02-01 Lulus, getar 1x di 48 m, bukti SK-F02-01_jacob_2026-11-24.mp4." |
+| Mencatat cacat | "Buat cacat baru di CACAT.md Dimas: SK-F04-06, tombol Dengarkan tidak bereaksi di layar kunci, Mayor." |
 | Persiapan uji | "Skenario apa saja milik Jacob yang bisa diuji hari ini tanpa keluar rumah? Urutkan per GPX." |
 | Langkah uji | "Tampilkan langkah dan hasil yang diharapkan SK-F06-04, serta GPX yang dipakai." |
 | Rekap | "Buat draf `docs/qa/REKAP_QA.md` dari HASIL.md Jacob dan Dimas putaran 01 (tandai Draf AI)." |

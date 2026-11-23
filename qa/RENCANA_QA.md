@@ -22,14 +22,25 @@ Tidak diuji: iPhone (tidak dapat menjalankan APK), fitur di luar PRD (non-goals 
 
 ## 2. Pembagian penguji
 
-Dua penguji, masing-masing memakai **dua HP Android** yang sama (HP1, HP2), agar setiap skenario teruji di ≥2 perangkat (PB01, PRD §11).
+Dua penguji, **satu orang satu HP** (merek berbeda), di tempat dan waktu masing-masing. Tidak ada uji yang perlu dua HP sekaligus dan tidak perlu bertukar HP.
 
 | Penguji | Kelompok skenario | Jumlah |
 |---|---|---|
 | **Jacob (QA-1)** | F01 Lokasi (11), F02 Pemicu (22), A02 QR (9), F05 Cari (16), A04 Fasilitas (5), F06 Navigasi (18), A01 Offline (7), A06 Baterai (2), INS Pemasangan (3), E2E Alur utama (9), KTH Ketahanan (5) | 107 |
 | **Michael Dimas (QA-2)** | F03 Konten (15), F04 Eyes-free (16), F07 Rekomendasi (15), A03 Pengingat jam tutup (9), F08 Wellness (19), A05 Data (6), A07 Aksesibilitas (5), ONB/HOM/SET (11), NG Non-goals (8), TKS Teks (4), USB Usability (4) | 112 |
 
-Log masing-masing: `qa/jacob/putaran-NN/` dan `qa/dimas/putaran-NN/`. Bila dua HP hanya ada pada satu orang, penguji bergantian memakai HP yang sama; kolom HP1/HP2 tetap merujuk ke perangkat yang sama untuk kedua penguji.
+Log masing-masing: `qa/jacob/putaran-NN/` dan `qa/dimas/putaran-NN/`. Setiap skenario bagian sendiri cukup diuji sekali, di HP penguji.
+
+**Uji lintas perangkat.** Dua belas skenario yang hasilnya dapat berbeda antar-merek HP (izin, layanan latar, notifikasi, mesin suara, sensor langkah, kamera, pemborosan baterai) dijalankan oleh **kedua** penguji, masing-masing di HP-nya sendiri. Dengan ini aplikasi teruji di ≥2 perangkat (PB01) tanpa mengulang semua skenario. Di `HASIL.md` skenario ini bertanda *Lintas = Ya*, dan 6 skenario milik penguji lain ada di bagian akhir.
+
+| Dari bagian Jacob (juga dijalankan Dimas) | Dari bagian Dimas (juga dijalankan Jacob) |
+|---|---|
+| SK-INS-01 Terpasang dan terbuka | SK-F03-09 Cadangan Text-to-Speech perangkat |
+| SK-F01-01 Posisi tampil setelah izin | SK-F04-01 Kunjungan POI dengan layar terkunci |
+| SK-F01-07 Lokasi tetap dibaca saat layar mati | SK-F04-07 Kontrol media di layar kunci |
+| SK-F02-20 Notifikasi pemicu di layar terkunci | SK-F04-13 Suara tanpa internet |
+| SK-A02-01 QR Gua Jepang dengan kamera, luring | SK-A03-02 Suara dan notifikasi pengingat |
+| SK-A06-01 Pemakaian baterai per jam | SK-F08-03 Uji 200 langkah |
 
 ## 3. Label tempat uji
 
@@ -68,17 +79,17 @@ Urutan kerja yang disarankan dalam satu putaran, per penguji:
 
 ## 5. Kriteria
 
-**Siap mulai putaran:** APK terpasang di HP1 dan HP2 (catat hash build) · `docs/qa/DEVICE_CHECK.md` §3 terisi untuk kedua HP · suara TTS Indonesia luring terpasang · aplikasi mock location siap · papan QR tercetak (§6).
+**Siap mulai putaran:** APK terpasang di HP penguji (catat hash build) · `docs/qa/DEVICE_CHECK.md` §3 terisi untuk HP masing-masing · suara TTS Indonesia luring terpasang · aplikasi mock location siap · papan QR tercetak (§6).
 
-**Fitur disetujui QA (`Lulus`):** semua skenario fitur itu yang terkait acceptance criteria PRD lulus di **kedua HP**, tanpa cacat Kritis/Mayor terbuka. Bila lulusnya lewat mock/luar, kolom *Cara uji* di rekap = `Luar`; setelah hari Tahura = `Tahura`.
+**Fitur disetujui QA (`Lulus`):** semua skenario fitur itu yang terkait acceptance criteria PRD lulus di HP penguji, dan skenario lintas perangkat fitur itu lulus di **kedua HP** (HP Jacob dan HP Dimas), tanpa cacat Kritis/Mayor terbuka. Bila lulusnya lewat mock/luar, kolom *Cara uji* di rekap = `Luar`; setelah hari Tahura = `Tahura`.
 
-**Fitur `Sebagian`:** sebagian kriteria lulus, atau baru di satu HP, atau menunggu konfirmasi Tahura untuk kriteria yang tidak bisa dibuktikan di luar.
+**Fitur `Sebagian`:** sebagian kriteria lulus, atau skenario lintas perangkatnya baru lulus di satu HP, atau menunggu konfirmasi Tahura untuk kriteria yang tidak bisa dibuktikan di luar.
 
-**Putaran selesai:** semua skenario terisi (Lulus/Sebagian/Gagal/Terblokir) di kedua HP; semua cacat tercatat dengan bukti.
+**Putaran selesai:** semua skenario di `HASIL.md` kedua penguji terisi (Lulus/Sebagian/Gagal/Terblokir), termasuk bagian lintas perangkat; semua cacat tercatat dengan bukti.
 
 ## 6. Persiapan perangkat dan alat
 
-- **Dua HP Android** dengan `docs/qa/DEVICE_CHECK.md` §1 (opsi pengembang aktif, sensor langkah, TTS Indonesia luring, pengaturan baterai).
+- **Satu HP Android per penguji** (merek berbeda) dengan `docs/qa/DEVICE_CHECK.md` §1 (opsi pengembang aktif, sensor langkah, TTS Indonesia luring, pengaturan baterai).
 - **APK:** GitHub → Releases → `apk-latest` → `jelajah-taman.apk`. Tiap versi baru: uninstall dulu (kunci tanda tangan CI berganti).
 - **Mock location:** `mock-location/PANDUAN.md`.
 - **Menu debug:** ketuk 7 kali baris *Versi aplikasi* di Setelan → Tentang. Menu ini membuka jam debug, GPS lemah tiruan, pratinjau panggilan akhir, salin ringkasan log sesi. Hasil dari menu debug dicatat sebagai bukti pendukung (metode M), bukan pengganti uji GPS.
@@ -87,7 +98,7 @@ Urutan kerja yang disarankan dalam satu putaran, per penguji:
 
 ## 7. Hari Tahura (konfirmasi + demo)
 
-Satu kunjungan di akhir Sprint 5. Jalankan rute Santai atau Sedang dengan GPS asli, layar sering terkunci, dua HP:
+Satu kunjungan di akhir Sprint 5. Jalankan rute Santai atau Sedang dengan GPS asli, layar sering terkunci, kedua penguji membawa HP masing-masing:
 
 1. SK-E2E-01 … SK-E2E-09 sebagai alur demo (rekam video).
 2. Sepanjang jalan: SK-F02-02 / SK-F02-03 (catat setiap pemicu dan waktunya), SK-F01-03 di titik referensi survei (`SURVEY_EXIF`), SK-F04-01 di satu POI.

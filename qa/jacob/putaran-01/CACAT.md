@@ -2,7 +2,8 @@
 
 ID: `CJ-nnn` (berurutan, tidak dipakai ulang di putaran berikutnya). Tingkat: `Kritis` (fitur Must tidak berfungsi, aplikasi macet, data hilang) · `Mayor` (acceptance criteria tidak terpenuhi, ada jalan lain) · `Minor` (tampilan, teks, kenyamanan).
 Status: `Terbuka` · `Diperbaiki (build …)` · `Lulus uji ulang (putaran …)` · `Ditolak (alasan)`.
+Perangkat: sebutkan merek/model HP di kolom Ringkasan bila cacat hanya muncul di HP tertentu.
 
-| ID | Skenario | HP | Tingkat | Ringkasan | Langkah reproduksi | Hasil diharapkan vs aktual | Bukti | Status |
-|---|---|---|---|---|---|---|---|---|
-| CJ-001 | | | | | | | | |
+| ID | Skenario | Tingkat | Ringkasan | Langkah reproduksi | Hasil diharapkan vs aktual | Bukti | Status |
+|---|---|---|---|---|---|---|---|
+| CJ-001 | | | | | | | |
