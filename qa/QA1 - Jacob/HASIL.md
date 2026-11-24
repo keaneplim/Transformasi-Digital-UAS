@@ -1,7 +1,7 @@
 # Hasil uji QA1 — Jacob
 
 Penguji: Jacob Reinhard Marudut Siagian (QA1)
-Perangkat: ______ (merek, model, versi Android)
+Perangkat: POCO X8 Pro, Android 16 (Xiaomi HyperOS 3.0.305.0), penyimpanan terpakai 165,2/528 GB. [ss](bukti/HP/perangkat_jacob_2026-11-24.jpg)
 
 **Hasil:** `Lulus` · `Sebagian` · `Gagal` · kosong = belum dijalankan.
 **Penjelasan:** angka terukur, catatan, ID cacat, dan bukti, mis. `CJ-001, [ss](bukti/F03/SK-F03-08_jacob_2026-11-23.jpg)`.
@@ -9,8 +9,8 @@ Metode, langkah, hasil yang diharapkan, label tempat uji, cara uji di luar Tahur
 
 ## Fase 1 — di luar Tahura
 
-Build (APK): `apk-latest` — hash commit dan tanggal build dari halaman rilis: ______
-Mulai: ____ · Selesai: ____
+Build (APK): `apk-latest` = Jelajah Taman v0.1.0+1, release build (arm64-v8a) of commit [32018e3](https://github.com/keaneplim/Transformasi-Digital-UAS/commit/32018e386d13724b5ebf258721d7d0d5cc643b05), built 2026-11-23 13:15 UTC.
+Mulai: 24 November 2026 · Selesai: ____
 
 Semua skenario dijalankan di luar Tahura. Jumlah: 107 skenario sendiri + 6 skenario lintas perangkat dari QA2 (Mike).
 
@@ -18,59 +18,59 @@ Semua skenario dijalankan di luar Tahura. Jumlah: 107 skenario sendiri + 6 skena
 
 | ID | Skenario | Hasil | Penjelasan |
 |---|---|---|---|
-| SK-F01-04 | Izin lokasi ditolak |  |  |
-| SK-F01-09 | Layanan lokasi perangkat dimatikan |  |  |
-| SK-F01-10 | Penguji di luar kawasan |  |  |
-| SK-F01-11 | Pelacakan berhenti setelah sesi diakhiri |  |  |
+| SK-F01-04 | Izin lokasi ditolak | Lulus | Izin lokasi ditolak saat onboarding, aplikasi tidak macet; peta tampil tanpa titik biru dengan kartu "Lokasi belum diizinkan" + tombol "Izinkan lokasi" dan "Pilih manual"; "Pilih manual" membuka POI (Area Rumput / Piknik, Dikunjungi). Pembukaan lewat QR dibuktikan di SK-A02-09 (QR tidak memakai lokasi; diuji saat izin lokasi sudah diberikan). [ss](bukti/F01/SK-F01-04_jacob_2026-11-24.jpg), [ss](bukti/F01/SK-F01-04_jacob_2026-11-24_2.jpg) |
+| SK-F01-09 | Layanan lokasi perangkat dimatikan | Gagal | CJ-006. Lokasi dimatikan dari panel cepat: aplikasi tidak macet, tetapi tidak ada ajakan menyalakan lokasi; peta tetap menampilkan "Anda di luar kawasan · 3,0 km ke gerbang" seperti saat lokasi menyala. Setelah dinyalakan lagi tidak ada perubahan yang terlihat (penguji di luar kawasan, titik biru memang tidak tampil di peta taman). [ss](bukti/F01/SK-F01-09_jacob_2026-11-24.jpg) |
+| SK-F01-10 | Penguji di luar kawasan | Lulus | Izin lokasi diberikan, ±3 km dari gerbang, sesi aktif >2 menit: label "Anda di luar kawasan · 3,0 km ke gerbang" dan panah arah di tepi peta; tidak ada pemicu; aplikasi tetap dapat dijelajahi. [ss](bukti/F01/SK-F01-10_jacob_2026-11-24.jpg) |
+| SK-F01-11 | Pelacakan berhenti setelah sesi diakhiri | Lulus | "Akhiri Jelajah" → ringkasan sesi tampil; layar dikunci ±2 menit: tidak ada notifikasi layanan pemandu Jelajah Taman di layar kunci/bilah notifikasi. [ss](bukti/F01/SK-F01-11_jacob_2026-11-24.jpg), [ss](bukti/F01/SK-F01-11_jacob_2026-11-24_2.jpg) |
 | SK-F02-10 | Pilihan "Nanti" tidak menandai dikunjungi |  |  |
 | SK-F02-11 | Pilihan "Dengarkan" menandai dikunjungi |  |  |
 | SK-F02-12 | Pilihan "Lihat" menandai dikunjungi |  |  |
-| SK-F02-14 | Lompatan GPS sesaat tidak memicu |  |  |
-| SK-F02-16 | Pemilihan POI secara manual |  |  |
+| SK-F02-14 | Lompatan GPS sesaat tidak memicu | Lulus | Uji otomatis (metode O): `test/modules/trigger/geofence_engine_test.dart` kasus "2. single fix inside r then outside → no trigger (debounce)". CI run #42 untuk build `32018e3` lulus (job "Content · format · analyze · architecture · test", 23 Nov 13:08 UTC, [log](https://github.com/keaneplim/Transformasi-Digital-UAS/actions/runs/45180612777)). Diperiksa asisten AI, bukan uji ponsel. |
+| SK-F02-16 | Pemilihan POI secara manual | Lulus | Izin lokasi ditolak → kartu peta "Pilih manual" → Area Rumput / Piknik terbuka dan berstatus Dikunjungi. [ss](bukti/F01/SK-F01-04_jacob_2026-11-24_2.jpg) |
 | SK-F02-18 | P11 hanya aktif pada rute Trekking |  |  |
 | SK-F02-21 | Pencatatan pemicu dan kunjungan |  |  |
-| SK-A02-03 | QR asing |  |  |
-| SK-A02-04 | QR berskema benar dengan ID tidak dikenal |  |  |
-| SK-A02-05 | Pemindaian QR menandai dikunjungi |  |  |
-| SK-A02-07 | Izin kamera ditolak |  |  |
-| SK-A02-08 | QR untuk POI yang sudah dikunjungi |  |  |
-| SK-A02-09 | QR dipindai tanpa sesi aktif |  |  |
-| SK-F05-01 | Kata kunci "gua" |  |  |
-| SK-F05-02 | Kata kunci "toilet" |  |  |
-| SK-F05-03 | Pencocokan sebagian dan tidak peka huruf besar/kecil |  |  |
-| SK-F05-04 | Filter kategori |  |  |
-| SK-F05-05 | Filter digabung dengan kata kunci |  |  |
-| SK-F05-08 | Kecepatan pencarian luring |  |  |
-| SK-F05-09 | Kata kunci tidak ditemukan |  |  |
-| SK-F05-10 | Satu salah ketik |  |  |
-| SK-F05-11 | Batas toleransi salah ketik |  |  |
-| SK-F05-12 | Sinonim |  |  |
-| SK-F05-13 | Memilih hasil membuka detail |  |  |
+| SK-A02-03 | QR asing | Lulus | Pesan "QR tidak dikenali. Pastikan Anda memindai papan Jelajah Taman."; tidak ada POI terbuka; pemindai dapat dipakai lagi. Catatan: pemindai juga membaca QR di luar kotak bidik (QR P05 di bawahnya ikut terbaca), lihat CJ-007. Bila hanya QR asing yang terlihat kamera, tidak ada POI yang terbuka. [ss](bukti/A02/SK-A02-03_jacob_2026-11-24.jpg) |
+| SK-A02-04 | QR berskema benar dengan ID tidak dikenal | Lulus | `jelajahtaman://poi/P99`: pesan "QR tidak dikenali"; tidak ada POI terbuka. Sesudahnya muncul petunjuk kuning "Di dalam gua sinyal lokasi melemah. Kode QR membuka ceritanya langsung." (juga pada QR asing). QR P06 di layar ikut terbaca (CJ-007). [ss](bukti/A02/SK-A02-04_jacob_2026-11-24.jpg) |
+| SK-A02-05 | Pemindaian QR menandai dikunjungi | Lulus | Diuji pada pindaian QR P05 pertama (sesi baru otomatis dimulai, P05 belum dikunjungi): P05 langsung berstatus Dikunjungi, ±1 detik. Sumber "QR" di log sesi belum diperiksa (lihat SK-F02-21). [ss](bukti/A02/SK-A02-09_jacob_2026-11-24.jpg) |
+| SK-A02-07 | Izin kamera ditolak | Lulus | Izin kamera tidak diminta saat onboarding; diminta saat pemindai dibuka. Setelah "Don't allow": pesan "Kamera belum diizinkan… atau pilih tempat dari daftar" + tombol "Pilih tempat dari daftar"; tidak macet. [ss](bukti/A02/SK-A02-07_jacob_2026-11-24.jpg), [ss](bukti/A02/SK-A02-07_jacob_2026-11-24_2.jpg) |
+| SK-A02-08 | QR untuk POI yang sudah dikunjungi | Lulus | QR P05 dipindai ulang: Gua Jepang tetap terbuka; jumlah tetap "2 dikunjungi" (P05 + P06 yang ikut terbaca, CJ-007), tidak bertambah. Lembar rekomendasi hanya muncul pada kunjungan pertama, tidak tiap pindaian. [ss](bukti/A02/SK-A02-08_jacob_2026-11-24.jpg) |
+| SK-A02-09 | QR dipindai tanpa sesi aktif | Lulus | QR P05 (di layar laptop) tanpa sesi: Gua Jepang terbuka ±1 detik, berstatus Dikunjungi, tidak macet. Sesi otomatis dimulai (sesuai desain, `guide_controller.dart:997`). Lembar rekomendasi "Berikutnya, ke sini?" (Kolam Pakar) + suara "berikutnya Kolam Pakar" juga muncul. [ss](bukti/A02/SK-A02-09_jacob_2026-11-24.jpg), [ss](bukti/A02/SK-A02-09_jacob_2026-11-24_2.jpg) |
+| SK-F05-01 | Kata kunci "gua" | Lulus | 5 hasil: Gua Jepang, Gua Belanda, serta fasilitas yang namanya memuat "gua" (Toilet dekat Gua Belanda, Musala dekat Gua Belanda, Saung Jalur Gua). |
+| SK-F05-02 | Kata kunci "toilet" | Lulus | 2 hasil = semua toilet di data (Toilet dekat Gerbang, Toilet dekat Gua Belanda). |
+| SK-F05-03 | Pencocokan sebagian dan tidak peka huruf besar/kecil | Lulus | Diketik satu per satu: `PINUS` 2 hasil (Kawasan Hutan Pinus + Bangku Hutan Pinus), `mus` 3 (Museum + 2 musala), `Rusa` 2 (Penangkaran Rusa + Saung Penangkaran Rusa). Bila ketiganya diketik sekaligus dalam satu kotak, tidak ada hasil (bukan bagian skenario). |
+| SK-F05-04 | Filter kategori | Lulus | Tiap filter (Sejarah, Alam, Rekreasi, Fasilitas) hanya menampilkan kategorinya. |
+| SK-F05-05 | Filter digabung dengan kata kunci | Lulus | `gua` + Fasilitas: hanya fasilitas dekat gua; `gua` + Sejarah: hanya kedua gua. |
+| SK-F05-08 | Kecepatan pencarian luring | Lulus | Mode pesawat; hasil `gua`, `toilet`, kata acak muncul < 1 detik. |
+| SK-F05-09 | Kata kunci tidak ditemukan | Lulus | `xyzabc`: pesan tidak ditemukan + saran kategori, tidak macet. |
+| SK-F05-10 | Satu salah ketik | Lulus | `tiolet` → toilet; `gua blanda` → Gua Belanda. Catatan: saat masih mengetik, hasil sempat kosong, lalu muncul setelah kata selesai. |
+| SK-F05-11 | Batas toleransi salah ketik | Lulus | `pinsu` → Pinus, `musla` → ketemu, `pxnxs` → tidak, `belxndx` → ketemu, `gxa` → tidak. Sesuai harapan. |
+| SK-F05-12 | Sinonim | Lulus | `wc` 2 hasil (toilet); `goa` 5 hasil (sama dengan `gua`). Catatan: `wc goa` → 1 hasil (Toilet dekat Gua Belanda). |
+| SK-F05-13 | Memilih hasil membuka detail | Lulus | Detail POI yang benar terbuka. |
 | SK-F05-14 | Memilih hasil memulai navigasi |  |  |
-| SK-F05-15 | Masukan tidak lazim |  |  |
-| SK-F05-16 | Pencarian tanpa posisi |  |  |
-| SK-A04-01 | Marker fasilitas di peta |  |  |
-| SK-A04-02 | Filter "Fasilitas" |  |  |
-| SK-A04-05 | Setiap jenis fasilitas dapat dicari |  |  |
+| SK-F05-15 | Masukan tidak lazim | Lulus | Spasi berulang, simbol, dan tempel teks panjang: tidak macet. |
+| SK-F05-16 | Pencarian tanpa posisi | Lulus | Izin lokasi ditolak: `toilet` tetap menampilkan hasil yang dapat dibuka; jarak berlabel "dari gerbang" (dilaporkan penguji; label yang sama terlihat di kartu fasilitas peta, [ss](bukti/A04/SK-A04-01_jacob_2026-11-24.jpg)). Catatan: POI Detail tetap menulis "dari Anda", lihat CJ-002. |
+| SK-A04-01 | Marker fasilitas di peta | Lulus | Marker fasilitas (ikon warung, cincin putih) berbeda dari marker POI; ketukan menampilkan nama "Warung dekat Kolam", jarak "10 m · <1 mnt dari gerbang" (tanpa posisi), dan tombol Navigasi. [ss](bukti/A04/SK-A04-01_jacob_2026-11-24.jpg) |
+| SK-A04-02 | Filter "Fasilitas" | Lulus | Toilet, musala, warung, titik istirahat, pos petugas tampil; tidak ada POI. |
+| SK-A04-05 | Setiap jenis fasilitas dapat dicari | Lulus | `musala`, `warung`, `petugas`, `istirahat` menampilkan fasilitas yang sesuai beserta jarak. |
 | SK-F06-12 | Membatalkan navigasi |  |  |
 | SK-F06-13 | Titik masuk navigasi |  |  |
 | SK-F06-15 | ETA memperhitungkan tanjakan |  |  |
-| SK-F06-16 | Rute terpendek |  |  |
+| SK-F06-16 | Rute terpendek | Lulus | Uji otomatis (metode O): `test/modules/routing/graph_trail_router_test.dart` (rute mengikuti jalur F06 AC1, biaya = waktu, D09 tanjakan, penempelan ke jalur, arahan belok/pertigaan, POI tak terjangkau). CI run #42 untuk build `32018e3` lulus (job "Content · format · analyze · architecture · test", 23 Nov 13:08 UTC, [log](https://github.com/keaneplim/Transformasi-Digital-UAS/actions/runs/45180612777)). Diperiksa asisten AI, bukan uji ponsel. |
 | SK-F06-18 | Seluruh POI dan fasilitas terjangkau |  |  |
-| SK-A01-02 | Pemakaian pertama tanpa internet |  |  |
-| SK-A01-03 | Peta luring |  |  |
-| SK-A01-04 | Atribusi peta |  |  |
-| SK-A01-05 | Lapisan satelit tanpa internet |  |  |
-| SK-A01-06 | Sinyal hilang-timbul |  |  |
-| SK-A01-07 | Ukuran pemasangan |  |  |
+| SK-A01-02 | Pemakaian pertama tanpa internet | Lulus | Mode pesawat sebelum dibuka pertama kali; onboarding selesai, peta tampil, satu POI dibuka dan audio berputar; tidak ada unduhan yang diminta. Peta luring: [ss](bukti/F01/SK-F01-04_jacob_2026-11-24.jpg) |
+| SK-A01-03 | Peta luring | Lulus | Mode pesawat, izin lokasi ditolak: zona tampil saat diperkecil dan diperbesar, tanpa area kosong; marker POI, marker fasilitas, dan jalur tampil. Titik pengguna tidak diuji (izin lokasi ditolak). [ss](bukti/A01/SK-A01-03_jacob_2026-11-24.jpg), [ss](bukti/A01/SK-A01-03_jacob_2026-11-24_2.jpg) |
+| SK-A01-04 | Atribusi peta | Lulus | "© OpenStreetMap" di peta dan "Data peta © OpenStreetMap contributors" di Tentang & atribusi. [ss](bukti/A01/SK-A01-04_jacob_2026-11-24.jpg), [ss](bukti/A01/SK-A01-03_jacob_2026-11-24.jpg) |
+| SK-A01-05 | Lapisan satelit tanpa internet | Lulus | Mode pesawat: pesan "Peta satelit butuh internet. Kembali ke peta biasa.", tidak macet. [ss](bukti/A01/SK-A01-05_jacob_2026-11-24.jpg) |
+| SK-A01-06 | Sinyal hilang-timbul | Lulus | Mode pesawat dinyalakan/dimatikan beberapa kali sambil berpindah layar selama sesi: tidak ada galat, fitur tetap berjalan. |
+| SK-A01-07 | Ukuran pemasangan | Lulus | Unduhan APK 63,76 MB; paket 60,8 MB (penginstal); penyimpanan setelah terpasang 69,81 MB. Ruang kosong HP jauh di atas 1 GB. [ss](bukti/A01/SK-A01-07_jacob_2026-11-24.jpg), [ss](bukti/A01/SK-A01-07_jacob_2026-11-24_2.jpg) |
 | SK-INS-01 | Terpasang dan terbuka di ≥2 perangkat uji |  |  |
-| SK-INS-02 | Pembaruan di atas versi lama |  |  |
-| SK-INS-03 | Aplikasi dibuka kembali |  |  |
+| SK-INS-02 | Pembaruan di atas versi lama | Lulus | Dilaporkan penguji: sebelum 24 Nov, APK versi lama di HP ini diperbarui ke build `32018e3` tanpa menghapus yang lama; pembaruan berhasil dan aplikasi berjalan normal. Tanpa screenshot (aplikasi kemudian dihapus untuk uji pemasangan baru). |
+| SK-INS-03 | Aplikasi dibuka kembali | Lulus | Aplikasi ditutup penuh lalu dibuka lagi: onboarding tidak diulang, langsung ke Beranda. |
 | SK-KTH-01 | Berpindah aplikasi selama sesi |  |  |
-| SK-KTH-02 | Layar diputar |  |  |
+| SK-KTH-02 | Layar diputar | Gagal | CJ-003. Tab Peta dalam posisi mendatar: kartu statistik menumpuk di atas kartu "Lokasi belum diizinkan", kartu tempat menutupi peta, tombol peta terpotong di atas. [ss](bukti/KTH/SK-KTH-02_jacob_2026-11-24.jpg) |
 | SK-KTH-03 | Baterai rendah / hemat daya |  |  |
 | SK-KTH-04 | Sesi panjang |  |  |
-| SK-KTH-05 | Tombol kembali Android |  |  |
+| SK-KTH-05 | Tombol kembali Android | Lulus | Dari POI Detail / navigasi: kembali ke layar sebelumnya. Dari tab Beranda/Peta/Cari: aplikasi keluar (perilaku standar Android), tetapi sesi tetap berjalan: durasi terus bertambah setelah aplikasi ditutup dan dihapus dari daftar aplikasi terbaru ±10 menit. Lihat CJ-004 (ditolak). |
 
 ### 1B. Fake GPS: mock location memutar trek GPX (41)
 
